@@ -94,10 +94,10 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
 
       {/* Score Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <ScoreMeter label="Composite" value={buyer.compositeScore} icon={Star} color="text-yellow-400" />
-        <ScoreMeter label="Reliability" value={buyer.reliabilityScore} icon={Shield} color="text-green-400" />
-        <ScoreMeter label="Liquidity" value={buyer.liquidityScore} icon={DollarSign} color="text-blue-400" />
-        <ScoreMeter label="Activity" value={buyer.activityScore} icon={Zap} color="text-purple-400" />
+        <ScoreMeter label="Composite" score={buyer.compositeScore} icon={Star} color="text-yellow-400" />
+        <ScoreMeter label="Reliability" score={buyer.reliabilityScore} icon={Shield} color="text-green-400" />
+        <ScoreMeter label="Liquidity" score={buyer.liquidityScore} icon={DollarSign} color="text-blue-400" />
+        <ScoreMeter label="Activity" score={buyer.activityScore} icon={Zap} color="text-purple-400" />
       </div>
 
       {/* Buy Box */}
