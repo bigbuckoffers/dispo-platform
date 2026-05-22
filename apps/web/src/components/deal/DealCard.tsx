@@ -108,7 +108,7 @@ export function DealCard({ deal, onUpdate }: { deal: any; onUpdate?: () => void 
             <button
               key={tier}
               onClick={(e) => { e.stopPropagation(); if (!released) release.mutate(tier as any); }}
-              disabled={!!released || release.isLoading}
+              disabled={!!released || release.isPending}
               className={cn(
                 'flex-1 text-xs py-1.5 rounded-md border font-medium transition-colors',
                 released
