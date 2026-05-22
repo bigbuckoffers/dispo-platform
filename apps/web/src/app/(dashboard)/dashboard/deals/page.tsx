@@ -58,7 +58,7 @@ export default function DealsPage() {
 
   const { data: dealsData, isLoading, refetch } = useQuery({
     queryKey: ['deals', sortBy, filterStatus, filterSource],
-    queryFn: () => api.get(`/deals?page=1&limit=50&sort=${sortBy}&status=${filterStatus}&source=${filterSource}`).then(r => r.data),
+    queryFn: () => api.get(`/deals?page=1&limit=50&sort=${sortBy}${filterStatus !== 'ALL' ? '&status=' + filterStatus : ''}${filterSource !== 'ALL' ? '&source=' + filterSource : ''}`).then(r => r.data),
   });
 
   const { data: marketIntel } = useQuery({
