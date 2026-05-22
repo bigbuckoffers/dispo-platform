@@ -1,0 +1,957 @@
+// prisma/schema.prisma
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions", "fullTextSearch"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [uuidOssp(map: "uuid-ossp"), vector, pgTrgm(map: "pg_trgm")]
+}
+
+// ─────────────────────────────────────────────
+// ORGANIZATIONS & USERS
+// ─────────────────────────────────────────────
+
+model Organization {
+  id           String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  name         String
+  slug         String   @unique
+  plan         PlanType @default(STARTER)
+  stripeCustomerId String? @unique
+  stripeSubId  String?  @unique
+  settings     Json     @default("{}")
+  isActive     Boolean  @default(true)
+  trialEndsAt  DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  members      TeamMember[]
+  buyers       Buyer[]
+  deals        Deal[]
+  campaigns    Campaign[]
+  subscriptions Subscription[]
+  auditLogs    AuditLog[]
+  apiKeys      ApiKey[]
+
+  @@map("organizations")
+}
+
+model User {
+  id           String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  clerkId      String   @unique
+  email        String   @unique
+  firstName    String
+  lastName     String
+  avatarUrl    String?
+  phone        String?
+  mfaEnabled   Boolean  @default(false)
+  isActive     Boolean  @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  memberships  TeamMember[]
+  offers       Offer[]
+  auditLogs    AuditLog[]
+  notifications Notification[]
+
+  @@map("users")
+}
+
+model TeamMember {
+  id             String     @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  organizationId String     @db.Uuid
+  userId         String     @db.Uuid
+  role           TeamRole   @default(VIEWER)
+  invitedBy      String?    @db.Uuid
+  acceptedAt     DateTime?
+  createdAt      DateTime   @default(now())
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
+  @@index([organizationId])
+  @@map("team_members")
+}
+
+// ─────────────────────────────────────────────
+// BUYER CRM
+// ─────────────────────────────────────────────
+
+model Buyer {
+  id                 String      @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  organizationId     String      @db.Uuid
+  externalId         String?     // for imports
+  
+  // Identity
+  firstName          String
+  lastName           String
+  company            String?
+  email              String
+  phone              String?
+  website            String?
+  llcNames           String[]    @default([])
+  socialProfiles     Json        @default("{}")
+  
+  // Verification
+  proofOfFundsUrl    String?
+  proofOfFundsExpiry DateTime?
+  preferredTitleCo   String?
+  preferredLender    String?
+  assignedRepId      String?     @db.Uuid
+  
+  // Buyer type
+  investorType       InvestorType @default(CASH_BUYER)
+  hasCash            Boolean     @default(false)
+  hasHardMoney       Boolean     @default(false)
+  
+  // Scores (0-100)
+  reliabilityScore   Float       @default(50)
+  liquidityScore     Float       @default(50)
+  activityScore      Float       @default(50)
+  compositeScore     Float       @default(50)
+  
+  // Tier
+  tier               BuyerTier   @default(TIER_3)
+  
+  // Flags
+  isActive           Boolean     @default(true)
+  isVerified         Boolean     @default(false)
+  isSuspended        Boolean     @default(false)
+  suspendedReason    String?
+  
+  // Metadata
+  source             String?
+  notes              String?
+  tags               String[]    @default([])
+  customFields       Json        @default("{}")
+  
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+
+  organization       Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  buyBox             BuyBox?
+  realBuyBox         RealBuyBox?
+  embedding          BuyerEmbedding?
+  events             BuyerEvent[]
+  dealViews          DealView[]
+  offers             Offer[]
+  purchases          PurchaseHistory[]
+  matchResults       MatchResult[]
+  scoreHistory       BuyerScoreHistory[]
+  campaignRecipients CampaignRecipient[]
+
+  @@unique([organizationId, email])
+  @@index([organizationId])
+  @@index([compositeScore(sort: Desc)])
+  @@index([tier])
+  @@index([isActive, isSuspended])
+  @@map("buyers")
+}
+
+model BuyBox {
+  id                 String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  buyerId            String   @unique @db.Uuid
+  
+  // Geography
+  states             String[] @default([])
+  counties           String[] @default([])
+  zipCodes           String[] @default([])
+  radiusMiles        Float?
+  geoPolygon         Json?    // GeoJSON polygon for custom area
+  
+  // Property filters
+  propertyTypes      PropertyType[]
+  minPrice           Float?
+  maxPrice           Float?
+  minArv             Float?
+  maxArv             Float?
+  minRehab           Float?
+  maxRehab           Float?
+  minBeds            Int?
+  maxBeds            Int?
+  minBaths           Float?
+  maxBaths           Float?
+  minSqft            Int?
+  maxSqft            Int?
+  minYearBuilt       Int?
+  maxYearBuilt       Int?
+  
+  // Preferences
+  occupancyPref      OccupancyPref[] @default([])
+  investmentStrategy InvestmentStrategy[]
+  preferredExits     ExitStrategy[]
+  rehabTolerance     RehabTolerance @default(MEDIUM)
+  
+  // Assignment
+  maxAssignmentFee   Float?
+  
+  updatedAt          DateTime @updatedAt
+  buyer              Buyer    @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+
+  @@map("buy_boxes")
+}
+
+model RealBuyBox {
+  id                  String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  buyerId             String   @unique @db.Uuid
+  
+  // AI-learned preferences (different from stated)
+  learnedZipCodes     String[] @default([])
+  learnedPriceMin     Float?
+  learnedPriceMax     Float?
+  learnedPropertyTypes PropertyType[]
+  learnedRehabDepth   RehabTolerance?
+  learnedFeatures     Json     @default("{}")   // brick, corner_lot, pool, etc.
+  learnedNeighborhood Json     @default("{}")   // crime_tolerance, school_rating, etc.
+  
+  confidenceScore     Float    @default(0)      // how confident AI is in this profile
+  dataPointCount      Int      @default(0)      // number of data points used
+  divergenceFromStated Float   @default(0)      // how different from stated buy box
+  
+  lastUpdated         DateTime @default(now())
+  buyer               Buyer    @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+
+  @@map("real_buy_boxes")
+}
+
+model BuyerEmbedding {
+  id        String                      @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  buyerId   String                      @unique @db.Uuid
+  vector    Unsupported("vector(1536)")?
+  modelVersion String                  @default("text-embedding-3-large")
+  updatedAt DateTime                    @updatedAt
+
+  buyer     Buyer @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+
+  @@map("buyer_embeddings")
+}
+
+model BuyerEvent {
+  id        String          @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  buyerId   String          @db.Uuid
+  eventType BuyerEventType
+  dealId    String?         @db.Uuid
+  metadata  Json            @default("{}")
+  createdAt DateTime        @default(now())
+
+  buyer     Buyer @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+
+  @@index([buyerId, createdAt(sort: Desc)])
+  @@index([buyerId, eventType])
+  @@map("buyer_events")
+}
+
+model BuyerScoreHistory {
+  id               String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  buyerId          String   @db.Uuid
+  reliabilityScore Float
+  liquidityScore   Float
+  activityScore    Float
+  compositeScore   Float
+  computedAt       DateTime @default(now())
+
+  buyer            Buyer @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+
+  @@index([buyerId, computedAt(sort: Desc)])
+  @@map("buyer_score_history")
+}
+
+// ─────────────────────────────────────────────
+// DEALS & PROPERTIES
+// ─────────────────────────────────────────────
+
+model Deal {
+  id               String     @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  organizationId   String     @db.Uuid
+  
+  // Property details
+  address          String
+  city             String
+  state            String
+  zipCode          String
+  county           String?
+  latitude         Float?
+  longitude        Float?
+  
+  // Financials
+  askingPrice      Float
+  arv              Float?
+  assignmentFee    Float?
+  repairEstimate   Float?
+  
+  // Property specs
+  propertyType     PropertyType  @default(SINGLE_FAMILY)
+  beds             Int?
+  baths            Float?
+  sqft             Int?
+  yearBuilt        Int?
+  lotSize          Float?
+  
+  // Status
+  occupancy        OccupancyStatus @default(VACANT)
+  titleStatus      TitleStatus     @default(CLEAR)
+  status           DealStatus      @default(DRAFT)
+  
+  // Timeline
+  closingDeadline  DateTime?
+  accessInstructions String?
+  
+  // Liens / legal
+  hasLiens         Boolean    @default(false)
+  lienAmount       Float?
+  taxesOwed        Float?
+  
+  // Seller info
+  sellerNotes      String?
+  acquisitionRepId String?    @db.Uuid
+  
+  // AI scores (generated on intake)
+  flipScore        Float?
+  landlordScore    Float?
+  cashBuyerDemand  Float?
+  liquidityScore   Float?
+  riskScore        Float?
+  aiAnalysis       Json?      // full AI enrichment response
+  
+  // Release tracking
+  tier1ReleasedAt  DateTime?
+  tier2ReleasedAt  DateTime?
+  tier3ReleasedAt  DateTime?
+  
+  // Media
+  photos           String[]   @default([])
+  videos           String[]   @default([])
+  documents        Document[]
+  
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+
+  organization     Organization  @relation(fields: [organizationId], references: [id])
+  embedding        DealEmbedding?
+  comps            Comp[]
+  offers           Offer[]
+  matchResults     MatchResult[]
+  views            DealView[]
+  campaigns        Campaign[]
+
+  @@index([organizationId, status])
+  @@index([organizationId, createdAt(sort: Desc)])
+  @@index([zipCode])
+  @@index([state, city])
+  @@map("deals")
+}
+
+model DealEmbedding {
+  id           String                        @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  dealId       String                        @unique @db.Uuid
+  vector       Unsupported("vector(1536)")?
+  modelVersion String                        @default("text-embedding-3-large")
+  updatedAt    DateTime                      @updatedAt
+
+  deal         Deal @relation(fields: [dealId], references: [id], onDelete: Cascade)
+
+  @@map("deal_embeddings")
+}
+
+model DealView {
+  id         String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  dealId     String   @db.Uuid
+  buyerId    String   @db.Uuid
+  durationSec Int     @default(0)
+  source     String?  // feed, sms, email, direct
+  createdAt  DateTime @default(now())
+
+  deal       Deal  @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  buyer      Buyer @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+
+  @@index([dealId])
+  @@index([buyerId, createdAt(sort: Desc)])
+  @@map("deal_views")
+}
+
+model Comp {
+  id           String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  dealId       String   @db.Uuid
+  address      String
+  salePrice    Float
+  sqft         Int?
+  soldDate     DateTime
+  distanceMi   Float?
+  source       String   @default("manual")
+  
+  deal         Deal @relation(fields: [dealId], references: [id], onDelete: Cascade)
+
+  @@index([dealId])
+  @@map("comps")
+}
+
+model Document {
+  id           String       @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  dealId       String       @db.Uuid
+  name         String
+  documentType DocumentType
+  s3Key        String
+  s3Bucket     String
+  sizeBytes    Int?
+  mimeType     String?
+  uploadedById String       @db.Uuid
+  createdAt    DateTime     @default(now())
+
+  deal         Deal @relation(fields: [dealId], references: [id], onDelete: Cascade)
+
+  @@index([dealId])
+  @@map("documents")
+}
+
+// ─────────────────────────────────────────────
+// AI MATCHING
+// ─────────────────────────────────────────────
+
+model MatchResult {
+  id                   String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  dealId               String   @db.Uuid
+  buyerId              String   @db.Uuid
+  
+  // Scores
+  finalScore           Float
+  vectorScore          Float
+  geoScore             Float
+  priceScore           Float
+  reliabilityScore     Float
+  activityScore        Float
+  historicalScore      Float
+  
+  // Output
+  rank                 Int
+  confidencePct        Float
+  estimatedOfferMin    Float?
+  estimatedOfferMax    Float?
+  
+  // Status
+  notified             Boolean  @default(false)
+  notifiedAt           DateTime?
+  
+  computedAt           DateTime @default(now())
+
+  deal                 Deal  @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  buyer                Buyer @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+
+  @@unique([dealId, buyerId])
+  @@index([dealId, rank])
+  @@index([buyerId, finalScore(sort: Desc)])
+  @@map("match_results")
+}
+
+model MatchJob {
+  id          String        @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  dealId      String        @db.Uuid
+  status      JobStatus     @default(QUEUED)
+  totalBuyers Int           @default(0)
+  matchCount  Int           @default(0)
+  errorMsg    String?
+  startedAt   DateTime?
+  completedAt DateTime?
+  createdAt   DateTime      @default(now())
+
+  @@index([dealId])
+  @@index([status])
+  @@map("match_jobs")
+}
+
+// ─────────────────────────────────────────────
+// OFFERS
+// ─────────────────────────────────────────────
+
+model Offer {
+  id              String      @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  dealId          String      @db.Uuid
+  buyerId         String      @db.Uuid
+  submittedById   String      @db.Uuid
+  
+  amount          Float
+  emdAmount       Float?
+  closingDate     DateTime?
+  contingencies   String[]    @default([])
+  notes           String?
+  
+  status          OfferStatus @default(PENDING)
+  declinedReason  String?
+  counterAmount   Float?
+  
+  isRetrade       Boolean     @default(false)
+  isCancelled     Boolean     @default(false)
+  cancelledReason String?
+  
+  submittedAt     DateTime    @default(now())
+  respondedAt     DateTime?
+  closedAt        DateTime?
+  updatedAt       DateTime    @updatedAt
+
+  deal            Deal  @relation(fields: [dealId], references: [id])
+  buyer           Buyer @relation(fields: [buyerId], references: [id])
+  submittedBy     User  @relation(fields: [submittedById], references: [id])
+
+  @@index([dealId, status])
+  @@index([buyerId, submittedAt(sort: Desc)])
+  @@map("offers")
+}
+
+model PurchaseHistory {
+  id                String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  buyerId           String   @db.Uuid
+  dealId            String?  @db.Uuid
+  
+  address           String
+  purchasePrice     Float
+  assignmentFeePaid Float?
+  closedAt          DateTime
+  
+  // Outcome tracking
+  rehabCost         Float?
+  salePrice         Float?
+  roi               Float?
+  
+  buyer             Buyer @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+
+  @@index([buyerId])
+  @@map("purchase_history")
+}
+
+// ─────────────────────────────────────────────
+// CAMPAIGNS & MESSAGING
+// ─────────────────────────────────────────────
+
+model Campaign {
+  id             String         @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  organizationId String         @db.Uuid
+  dealId         String         @db.Uuid
+  
+  name           String
+  channel        CampaignChannel
+  targetTier     BuyerTier
+  
+  subject        String?        // email subject
+  body           String         // message body (AI-generated or manual)
+  
+  status         CampaignStatus @default(DRAFT)
+  scheduledAt    DateTime?
+  sentAt         DateTime?
+  
+  // Stats
+  totalRecipients Int           @default(0)
+  delivered       Int           @default(0)
+  opened          Int           @default(0)
+  clicked         Int           @default(0)
+  replied         Int           @default(0)
+  unsubscribed    Int           @default(0)
+  
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  deal           Deal         @relation(fields: [dealId], references: [id])
+  recipients     CampaignRecipient[]
+  messages       Message[]
+
+  @@index([organizationId, createdAt(sort: Desc)])
+  @@index([dealId])
+  @@map("campaigns")
+}
+
+model CampaignRecipient {
+  id           String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  campaignId   String   @db.Uuid
+  buyerId      String   @db.Uuid
+  personalizedBody String?
+  
+  campaign     Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  buyer        Buyer    @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, buyerId])
+  @@map("campaign_recipients")
+}
+
+model Message {
+  id           String        @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  campaignId   String        @db.Uuid
+  channel      CampaignChannel
+  toAddress    String        // phone or email
+  body         String
+  
+  externalId   String?       // Twilio SID or SendGrid ID
+  status       MessageStatus @default(QUEUED)
+  errorMsg     String?
+  
+  sentAt       DateTime?
+  deliveredAt  DateTime?
+  openedAt     DateTime?
+  clickedAt    DateTime?
+  repliedAt    DateTime?
+  
+  createdAt    DateTime      @default(now())
+
+  campaign     Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  events       MessageEvent[]
+
+  @@index([campaignId])
+  @@index([externalId])
+  @@map("messages")
+}
+
+model MessageEvent {
+  id        String            @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  messageId String            @db.Uuid
+  eventType MessageEventType
+  metadata  Json              @default("{}")
+  createdAt DateTime          @default(now())
+
+  message   Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@index([messageId])
+  @@map("message_events")
+}
+
+model DripSequence {
+  id             String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  organizationId String   @db.Uuid
+  name           String
+  trigger        String   // e.g. "DEAL_VIEWED", "NO_RESPONSE_48H"
+  isActive       Boolean  @default(true)
+  steps          Json     // array of {delayHours, channel, template}
+  createdAt      DateTime @default(now())
+
+  @@index([organizationId])
+  @@map("drip_sequences")
+}
+
+model Notification {
+  id        String           @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  userId    String           @db.Uuid
+  type      NotificationType
+  title     String
+  body      String
+  link      String?
+  metadata  Json             @default("{}")
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead, createdAt(sort: Desc)])
+  @@map("notifications")
+}
+
+// ─────────────────────────────────────────────
+// MARKETPLACE
+// ─────────────────────────────────────────────
+
+model MarketplaceListing {
+  id             String            @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  dealId         String            @unique @db.Uuid
+  organizationId String            @db.Uuid
+  
+  visibility     ListingVisibility @default(PUBLIC)
+  featuredUntil  DateTime?
+  
+  viewCount      Int               @default(0)
+  saveCount      Int               @default(0)
+  offerCount     Int               @default(0)
+  
+  publishedAt    DateTime?
+  expiresAt      DateTime?
+  createdAt      DateTime          @default(now())
+
+  @@index([visibility, publishedAt])
+  @@index([organizationId])
+  @@map("marketplace_listings")
+}
+
+model SavedDeal {
+  id        String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  buyerId   String   @db.Uuid
+  dealId    String   @db.Uuid
+  notes     String?
+  createdAt DateTime @default(now())
+
+  @@unique([buyerId, dealId])
+  @@map("saved_deals")
+}
+
+// ─────────────────────────────────────────────
+// BILLING
+// ─────────────────────────────────────────────
+
+model Subscription {
+  id                 String             @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  organizationId     String             @db.Uuid
+  stripeSubscriptionId String           @unique
+  plan               PlanType
+  status             SubscriptionStatus
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+  cancelAtPeriodEnd  Boolean            @default(false)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  organization       Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId])
+  @@map("subscriptions")
+}
+
+// ─────────────────────────────────────────────
+// SECURITY & AUDIT
+// ─────────────────────────────────────────────
+
+model AuditLog {
+  id             String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  organizationId String   @db.Uuid
+  userId         String?  @db.Uuid
+  action         String
+  resource       String
+  resourceId     String?
+  oldValue       Json?
+  newValue       Json?
+  ipAddress      String?
+  userAgent      String?
+  createdAt      DateTime @default(now())
+
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  user           User?        @relation(fields: [userId], references: [id])
+
+  @@index([organizationId, createdAt(sort: Desc)])
+  @@index([userId])
+  @@index([resource, resourceId])
+  @@map("audit_logs")
+}
+
+model ApiKey {
+  id             String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  organizationId String   @db.Uuid
+  name           String
+  keyHash        String   @unique
+  keyPrefix      String
+  lastUsedAt     DateTime?
+  expiresAt      DateTime?
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId])
+  @@map("api_keys")
+}
+
+// ─────────────────────────────────────────────
+// ENUMS
+// ─────────────────────────────────────────────
+
+enum PlanType {
+  STARTER
+  GROWTH
+  ENTERPRISE
+}
+
+enum TeamRole {
+  OWNER
+  ADMIN
+  DISPO_REP
+  ACQUISITIONS_REP
+  VIEWER
+  BUYER
+}
+
+enum InvestorType {
+  CASH_BUYER
+  FIX_AND_FLIP
+  LANDLORD
+  HEDGE_FUND
+  WHOLESALER
+  DEVELOPER
+  JV_PARTNER
+}
+
+enum BuyerTier {
+  TIER_1  // VIP
+  TIER_2  // Active
+  TIER_3  // General
+}
+
+enum PropertyType {
+  SINGLE_FAMILY
+  MULTI_FAMILY
+  DUPLEX
+  TRIPLEX
+  FOURPLEX
+  CONDO
+  TOWNHOUSE
+  MOBILE_HOME
+  LAND
+  COMMERCIAL
+  MIXED_USE
+}
+
+enum OccupancyPref {
+  VACANT
+  OCCUPIED_TENANT
+  OCCUPIED_OWNER
+  ANY
+}
+
+enum OccupancyStatus {
+  VACANT
+  OCCUPIED_TENANT
+  OCCUPIED_OWNER
+}
+
+enum InvestmentStrategy {
+  FLIP
+  BUY_AND_HOLD
+  BRRRR
+  WHOLESALE
+  NEW_CONSTRUCTION
+  AIRBNB
+}
+
+enum ExitStrategy {
+  RETAIL_SALE
+  WHOLESALE
+  RENT
+  AIRBNB
+  LEASE_OPTION
+}
+
+enum RehabTolerance {
+  COSMETIC_ONLY
+  LIGHT
+  MEDIUM
+  HEAVY
+  FULL_GUT
+}
+
+enum TitleStatus {
+  CLEAR
+  CLOUDY
+  PROBATE
+  TAX_LIEN
+  FORECLOSURE
+}
+
+enum DealStatus {
+  DRAFT
+  ACTIVE
+  UNDER_CONTRACT
+  CLOSED
+  DEAD
+  EXPIRED
+}
+
+enum OfferStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  COUNTERED
+  WITHDRAWN
+  EXPIRED
+}
+
+enum CampaignChannel {
+  SMS
+  EMAIL
+  PUSH
+  BOTH
+}
+
+enum CampaignStatus {
+  DRAFT
+  SCHEDULED
+  SENDING
+  SENT
+  CANCELLED
+}
+
+enum MessageStatus {
+  QUEUED
+  SENT
+  DELIVERED
+  OPENED
+  CLICKED
+  BOUNCED
+  FAILED
+  UNSUBSCRIBED
+}
+
+enum MessageEventType {
+  SENT
+  DELIVERED
+  OPENED
+  CLICKED
+  REPLIED
+  BOUNCED
+  UNSUBSCRIBED
+}
+
+enum BuyerEventType {
+  PROFILE_CREATED
+  DEAL_VIEWED
+  DEAL_SAVED
+  DEAL_SHARED
+  OFFER_SUBMITTED
+  OFFER_WITHDRAWN
+  OFFER_ACCEPTED
+  WALKTHROUGH_ATTENDED
+  SMS_OPENED
+  SMS_REPLIED
+  EMAIL_OPENED
+  EMAIL_CLICKED
+  DEAL_PURCHASED
+  OFFER_RETRADED
+  CAMPAIGN_UNSUBSCRIBED
+  LOGIN
+}
+
+enum DocumentType {
+  PHOTO
+  VIDEO
+  DRONE
+  INSPECTION
+  TITLE
+  PURCHASE_CONTRACT
+  POF
+  COMPS
+  OTHER
+}
+
+enum JobStatus {
+  QUEUED
+  RUNNING
+  COMPLETE
+  FAILED
+}
+
+enum ListingVisibility {
+  PRIVATE
+  JV_ONLY
+  PUBLIC
+}
+
+enum NotificationType {
+  DEAL_MATCHED
+  OFFER_RECEIVED
+  OFFER_ACCEPTED
+  DEAL_RELEASED
+  CAMPAIGN_SENT
+  BUYER_SCORE_CHANGED
+  SYSTEM
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAST_DUE
+  CANCELLED
+  TRIALING
+}
