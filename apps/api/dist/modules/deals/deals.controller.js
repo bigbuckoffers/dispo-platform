@@ -28,7 +28,7 @@ let DealsController = class DealsController {
         this.prisma = prisma;
     }
     findAll(orgId, query) {
-        return this.dealsService.findAll(orgId, query);
+        return this.dealsService.findAll(orgId || 'a296974d-74f4-4c8b-b6f4-5a57b9f36758', query);
     }
     async getMarketIntelligence() {
         const deals = await this.prisma.deal.findMany({
@@ -107,7 +107,7 @@ let DealsController = class DealsController {
         });
     }
     findOne(orgId, id) {
-        return this.dealsService.findOne(orgId, id);
+        return this.dealsService.findOne(orgId || 'a296974d-74f4-4c8b-b6f4-5a57b9f36758', id);
     }
     async update(id, dto) {
         return this.prisma.deal.update({ where: { id }, data: dto });
