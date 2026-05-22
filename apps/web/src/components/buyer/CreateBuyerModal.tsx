@@ -139,9 +139,9 @@ export function CreateBuyerModal({ onClose, onCreated }: { onClose: () => void; 
 
           <div className="flex justify-end gap-3 pt-2">
             <button onClick={onClose} className="px-4 py-2 text-sm text-gray-400 hover:text-white">Cancel</button>
-            <button onClick={handleSubmit} disabled={create.isLoading}
+            <button onClick={handleSubmit} disabled={create.isPending}
               className="flex items-center gap-2 px-5 py-2 bg-blue-500 hover:bg-blue-600 disabled:opacity-50 text-white text-sm rounded-lg transition-colors">
-              {create.isLoading && <Loader2 size={14} className="animate-spin" />}
+              {create.isPending && <Loader2 size={14} className="animate-spin" />}
               Add buyer
             </button>
           </div>
