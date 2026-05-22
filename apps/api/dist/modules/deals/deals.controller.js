@@ -15,43 +15,155 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.DealsController = void 0;
 const common_1 = require("@nestjs/common");
 const swagger_1 = require("@nestjs/swagger");
-const client_1 = require("@prisma/client");
 const decorators_1 = require("../../shared/decorators");
 const deals_service_1 = require("./deals.service");
-const create_deal_dto_1 = require("./dto/create-deal.dto");
+const deals_scoring_service_1 = require("./deals-scoring.service");
+const deals_ai_parser_service_1 = require("./deals-ai-parser.service");
+const prisma_service_1 = require("../../shared/prisma/prisma.service");
 let DealsController = class DealsController {
-    constructor(dealsService) {
+    constructor(dealsService, scoringService, aiParser, prisma) {
         this.dealsService = dealsService;
+        this.scoringService = scoringService;
+        this.aiParser = aiParser;
+        this.prisma = prisma;
     }
     findAll(orgId, query) {
         return this.dealsService.findAll(orgId, query);
     }
-    create(orgId, userId, dto) {
-        return this.dealsService.create(orgId, userId, dto);
+    async getMarketIntelligence() {
+        const deals = await this.prisma.deal.findMany({
+            where: { status: { notIn: ['DEAD', 'CLOSED'] } },
+            select: {
+                id: true, city: true, state: true, zipCode: true,
+                marketKey: true, spread: true, dealPriorityScore: true,
+                matchedBuyerCount: true, tier1MatchCount: true,
+                buyerDemandScore: true, buyerGapScore: true,
+                buyerCoverageStatus: true, marketBuyerNeedRecommendation: true,
+            },
+        });
+        const marketMap = new Map();
+        for (const d of deals) {
+            const key = d.marketKey || `${d.city || 'Unknown'}, ${d.state || ''}`;
+            if (!marketMap.has(key)) {
+                marketMap.set(key, {
+                    market: key, city: d.city, state: d.state,
+                    activeDealCount: 0, totalEstimatedSpread: 0, dealScores: [],
+                    totalMatchedBuyers: 0, totalTier1Buyers: 0, maxBuyerGapScore: 0,
+                    recommendation: d.marketBuyerNeedRecommendation || '',
+                });
+            }
+            const m = marketMap.get(key);
+            m.activeDealCount++;
+            m.totalEstimatedSpread += d.spread || 0;
+            m.dealScores.push(d.dealPriorityScore || 0);
+            m.totalMatchedBuyers += d.matchedBuyerCount || 0;
+            m.totalTier1Buyers += d.tier1MatchCount || 0;
+            m.maxBuyerGapScore = Math.max(m.maxBuyerGapScore, d.buyerGapScore || 0);
+            if (d.marketBuyerNeedRecommendation)
+                m.recommendation = d.marketBuyerNeedRecommendation;
+        }
+        const markets = Array.from(marketMap.values()).map(m => ({
+            ...m,
+            averageDealScore: m.dealScores.length > 0
+                ? Math.round(m.dealScores.reduce((a, b) => a + b, 0) / m.dealScores.length) : 0,
+            buyerCoverageStatus: m.totalMatchedBuyers >= 15 && m.totalTier1Buyers >= 3 ? 'Strong Coverage'
+                : m.totalMatchedBuyers >= 8 || m.totalTier1Buyers >= 1 ? 'Moderate Coverage'
+                    : m.totalMatchedBuyers >= 1 ? 'Weak Coverage' : 'Buyer Gap',
+            dealScores: undefined,
+        }));
+        return {
+            byDealCount: [...markets].sort((a, b) => b.activeDealCount - a.activeDealCount).slice(0, 10),
+            byTotalSpread: [...markets].sort((a, b) => b.totalEstimatedSpread - a.totalEstimatedSpread).slice(0, 10),
+            byBuyerGap: [...markets].sort((a, b) => b.maxBuyerGapScore - a.maxBuyerGapScore).slice(0, 10),
+            needingBuyers: markets.filter(m => ['Weak Coverage', 'Buyer Gap'].includes(m.buyerCoverageStatus)).slice(0, 10),
+            summary: {
+                totalActiveDeals: deals.length,
+                marketsWithDeals: markets.length,
+                marketsNeedingBuyers: markets.filter(m => ['Weak Coverage', 'Buyer Gap'].includes(m.buyerCoverageStatus)).length,
+            },
+        };
+    }
+    async importRaw(body) {
+        const parsed = await this.aiParser.parseDealText(body.rawText, body.sourceType);
+        return { ...parsed, rawInputText: body.rawText, facebookPostUrl: body.facebookUrl, sourceType: body.sourceType || 'MANUAL' };
+    }
+    async create(orgId, userId, dto) {
+        const metrics = this.scoringService.calculateMetrics(dto);
+        const marketKey = `${dto.city || ''}, ${dto.state || ''}`.trim().replace(/^,\s*/, '');
+        return this.prisma.deal.create({
+            data: {
+                organizationId: orgId || 'a296974d-74f4-4c8b-b6f4-5a57b9f36758',
+                address: dto.address || 'TBD',
+                city: dto.city || '',
+                state: dto.state || '',
+                zipCode: dto.zipCode || '',
+                askingPrice: dto.askingPrice || 0,
+                ...dto,
+                ...metrics,
+                marketKey,
+                id: undefined,
+                organizationId: orgId || 'a296974d-74f4-4c8b-b6f4-5a57b9f36758',
+            },
+        });
     }
     findOne(orgId, id) {
         return this.dealsService.findOne(orgId, id);
     }
-    update(orgId, id, dto, userId) {
-        return this.dealsService.update(orgId, id, dto, userId);
+    async update(id, dto) {
+        return this.prisma.deal.update({ where: { id }, data: dto });
     }
-    getMatches(orgId, id, limit = 25) {
-        return this.dealsService.getMatches(orgId, id, +limit);
+    async parseDeal(id) {
+        const deal = await this.prisma.deal.findUnique({ where: { id } });
+        if (!deal?.rawInputText)
+            return { error: 'No raw text to parse' };
+        const parsed = await this.aiParser.parseDealText(deal.rawInputText, deal.sourceType || 'MANUAL');
+        const metrics = this.scoringService.calculateMetrics({ ...deal, ...parsed });
+        return this.prisma.deal.update({ where: { id }, data: { ...parsed, ...metrics } });
     }
-    triggerMatching(orgId, id) {
-        return this.dealsService.triggerMatching(orgId, id);
+    async calculateMetrics(id) {
+        const deal = await this.prisma.deal.findUnique({ where: { id } });
+        if (!deal)
+            return { error: 'Not found' };
+        const metrics = this.scoringService.calculateMetrics(deal);
+        const mathSummary = await this.aiParser.generateDealMathSummary({ ...deal, ...metrics });
+        return this.prisma.deal.update({ where: { id }, data: { ...metrics, aiDealMathSummary: mathSummary } });
     }
-    release(orgId, id, body, userId) {
-        return this.dealsService.releaseToDealTier(orgId, id, body.tier, userId);
+    async generateFollowUp(id) {
+        const deal = await this.prisma.deal.findUnique({ where: { id } });
+        if (!deal)
+            return { error: 'Not found' };
+        const metrics = this.scoringService.calculateMetrics(deal);
+        const message = await this.aiParser.generateFollowUpMessage({ ...deal, missingInfo: metrics.missingInfo });
+        await this.prisma.deal.update({ where: { id }, data: { missingInfo: metrics.missingInfo, missingInfoCount: metrics.missingInfoCount } });
+        return { message, missingInfo: metrics.missingInfo };
     }
-    generateCampaign(orgId, id, body) {
-        return this.dealsService.generateAiCampaign(orgId, id, body.tier);
-    }
-    updateStatus(orgId, id, status, userId) {
-        return this.dealsService.updateStatus(orgId, id, status, userId);
-    }
-    remove(orgId, id) {
-        return this.dealsService.remove(orgId, id);
+    async matchBuyers(id) {
+        const deal = await this.prisma.deal.findUnique({ where: { id } });
+        if (!deal)
+            return { error: 'Not found' };
+        const buyers = await this.prisma.buyer.findMany({ where: { isActive: true }, include: { buyBox: true } });
+        let matched = 0, tier1 = 0;
+        for (const buyer of buyers) {
+            if (!buyer.buyBox)
+                continue;
+            const bb = buyer.buyBox;
+            const stateMatch = !bb.states?.length || bb.states.includes(deal.state);
+            const price = deal.askingPrice || deal.buyerFacingPrice || 0;
+            const priceMatch = (!bb.minPrice || price >= bb.minPrice) && (!bb.maxPrice || price <= bb.maxPrice);
+            if (stateMatch && priceMatch) {
+                matched++;
+                if (buyer.tier === 'TIER_1')
+                    tier1++;
+            }
+        }
+        const buyerDemandScore = Math.min(100, matched * 5);
+        return this.prisma.deal.update({
+            where: { id },
+            data: {
+                matchedBuyerCount: matched, tier1MatchCount: tier1, buyerDemandScore,
+                status: matched > 0 ? 'MATCHED' : deal.status,
+            },
+        });
     }
 };
 exports.DealsController = DealsController;
@@ -64,15 +176,29 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], DealsController.prototype, "findAll", null);
 __decorate([
+    (0, common_1.Get)('market-intelligence'),
+    (0, swagger_1.ApiOperation)({ summary: 'Get market demand intelligence' }),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], DealsController.prototype, "getMarketIntelligence", null);
+__decorate([
+    (0, common_1.Post)('import/raw'),
+    (0, swagger_1.ApiOperation)({ summary: 'Parse raw deal text with AI' }),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], DealsController.prototype, "importRaw", null);
+__decorate([
     (0, common_1.Post)(),
-    (0, decorators_1.Roles)(client_1.TeamRole.ACQUISITIONS_REP, client_1.TeamRole.DISPO_REP, client_1.TeamRole.ADMIN, client_1.TeamRole.OWNER),
-    (0, swagger_1.ApiOperation)({ summary: 'Create deal — triggers AI property analysis automatically' }),
+    (0, swagger_1.ApiOperation)({ summary: 'Create deal' }),
     __param(0, (0, decorators_1.OrgId)()),
     __param(1, (0, decorators_1.CurrentUser)('id')),
     __param(2, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String, create_deal_dto_1.CreateDealDto]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:paramtypes", [String, String, Object]),
+    __metadata("design:returntype", Promise)
 ], DealsController.prototype, "create", null);
 __decorate([
     (0, common_1.Get)(':id'),
@@ -83,84 +209,53 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], DealsController.prototype, "findOne", null);
 __decorate([
-    (0, common_1.Put)(':id'),
-    (0, decorators_1.Roles)(client_1.TeamRole.DISPO_REP, client_1.TeamRole.ADMIN, client_1.TeamRole.OWNER),
-    __param(0, (0, decorators_1.OrgId)()),
-    __param(1, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
-    __param(2, (0, common_1.Body)()),
-    __param(3, (0, decorators_1.CurrentUser)('id')),
+    (0, common_1.Patch)(':id'),
+    (0, swagger_1.ApiOperation)({ summary: 'Update deal' }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
+    __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String, Object, String]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
 ], DealsController.prototype, "update", null);
 __decorate([
-    (0, common_1.Get)(':id/matches'),
-    (0, swagger_1.ApiOperation)({ summary: 'Get AI-ranked buyer matches for this deal' }),
-    __param(0, (0, decorators_1.OrgId)()),
-    __param(1, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
-    __param(2, (0, common_1.Query)('limit')),
+    (0, common_1.Post)(':id/parse'),
+    (0, swagger_1.ApiOperation)({ summary: 'Re-parse deal from raw text' }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String, Object]),
-    __metadata("design:returntype", void 0)
-], DealsController.prototype, "getMatches", null);
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], DealsController.prototype, "parseDeal", null);
 __decorate([
-    (0, common_1.Post)(':id/trigger-matching'),
-    (0, decorators_1.Roles)(client_1.TeamRole.DISPO_REP, client_1.TeamRole.ADMIN, client_1.TeamRole.OWNER),
-    (0, swagger_1.ApiOperation)({ summary: 'Queue AI matching job for this deal' }),
-    __param(0, (0, decorators_1.OrgId)()),
-    __param(1, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
+    (0, common_1.Post)(':id/calculate-metrics'),
+    (0, swagger_1.ApiOperation)({ summary: 'Recalculate deal scores' }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String]),
-    __metadata("design:returntype", void 0)
-], DealsController.prototype, "triggerMatching", null);
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], DealsController.prototype, "calculateMetrics", null);
 __decorate([
-    (0, common_1.Post)(':id/release'),
-    (0, decorators_1.Roles)(client_1.TeamRole.DISPO_REP, client_1.TeamRole.ADMIN, client_1.TeamRole.OWNER),
-    (0, swagger_1.ApiOperation)({ summary: 'Release deal to a buyer tier (1, 2, or 3)' }),
-    __param(0, (0, decorators_1.OrgId)()),
-    __param(1, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
-    __param(2, (0, common_1.Body)()),
-    __param(3, (0, decorators_1.CurrentUser)('id')),
+    (0, common_1.Post)(':id/generate-follow-up'),
+    (0, swagger_1.ApiOperation)({ summary: 'Generate follow-up message' }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String, Object, String]),
-    __metadata("design:returntype", void 0)
-], DealsController.prototype, "release", null);
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], DealsController.prototype, "generateFollowUp", null);
 __decorate([
-    (0, common_1.Post)(':id/generate-campaign'),
-    (0, decorators_1.Roles)(client_1.TeamRole.DISPO_REP, client_1.TeamRole.ADMIN, client_1.TeamRole.OWNER),
-    (0, swagger_1.ApiOperation)({ summary: 'AI-generate SMS + email campaign for this deal' }),
-    __param(0, (0, decorators_1.OrgId)()),
-    __param(1, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
-    __param(2, (0, common_1.Body)()),
+    (0, common_1.Post)(':id/match-buyers'),
+    (0, swagger_1.ApiOperation)({ summary: 'Run buyer matching' }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String, Object]),
-    __metadata("design:returntype", void 0)
-], DealsController.prototype, "generateCampaign", null);
-__decorate([
-    (0, common_1.Patch)(':id/status'),
-    (0, decorators_1.Roles)(client_1.TeamRole.DISPO_REP, client_1.TeamRole.ADMIN, client_1.TeamRole.OWNER),
-    __param(0, (0, decorators_1.OrgId)()),
-    __param(1, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
-    __param(2, (0, common_1.Body)('status')),
-    __param(3, (0, decorators_1.CurrentUser)('id')),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String, String, String]),
-    __metadata("design:returntype", void 0)
-], DealsController.prototype, "updateStatus", null);
-__decorate([
-    (0, common_1.Delete)(':id'),
-    (0, decorators_1.Roles)(client_1.TeamRole.ADMIN, client_1.TeamRole.OWNER),
-    (0, common_1.HttpCode)(common_1.HttpStatus.NO_CONTENT),
-    __param(0, (0, decorators_1.OrgId)()),
-    __param(1, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String]),
-    __metadata("design:returntype", void 0)
-], DealsController.prototype, "remove", null);
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], DealsController.prototype, "matchBuyers", null);
 exports.DealsController = DealsController = __decorate([
     (0, swagger_1.ApiTags)('deals'),
     (0, swagger_1.ApiBearerAuth)(),
     (0, common_1.Controller)('deals'),
-    __metadata("design:paramtypes", [deals_service_1.DealsService])
+    __metadata("design:paramtypes", [deals_service_1.DealsService,
+        deals_scoring_service_1.DealsScoringService,
+        deals_ai_parser_service_1.DealsAiParserService,
+        prisma_service_1.PrismaService])
 ], DealsController);
 //# sourceMappingURL=deals.controller.js.map

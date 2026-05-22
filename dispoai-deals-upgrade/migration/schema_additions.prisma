@@ -1,0 +1,106 @@
+// ADD THESE FIELDS TO YOUR Deal model in packages/database/prisma/schema.prisma
+// Find the existing Deal model and add all fields below
+
+// ===== PASTE THESE INTO YOUR EXISTING Deal model =====
+
+  // Source / JV
+  sourceType                    String?   @default("MANUAL") // OWN, JV, FACEBOOK, SMS, BIRD_DOG, AGENT, WHOLESALER, MANUAL
+  dealType                      String?   // FLIP, RENTAL, SUBTO, CREATIVE, WHOLESALE
+  rawInputText                  String?
+  originalPostText              String?
+  sourceName                    String?
+  sourcePhone                   String?
+  sourceEmail                   String?
+  sourceCompany                 String?
+  facebookProfileUrl            String?
+  facebookPostUrl               String?
+  facebookGroupName             String?
+  jvSplit                       String?
+  jvAgreementStatus             String?
+  sourceNotes                   String?
+
+  // Property (extend existing)
+  county                        String?
+  lotSize                       String?
+  yearBuilt                     Int?
+  occupancy                     String?   @default("UNKNOWN") // VACANT, OWNER_OCCUPIED, TENANT_OCCUPIED, UNKNOWN
+  accessInfo                    String?
+  hoaStatus                     String?   @default("UNKNOWN")
+  floodZone                     String?   @default("UNKNOWN")
+  description                   String?
+
+  // Financial (extend existing)
+  buyerFacingPrice              Float?
+  internalContractPrice         Float?
+  assignmentFee                 Float?
+  jvFee                         Float?
+  rentEstimate                  Float?
+  currentRent                   Float?
+  taxesAnnual                   Float?
+  insuranceEstimate             Float?
+  hoaMonthly                    Float?
+  spread                        Float?
+  seventyPercentRuleMax         Float?
+  pricePerSqft                  Float?
+  arvPerSqft                    Float?
+  rentToPriceRatio              Float?
+
+  // Condition
+  overallCondition              String?   @default("UNKNOWN")
+  roofCondition                 String?
+  roofAge                       String?
+  hvacCondition                 String?
+  hvacAge                       String?
+  foundationCondition           String?
+  plumbingCondition             String?
+  electricalCondition           String?
+  kitchenCondition              String?
+  bathroomCondition             String?
+  flooringCondition             String?
+  moldOrWaterDamage             Boolean   @default(false)
+  fireDamage                    Boolean   @default(false)
+  codeIssues                    Boolean   @default(false)
+  conditionNotes                String?
+
+  // Timeline
+  contractDate                  DateTime?
+  inspectionDeadline            DateTime?
+  emdDueDate                    DateTime?
+  closingDate                   DateTime?
+  assignmentDeadline            DateTime?
+  titleCompany                  String?
+  escrowOfficer                 String?
+  assignmentAllowed             String?   @default("UNKNOWN")
+  doubleCloseNeeded             String?   @default("UNKNOWN")
+  financingAllowed              String?   @default("UNKNOWN")
+  vacantAtClose                 String?   @default("UNKNOWN")
+
+  // Links / Media (extend existing)
+  redfinUrl                     String?
+  redfinEstimate                Float?
+  googleMapsUrl                 String?
+  streetViewUrl                 String?
+  photosUrl                     String?
+  inspectionReportUrl           String?
+  repairQuoteUrl                String?
+  otherDocumentUrls             String[]
+
+  // AI / Scoring
+  aiSummary                     String?
+  buyerFacingSummary            String?
+  internalSummary               String?
+  aiDealMathSummary             String?
+  missingInfo                   String[]
+  aiFollowUpQuestions           String?
+  dealPriorityScore             Int       @default(0)
+  buyerDemandScore              Int       @default(0)
+  dataCompletenessScore         Int       @default(0)
+  missingInfoCount              Int       @default(0)
+  matchedBuyerCount             Int       @default(0)
+  tier1MatchCount               Int       @default(0)
+  nextBestAction                String?
+  buyerCoverageStatus           String?
+  buyerGapScore                 Int       @default(0)
+  marketKey                     String?
+  marketDemandScore             Int       @default(0)
+  marketBuyerNeedRecommendation String?
