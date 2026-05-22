@@ -342,6 +342,106 @@ model Deal {
   @@index([organizationId, createdAt(sort: Desc)])
   @@index([zipCode])
   @@index([state, city])
+  // Source / JV
+  sourceType                    String?   @default("MANUAL")
+  dealType                      String?
+  rawInputText                  String?
+  originalPostText              String?
+  sourceName                    String?
+  sourcePhone                   String?
+  sourceEmail                   String?
+  sourceCompany                 String?
+  facebookProfileUrl            String?
+  facebookPostUrl               String?
+  facebookGroupName             String?
+  jvSplit                       String?
+  jvAgreementStatus             String?
+  sourceNotes                   String?
+
+  // Extended financials
+  buyerFacingPrice              Float?
+  internalContractPrice         Float?
+  jvFee                         Float?
+  rentEstimate                  Float?
+  currentRent                   Float?
+  taxesAnnual                   Float?
+  insuranceEstimate             Float?
+  hoaMonthly                    Float?
+  spread                        Float?
+  seventyPercentRuleMax         Float?
+  pricePerSqft                  Float?
+  arvPerSqft                    Float?
+  rentToPriceRatio              Float?
+
+  // Condition
+  overallCondition              String?   @default("UNKNOWN")
+  roofCondition                 String?
+  roofAge                       String?
+  hvacCondition                 String?
+  hvacAge                       String?
+  foundationCondition           String?
+  plumbingCondition             String?
+  electricalCondition           String?
+  kitchenCondition              String?
+  bathroomCondition             String?
+  flooringCondition             String?
+  moldOrWaterDamage             Boolean   @default(false)
+  fireDamage                    Boolean   @default(false)
+  codeIssues                    Boolean   @default(false)
+  conditionNotes                String?
+
+  // Extended timeline
+  contractDate                  DateTime?
+  inspectionDeadline            DateTime?
+  emdDueDate                    DateTime?
+  closingDate                   DateTime?
+  assignmentDeadline            DateTime?
+  titleCompany                  String?
+  escrowOfficer                 String?
+  assignmentAllowed             String?   @default("UNKNOWN")
+  doubleCloseNeeded             String?   @default("UNKNOWN")
+  financingAllowed              String?   @default("UNKNOWN")
+  vacantAtClose                 String?   @default("UNKNOWN")
+  accessInfo                    String?
+  hoaStatus                     String?   @default("UNKNOWN")
+  floodZone                     String?   @default("UNKNOWN")
+  description                   String?
+
+  // Links
+  zillowUrl                     String?
+  zillowEstimate                Float?
+  realtorUrl                    String?
+  realtorEstimate               Float?
+  redfinUrl                     String?
+  redfinEstimate                Float?
+  googleMapsUrl                 String?
+  streetViewUrl                 String?
+  photosUrl                     String?
+  googleDriveUrl                String?
+  inspectionReportUrl           String?
+  repairQuoteUrl                String?
+  otherDocumentUrls             String[]
+
+  // AI / Scoring
+  aiSummary                     String?
+  buyerFacingSummary            String?
+  internalSummary               String?
+  aiDealMathSummary             String?
+  missingInfo                   String[]
+  aiFollowUpQuestions           String?
+  dealPriorityScore             Int       @default(0)
+  buyerDemandScore              Int       @default(0)
+  dataCompletenessScore         Int       @default(0)
+  missingInfoCount              Int       @default(0)
+  matchedBuyerCount             Int       @default(0)
+  tier1MatchCount               Int       @default(0)
+  nextBestAction                String?
+  buyerCoverageStatus           String?
+  buyerGapScore                 Int       @default(0)
+  marketKey                     String?
+  marketDemandScore             Int       @default(0)
+  marketBuyerNeedRecommendation String?
+
   @@map("deals")
 }
 
@@ -843,7 +943,14 @@ enum TitleStatus {
 
 enum DealStatus {
   DRAFT
+  NEEDS_INFO
   ACTIVE
+  READY_TO_MATCH
+  MATCHED
+  READY_TO_BLAST
+  CAMPAIGN_ACTIVE
+  OFFER_RECEIVED
+  ASSIGNED
   UNDER_CONTRACT
   CLOSED
   DEAD
