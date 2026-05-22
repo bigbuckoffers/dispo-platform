@@ -77,10 +77,10 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
         </div>
         <button
           onClick={() => recalculate.mutate()}
-          disabled={recalculate.isLoading}
+          disabled={recalculate.isPending}
           className="flex items-center gap-2 text-xs text-gray-400 hover:text-white border border-gray-800 hover:border-gray-700 rounded-lg px-3 py-2 transition-colors"
         >
-          <RefreshCw size={12} className={recalculate.isLoading ? 'animate-spin' : ''} />
+          <RefreshCw size={12} className={recalculate.isPending ? 'animate-spin' : ''} />
           Recalculate scores
         </button>
       </div>
