@@ -1,5 +1,5 @@
 [build]
-buildCommand = "npm install && ./node_modules/.bin/prisma generate && npm run build -- --skipLibCheck"
+buildCommand = "npm install && ./node_modules/.bin/prisma generate && npm run build"
 
 [deploy]
 startCommand = "node dist/main.js"
