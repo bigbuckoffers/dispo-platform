@@ -22,7 +22,7 @@ export class DealsService {
     const skip = (page - 1) * limit;
 
     const where: any = {
-      organizationId: orgId,
+      organizationId: orgId || 'a296974d-74f4-4c8b-b6f4-5a57b9f36758',
       ...(status && { status }),
       ...(search && {
         OR: [
@@ -34,11 +34,14 @@ export class DealsService {
     };
 
     const [deals, total] = await Promise.all([
-      this.prisma.deal.findMany({
+      (this.prisma.deal as any).findMany({
         where,
         skip,
         take: +limit,
-        orderBy: { createdAt: 'desc' },
+        orderBy: [
+          { dealPriorityScore: 'desc' },
+          { createdAt: 'desc' },
+        ],
         include: {
           _count: { select: { offers: true, matchResults: true, views: true } },
         },

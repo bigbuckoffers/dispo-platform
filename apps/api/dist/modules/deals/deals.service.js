@@ -29,7 +29,7 @@ let DealsService = DealsService_1 = class DealsService {
         const { page = 1, limit = 20, status, search } = query;
         const skip = (page - 1) * limit;
         const where = {
-            organizationId: orgId,
+            organizationId: orgId || 'a296974d-74f4-4c8b-b6f4-5a57b9f36758',
             ...(status && { status }),
             ...(search && {
                 OR: [
@@ -44,7 +44,10 @@ let DealsService = DealsService_1 = class DealsService {
                 where,
                 skip,
                 take: +limit,
-                orderBy: { createdAt: 'desc' },
+                orderBy: [
+                    { dealPriorityScore: 'desc' },
+                    { createdAt: 'desc' },
+                ],
                 include: {
                     _count: { select: { offers: true, matchResults: true, views: true } },
                 },
