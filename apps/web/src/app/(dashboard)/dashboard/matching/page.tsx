@@ -81,10 +81,10 @@ export default function MatchingPage() {
             </select>
           </div>
           {selectedDeal && (
-            <button onClick={() => triggerMatch.mutate()} disabled={triggerMatch.isLoading}
+            <button onClick={() => triggerMatch.mutate()} disabled={triggerMatch.isPending}
               className="mt-5 flex items-center gap-2 px-4 py-2.5 bg-violet-500 hover:bg-violet-600 text-white text-sm rounded-lg transition-colors disabled:opacity-50">
               <Zap size={14} />
-              {triggerMatch.isLoading ? 'Running...' : 'Re-run AI matching'}
+              {triggerMatch.isPending ? 'Running...' : 'Re-run AI matching'}
             </button>
           )}
         </div>
