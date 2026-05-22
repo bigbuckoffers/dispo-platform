@@ -40,8 +40,8 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
   const recalculate = useMutation({
     mutationFn: () => api.post(`/buyers/${id}/recalculate-scores`).then(r => r.data),
     onSuccess: () => {
-      qc.invalidateQueries(['buyer', id]);
-      qc.invalidateQueries(['buyer-scores', id]);
+      qc.invalidateQueries({ queryKey: ['buyer', id] });
+      qc.invalidateQueries({ queryKey: ['buyer-scores', id] });
       toast.success('Scores recalculated');
     },
   });
