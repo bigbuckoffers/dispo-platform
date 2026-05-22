@@ -1,1 +1,2 @@
-export { BuyerActivityChart } from '../analytics/index';
+'use client';
+export function BuyerActivityChart() { return <div />; }
