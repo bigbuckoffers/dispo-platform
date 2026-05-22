@@ -1,0 +1,9 @@
+{
+  "/(dashboard)/dashboard/deals/[id]/page": "app/(dashboard)/dashboard/deals/[id]/page.js",
+  "/(dashboard)/dashboard/deals/page": "app/(dashboard)/dashboard/deals/page.js",
+  "/(dashboard)/dashboard/analytics/page": "app/(dashboard)/dashboard/analytics/page.js",
+  "/(dashboard)/dashboard/settings/page": "app/(dashboard)/dashboard/settings/page.js",
+  "/(dashboard)/dashboard/page": "app/(dashboard)/dashboard/page.js",
+  "/(dashboard)/dashboard/buyers/[id]/page": "app/(dashboard)/dashboard/buyers/[id]/page.js",
+  "/(dashboard)/dashboard/buyers/page": "app/(dashboard)/dashboard/buyers/page.js"
+}

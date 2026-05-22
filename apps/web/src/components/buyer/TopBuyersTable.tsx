@@ -1,0 +1,1 @@
+export { TopBuyersTable } from './index';

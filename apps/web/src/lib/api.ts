@@ -1,4 +1,3 @@
-// src/lib/api.ts
 import axios from 'axios';
 
 export const api = axios.create({
@@ -6,21 +5,13 @@ export const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-// Clerk JWT injection — call this in a client component init
+// Call this once in a client component to inject auth
 export function setupApiAuth(getToken: () => Promise<string | null>) {
   api.interceptors.request.use(async (config) => {
-    const token = await getToken();
-    if (token) config.headers.Authorization = `Bearer ${token}`;
+    try {
+      const token = await getToken();
+      if (token) config.headers.Authorization = `Bearer ${token}`;
+    } catch {}
     return config;
   });
 }
-
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      window.location.href = '/sign-in';
-    }
-    return Promise.reject(error);
-  }
-);

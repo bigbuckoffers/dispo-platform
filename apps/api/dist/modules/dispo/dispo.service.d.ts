@@ -1,0 +1,65 @@
+import { ConfigService } from '@nestjs/config';
+import { Queue } from 'bull';
+import { PrismaService } from '../../shared/prisma/prisma.service';
+import { AiWriterService } from '../ai/ai-writer.service';
+export declare class DispoService {
+    private prisma;
+    private config;
+    private aiWriter;
+    private dispoQueue;
+    private readonly logger;
+    private twilioClient;
+    constructor(prisma: PrismaService, config: ConfigService, aiWriter: AiWriterService, dispoQueue: Queue);
+    onDealReleased(payload: {
+        dealId: string;
+        orgId: string;
+        tier: number;
+        userId: string;
+    }): Promise<void>;
+    sendSms(to: string, body: string, campaignId: string): Promise<string>;
+    sendEmail(to: string, subject: string, html: string, campaignId: string): Promise<void>;
+    getCampaignStats(campaignId: string): Promise<{
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        name: string;
+        organizationId: string;
+        dealId: string;
+        status: import(".prisma/client").$Enums.CampaignStatus;
+        channel: import(".prisma/client").$Enums.CampaignChannel;
+        targetTier: import(".prisma/client").$Enums.BuyerTier;
+        subject: string | null;
+        body: string;
+        scheduledAt: Date | null;
+        sentAt: Date | null;
+        totalRecipients: number;
+        delivered: number;
+        opened: number;
+        clicked: number;
+        replied: number;
+        unsubscribed: number;
+    }>;
+    getOrgCampaigns(orgId: string, dealId?: string): Promise<{
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        name: string;
+        organizationId: string;
+        dealId: string;
+        status: import(".prisma/client").$Enums.CampaignStatus;
+        channel: import(".prisma/client").$Enums.CampaignChannel;
+        targetTier: import(".prisma/client").$Enums.BuyerTier;
+        subject: string | null;
+        body: string;
+        scheduledAt: Date | null;
+        sentAt: Date | null;
+        totalRecipients: number;
+        delivered: number;
+        opened: number;
+        clicked: number;
+        replied: number;
+        unsubscribed: number;
+    }[]>;
+    handleTwilioWebhook(data: any): Promise<void>;
+    private formatEmailHtml;
+}

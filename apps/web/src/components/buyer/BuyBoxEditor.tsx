@@ -1,0 +1,1 @@
+export { BuyBoxEditor } from './index';

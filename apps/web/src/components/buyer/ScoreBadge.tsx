@@ -1,0 +1,1 @@
+export { ScoreBadge } from './index';

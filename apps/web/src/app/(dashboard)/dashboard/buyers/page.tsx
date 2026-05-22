@@ -1,225 +1,90 @@
 'use client';
-
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { motion } from 'framer-motion';
-import {
-  Search, Filter, Plus, ChevronUp, ChevronDown, Star,
-  TrendingUp, Zap, Shield, MoreHorizontal,
-} from 'lucide-react';
-import { api } from '@/lib/api';
-import { ScoreBadge } from '@/components/buyer/ScoreBadge';
-import { TierBadge } from '@/components/buyer/TierBadge';
-import { CreateBuyerModal } from '@/components/buyer/CreateBuyerModal';
-import { formatNumber } from '@/lib/format';
-
-const TIERS = [
-  { value: '', label: 'All tiers' },
-  { value: 'TIER_1', label: 'VIP (Tier 1)' },
-  { value: 'TIER_2', label: 'Active (Tier 2)' },
-  { value: 'TIER_3', label: 'General (Tier 3)' },
-];
-
-const SORT_OPTIONS = [
-  { value: 'compositeScore', label: 'Composite score' },
-  { value: 'reliability', label: 'Reliability' },
-  { value: 'liquidity', label: 'Liquidity' },
-  { value: 'activity', label: 'Activity' },
-  { value: 'name', label: 'Name' },
-  { value: 'createdAt', label: 'Newest' },
-];
-
+import { useState, useEffect } from 'react';
+const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
 export default function BuyersPage() {
+  const [buyers, setBuyers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [search, setSearch] = useState('');
   const [tier, setTier] = useState('');
-  const [sortBy, setSortBy] = useState('compositeScore');
-  const [page, setPage] = useState(1);
-  const [showCreate, setShowCreate] = useState(false);
-
-  const { data, isLoading, refetch } = useQuery({
-    queryKey: ['buyers', { search, tier, sortBy, page }],
-    queryFn: () => api.get('/buyers', { params: { search, tier, sortBy, page, limit: 25 } }).then(r => r.data),
-    keepPreviousData: true,
-  });
-
-  const buyers = data?.data ?? [];
-  const meta = data?.meta ?? {};
-
+  useEffect(() => { load(); }, [search, tier]);
+  async function load() {
+    setLoading(true); setError('');
+    try {
+      const p = new URLSearchParams({ page:'1', limit:'50' });
+      if (search) p.set('search', search);
+      if (tier) p.set('tier', tier);
+      const r = await fetch(`${API}/buyers?${p}`);
+      if (!r.ok) throw new Error(`API error ${r.status}`);
+      const j = await r.json();
+      setBuyers(j.data ?? j);
+    } catch(e:any) { setError(e.message); }
+    finally { setLoading(false); }
+  }
+  const tb: any = {
+    TIER_1:'bg-yellow-500/20 text-yellow-300 border border-yellow-500/40',
+    TIER_2:'bg-blue-500/20 text-blue-300 border border-blue-500/40',
+    TIER_3:'bg-gray-500/20 text-gray-300 border border-gray-500/40',
+  };
+  const tl: any = { TIER_1:'🔥 Tier 1', TIER_2:'Tier 2', TIER_3:'Tier 3' };
+  const sc = (n:number) => n>=80?'text-green-400':n>=60?'text-yellow-400':'text-red-400';
   return (
-    <div className="p-6">
-      {/* Header */}
+    <div className="min-h-screen bg-gray-950 text-white p-6">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-xl font-semibold text-white">Buyer CRM</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
-            {formatNumber(meta.total ?? 0)} buyers in your database
-          </p>
+          <h1 className="text-2xl font-bold">Buyer CRM</h1>
+          <p className="text-gray-400 text-sm mt-1">{buyers.length} buyers</p>
         </div>
-        <button
-          onClick={() => setShowCreate(true)}
-          className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white text-sm px-4 py-2 rounded-lg transition-colors"
-        >
-          <Plus size={15} />
-          Add buyer
-        </button>
       </div>
-
-      {/* Filters */}
-      <div className="flex flex-wrap gap-3 mb-5">
-        <div className="relative">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-          <input
-            type="text"
-            placeholder="Search buyers..."
-            value={search}
-            onChange={e => { setSearch(e.target.value); setPage(1); }}
-            className="pl-9 pr-4 py-2 bg-gray-900 border border-gray-800 rounded-lg text-sm text-white placeholder:text-gray-500 focus:outline-none focus:border-blue-500 w-64"
-          />
-        </div>
-        <select
-          value={tier}
-          onChange={e => { setTier(e.target.value); setPage(1); }}
-          className="px-3 py-2 bg-gray-900 border border-gray-800 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500"
-        >
-          {TIERS.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+      <div className="flex gap-3 mb-6">
+        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search buyers..."
+          className="bg-gray-800 border border-gray-700 text-white placeholder-gray-500 rounded-lg px-4 py-2 text-sm w-72 focus:outline-none focus:border-blue-500" />
+        <select value={tier} onChange={e => setTier(e.target.value)}
+          className="bg-gray-800 border border-gray-700 text-white rounded-lg px-4 py-2 text-sm focus:outline-none">
+          <option value="">All Tiers</option>
+          <option value="TIER_1">Tier 1</option>
+          <option value="TIER_2">Tier 2</option>
+          <option value="TIER_3">Tier 3</option>
         </select>
-        <select
-          value={sortBy}
-          onChange={e => setSortBy(e.target.value)}
-          className="px-3 py-2 bg-gray-900 border border-gray-800 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500"
-        >
-          {SORT_OPTIONS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-        </select>
+        <button onClick={load} className="bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-300 px-4 py-2 rounded-lg text-sm">Refresh</button>
       </div>
-
-      {/* Table */}
+      {error && <div className="bg-red-900/30 border border-red-500/30 text-red-300 rounded-lg p-4 mb-6 text-sm">Error: {error}</div>}
       <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-800">
-                <th className="text-left text-xs font-medium text-gray-500 px-4 py-3">Buyer</th>
-                <th className="text-left text-xs font-medium text-gray-500 px-4 py-3">Tier</th>
-                <th className="text-left text-xs font-medium text-gray-500 px-4 py-3">
-                  <div className="flex items-center gap-1"><Shield size={11} /> Reliability</div>
-                </th>
-                <th className="text-left text-xs font-medium text-gray-500 px-4 py-3">
-                  <div className="flex items-center gap-1"><TrendingUp size={11} /> Liquidity</div>
-                </th>
-                <th className="text-left text-xs font-medium text-gray-500 px-4 py-3">
-                  <div className="flex items-center gap-1"><Zap size={11} /> Activity</div>
-                </th>
-                <th className="text-left text-xs font-medium text-gray-500 px-4 py-3">
-                  <div className="flex items-center gap-1"><Star size={11} /> Score</div>
-                </th>
-                <th className="text-left text-xs font-medium text-gray-500 px-4 py-3">Buy box</th>
-                <th className="text-left text-xs font-medium text-gray-500 px-4 py-3">Activity</th>
-                <th className="px-4 py-3"></th>
+        <table className="w-full text-sm">
+          <thead><tr className="border-b border-gray-800">
+            {['Buyer','Tier','Reliability','Liquidity','Activity','Score','Markets'].map(h => (
+              <th key={h} className="text-left text-gray-400 font-medium px-4 py-3">{h}</th>
+            ))}
+          </tr></thead>
+          <tbody>
+            {loading ? [...Array(5)].map((_,i) => (
+              <tr key={i} className="border-b border-gray-800/50">
+                {[...Array(7)].map((_,j) => (
+                  <td key={j} className="px-4 py-3"><div className="h-4 bg-gray-800 rounded animate-pulse" /></td>
+                ))}
               </tr>
-            </thead>
-            <tbody>
-              {isLoading
-                ? Array.from({ length: 8 }).map((_, i) => (
-                    <tr key={i} className="border-b border-gray-800 animate-pulse">
-                      {Array.from({ length: 9 }).map((_, j) => (
-                        <td key={j} className="px-4 py-3">
-                          <div className="h-4 bg-gray-800 rounded w-16" />
-                        </td>
-                      ))}
-                    </tr>
-                  ))
-                : buyers.map((buyer: any, i: number) => (
-                    <motion.tr
-                      key={buyer.id}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: i * 0.03 }}
-                      className="border-b border-gray-800 hover:bg-gray-800/50 cursor-pointer transition-colors group"
-                      onClick={() => window.location.href = `/dashboard/buyers/${buyer.id}`}
-                    >
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 text-xs font-semibold flex-shrink-0">
-                            {buyer.firstName?.[0]}{buyer.lastName?.[0]}
-                          </div>
-                          <div>
-                            <p className="text-white font-medium">{buyer.firstName} {buyer.lastName}</p>
-                            <p className="text-gray-500 text-xs">{buyer.company ?? buyer.email}</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3"><TierBadge tier={buyer.tier} /></td>
-                      <td className="px-4 py-3"><ScoreBadge score={buyer.reliabilityScore} /></td>
-                      <td className="px-4 py-3"><ScoreBadge score={buyer.liquidityScore} color="emerald" /></td>
-                      <td className="px-4 py-3"><ScoreBadge score={buyer.activityScore} color="amber" /></td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          <div className="h-1.5 w-20 bg-gray-800 rounded-full overflow-hidden">
-                            <div
-                              className="h-full bg-blue-500 rounded-full"
-                              style={{ width: `${buyer.compositeScore}%` }}
-                            />
-                          </div>
-                          <span className="text-xs text-gray-400">{Math.round(buyer.compositeScore)}</span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="text-xs text-gray-400">
-                          {buyer.buyBox?.states?.join(', ') || '—'}
-                          {buyer.buyBox?.minPrice && (
-                            <span className="text-gray-600"> · ${(buyer.buyBox.minPrice/1000).toFixed(0)}k–${(buyer.buyBox.maxPrice/1000).toFixed(0)}k</span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="text-xs text-gray-500">
-                          {buyer._count?.offers ?? 0} offers · {buyer._count?.purchases ?? 0} closed
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <button className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-gray-700 text-gray-400 transition-opacity">
-                          <MoreHorizontal size={15} />
-                        </button>
-                      </td>
-                    </motion.tr>
-                  ))
-              }
-            </tbody>
-          </table>
-        </div>
-
-        {/* Pagination */}
-        {meta.totalPages > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-gray-800">
-            <span className="text-xs text-gray-500">
-              Page {meta.page} of {meta.totalPages} · {formatNumber(meta.total)} total
-            </span>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setPage(p => Math.max(1, p - 1))}
-                disabled={page === 1}
-                className="px-3 py-1.5 text-xs bg-gray-800 text-gray-300 rounded disabled:opacity-40 hover:bg-gray-700 transition-colors"
-              >
-                Previous
-              </button>
-              <button
-                onClick={() => setPage(p => Math.min(meta.totalPages, p + 1))}
-                disabled={page >= meta.totalPages}
-                className="px-3 py-1.5 text-xs bg-gray-800 text-gray-300 rounded disabled:opacity-40 hover:bg-gray-700 transition-colors"
-              >
-                Next
-              </button>
-            </div>
-          </div>
-        )}
+            )) : buyers.length === 0 ? (
+              <tr><td colSpan={7} className="px-4 py-12 text-center text-gray-500">No buyers found.</td></tr>
+            ) : buyers.map((b:any) => (
+              <tr key={b.id} className="border-b border-gray-800/50 hover:bg-gray-800/30 cursor-pointer transition-colors"
+                onClick={() => window.location.href = `/dashboard/buyers/${b.id}`}>
+                <td className="px-4 py-3">
+                  <div className="font-medium text-white">{b.firstName} {b.lastName}</div>
+                  <div className="text-gray-400 text-xs">{b.email}</div>
+                </td>
+                <td className="px-4 py-3">
+                  <span className={`px-2 py-1 rounded text-xs font-medium ${tb[b.tier] || tb.TIER_3}`}>{tl[b.tier] || b.tier}</span>
+                </td>
+                <td className="px-4 py-3"><span className={sc(b.reliabilityScore)}>{b.reliabilityScore}</span></td>
+                <td className="px-4 py-3"><span className={sc(b.liquidityScore)}>{b.liquidityScore}</span></td>
+                <td className="px-4 py-3"><span className={sc(b.activityScore)}>{b.activityScore}</span></td>
+                <td className="px-4 py-3"><span className={`font-bold ${sc(b.compositeScore)}`}>{b.compositeScore}</span></td>
+                <td className="px-4 py-3 text-gray-400 text-xs">{b.buyBox?.states?.join(', ') || '—'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
-
-      {showCreate && (
-        <CreateBuyerModal
-          onClose={() => setShowCreate(false)}
-          onCreated={() => { setShowCreate(false); refetch(); }}
-        />
-      )}
     </div>
   );
 }

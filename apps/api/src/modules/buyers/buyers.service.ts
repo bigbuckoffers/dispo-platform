@@ -4,7 +4,7 @@ import {
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { BuyerTier, BuyerEventType } from '@prisma/client';
 import { PrismaService } from '../../shared/prisma/prisma.service';
-import { AuditService } from '../audit/audit.service';
+
 import { CreateBuyerDto } from './dto/create-buyer.dto';
 import { UpdateBuyerDto } from './dto/update-buyer.dto';
 import { UpdateBuyBoxDto } from './dto/update-buy-box.dto';
@@ -80,7 +80,7 @@ export class BuyersService {
       data: {
         organizationId: orgId,
         ...dto,
-        buyBox: dto.buyBox ? { create: dto.buyBox } : undefined,
+        buyBox: dto.buyBox ? { create: dto.buyBox as any } : undefined,
       },
       include: { buyBox: true },
     });
@@ -246,8 +246,8 @@ export class BuyersService {
     await this.findOne(orgId, id);
     const buyBox = await this.prisma.buyBox.upsert({
       where: { buyerId: id },
-      create: { buyerId: id, ...dto },
-      update: dto,
+      create: { buyerId: id, ...dto } as any,
+      update: dto as any,
     });
     // Trigger re-embedding since buy box changed
     this.eventEmitter.emit('buyer.buybox.updated', { buyerId: id, orgId });

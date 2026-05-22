@@ -83,7 +83,7 @@ export class MatchingService {
     if (!deal) throw new Error(`Deal ${dealId} not found`);
 
     // Generate deal embedding if it doesn't exist
-    let dealVector = dealEmbedding?.vector;
+    let dealVector = (dealEmbedding as any)?.vector;
     if (!dealVector) {
       const text = this.buildDealTextForEmbedding(deal);
       dealVector = await this.embeddingsService.generateEmbedding(text);

@@ -1,7 +1,7 @@
 import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { TeamRole } from '@prisma/client';
-import { ROLES_KEY } from '../decorators/roles.decorator';
+import { ROLES_KEY } from '../decorators';
 
 const ROLE_HIERARCHY: Record<TeamRole, number> = {
   [TeamRole.OWNER]: 100,

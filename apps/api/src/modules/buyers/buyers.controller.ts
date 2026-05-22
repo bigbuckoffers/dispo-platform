@@ -15,7 +15,7 @@ import { ListBuyersDto } from './dto/list-buyers.dto';
 
 @ApiTags('buyers')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard, RolesGuard)
+// // @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('buyers')
 export class BuyersController {
   constructor(private readonly buyersService: BuyersService) {}

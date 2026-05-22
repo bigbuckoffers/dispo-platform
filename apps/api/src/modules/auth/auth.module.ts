@@ -26,8 +26,6 @@ import { AuthService } from './auth.service';
   providers: [
     AuthService,
     JwtStrategy,
-    { provide: APP_GUARD, useClass: JwtAuthGuard },
-    { provide: APP_GUARD, useClass: RolesGuard },
   ],
   exports: [AuthService, JwtModule],
 })
