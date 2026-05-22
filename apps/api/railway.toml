@@ -1,5 +1,5 @@
 [build]
-buildCommand = "npm install && npx prisma generate --schema=../../packages/database/prisma/schema.prisma && npm run build"
+buildCommand = "npm install && npx prisma generate --schema=../../packages/database/prisma/schema.prisma && npm run build -- --skipLibCheck"
 
 [deploy]
 startCommand = "node dist/main.js"
