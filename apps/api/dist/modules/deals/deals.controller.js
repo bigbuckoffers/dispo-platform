@@ -33,13 +33,6 @@ let DealsController = class DealsController {
     async getMarketIntelligence() {
         const deals = await this.prisma.deal.findMany({
             where: { status: { notIn: ['DEAD', 'CLOSED'] } },
-            select: {
-                id: true, city: true, state: true, zipCode: true,
-                marketKey: true, spread: true, dealPriorityScore: true,
-                matchedBuyerCount: true, tier1MatchCount: true,
-                buyerDemandScore: true, buyerGapScore: true,
-                buyerCoverageStatus: true, marketBuyerNeedRecommendation: true,
-            },
         });
         const marketMap = new Map();
         for (const d of deals) {
@@ -92,17 +85,16 @@ let DealsController = class DealsController {
         const marketKey = `${dto.city || ''}, ${dto.state || ''}`.trim().replace(/^,\s*/, '');
         return this.prisma.deal.create({
             data: {
+                ...dto,
+                ...metrics,
+                marketKey,
+                id: undefined,
                 organizationId: orgId || 'a296974d-74f4-4c8b-b6f4-5a57b9f36758',
                 address: dto.address || 'TBD',
                 city: dto.city || '',
                 state: dto.state || '',
                 zipCode: dto.zipCode || '',
                 askingPrice: dto.askingPrice || 0,
-                ...dto,
-                ...metrics,
-                marketKey,
-                id: undefined,
-                organizationId: orgId || 'a296974d-74f4-4c8b-b6f4-5a57b9f36758',
             },
         });
     }
@@ -161,7 +153,7 @@ let DealsController = class DealsController {
             where: { id },
             data: {
                 matchedBuyerCount: matched, tier1MatchCount: tier1, buyerDemandScore,
-                status: matched > 0 ? 'MATCHED' : deal.status,
+                status: (matched > 0 ? 'MATCHED' : deal.status),
             },
         });
     }

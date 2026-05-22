@@ -32,14 +32,7 @@ export class DealsController {
   @ApiOperation({ summary: 'Get market demand intelligence' })
   async getMarketIntelligence() {
     const deals = await this.prisma.deal.findMany({
-      where: { status: { notIn: ['DEAD', 'CLOSED'] } },
-      select: {
-        id: true, city: true, state: true, zipCode: true,
-        marketKey: true, spread: true, dealPriorityScore: true,
-        matchedBuyerCount: true, tier1MatchCount: true,
-        buyerDemandScore: true, buyerGapScore: true,
-        buyerCoverageStatus: true, marketBuyerNeedRecommendation: true,
-      },
+      where: { status: { notIn: ['DEAD', 'CLOSED'] as any } },
     });
 
     const marketMap = new Map<string, any>();
@@ -100,18 +93,17 @@ export class DealsController {
     const marketKey = `${dto.city || ''}, ${dto.state || ''}`.trim().replace(/^,\s*/, '');
     return this.prisma.deal.create({
       data: {
+        ...dto,
+        ...metrics,
+        marketKey,
+        id: undefined,
         organizationId: orgId || 'a296974d-74f4-4c8b-b6f4-5a57b9f36758',
         address: dto.address || 'TBD',
         city: dto.city || '',
         state: dto.state || '',
         zipCode: dto.zipCode || '',
         askingPrice: dto.askingPrice || 0,
-        ...dto,
-        ...metrics,
-        marketKey,
-        id: undefined,
-        organizationId: orgId || 'a296974d-74f4-4c8b-b6f4-5a57b9f36758',
-      },
+      } as any,
     });
   }
 
@@ -143,7 +135,7 @@ export class DealsController {
     if (!deal) return { error: 'Not found' };
     const metrics = this.scoringService.calculateMetrics(deal);
     const mathSummary = await this.aiParser.generateDealMathSummary({ ...deal, ...metrics });
-    return this.prisma.deal.update({ where: { id }, data: { ...metrics, aiDealMathSummary: mathSummary } });
+    return this.prisma.deal.update({ where: { id }, data: { ...metrics, aiDealMathSummary: mathSummary } as any });
   }
 
   @Post(':id/generate-follow-up')
@@ -153,7 +145,7 @@ export class DealsController {
     if (!deal) return { error: 'Not found' };
     const metrics = this.scoringService.calculateMetrics(deal);
     const message = await this.aiParser.generateFollowUpMessage({ ...deal, missingInfo: metrics.missingInfo });
-    await this.prisma.deal.update({ where: { id }, data: { missingInfo: metrics.missingInfo, missingInfoCount: metrics.missingInfoCount } });
+    await this.prisma.deal.update({ where: { id }, data: { missingInfo: metrics.missingInfo, missingInfoCount: metrics.missingInfoCount } as any });
     return { message, missingInfo: metrics.missingInfo };
   }
 
@@ -177,7 +169,7 @@ export class DealsController {
       where: { id },
       data: {
         matchedBuyerCount: matched, tier1MatchCount: tier1, buyerDemandScore,
-        status: matched > 0 ? 'MATCHED' : (deal.status as string),
+        status: (matched > 0 ? 'MATCHED' : deal.status) as any,
       },
     });
   }
