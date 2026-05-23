@@ -396,10 +396,14 @@ export default function DealsPage() {
 
                       {/* Buyers */}
                       <div className="px-2 py-3">
-                        <div className={`rounded-lg px-2 py-1.5 border ${dm.bg} text-center`}>
-                          <p className={`text-xl font-bold ${dm.c}`}>{b}</p>
-                          {t1>0&&<p className={`text-xs ${dm.c} opacity-80`}>{t1} T1</p>}
-                          <p className={`text-xs ${dm.c} opacity-70`}>{dm.l}</p>
+                        <div className={`rounded-lg px-2 py-2 border ${dm.bg}`}>
+                          <p className={`text-lg font-bold leading-none ${dm.c}`}>{b} buyers</p>
+                          <div className="mt-1 space-y-0.5">
+                            {t1>0&&<p className="text-xs text-purple-300">{t1}x Tier 1</p>}
+                            {(deal.tier2MatchCount||0)>0&&<p className="text-xs text-blue-300">{deal.tier2MatchCount}x Tier 2</p>}
+                            {(deal.tier3MatchCount||0)>0&&<p className="text-xs text-gray-400">{deal.tier3MatchCount}x Tier 3</p>}
+                            {b===0&&<p className={`text-xs ${dm.c} font-medium`}>Buyer Gap</p>}
+                          </div>
                         </div>
                       </div>
 
