@@ -24,7 +24,7 @@ export class DealsController {
   ) {}
 
   @Get()
-  findAll(@OrgId() orgId: string, @Query() query: any) async {
+  async findAll(@OrgId() orgId: string, @Query() query: any) {
     return this.dealsService.findAll(orgId || await this.dealsService.getDefaultOrgId(), query);
   }
 
