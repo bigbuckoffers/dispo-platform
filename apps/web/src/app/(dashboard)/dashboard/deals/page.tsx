@@ -310,7 +310,7 @@ export default function DealsPage() {
                     <div className="grid items-center h-11" style={{gridTemplateColumns:COLS}}>
 
                       {/* Score */}
-                      <div className="flex items-center justify-center">
+                      <div className="flex items-center justify-start px-2">
                         <div className={`border-l-[3px] pl-2 ${t.bdr}`}>
                           <p className={`text-sm font-bold leading-none ${t.t}`}>{sc||'—'}</p>
                           <p className={`text-[10px] ${t.t} opacity-60 leading-tight`}>{t.l}</p>
