@@ -311,7 +311,7 @@ export default function DealsPage() {
 
                       {/* Score */}
                       <div className="flex items-center justify-center">
-                        <div className={`border-l-[3px] pl-2 ${t.border}`}>
+                        <div className={`border-l-[3px] pl-2 ${t.bdr}`}>
                           <p className={`text-sm font-bold leading-none ${t.t}`}>{sc||'—'}</p>
                           <p className={`text-[10px] ${t.t} opacity-60 leading-tight`}>{t.l}</p>
                         </div>
