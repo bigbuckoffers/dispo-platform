@@ -321,11 +321,6 @@ export default function DealsPage() {
                         <p className="text-gray-400 text-xs mt-0.5">{[deal.city,deal.state,deal.zipCode].filter(Boolean).join(', ')}</p>
                       </Link>
 
-                      {/* City/State */}
-                      <div className="px-2 py-3">
-                        <p className="text-gray-300 text-xs font-medium">{deal.city||'—'}</p>
-                        <p className="text-gray-500 text-xs">{deal.state}{deal.zipCode?` ${deal.zipCode}`:''}</p>
-                      </div>
 
                       {/* Beds/Baths */}
                       <div className="px-2 py-3">
