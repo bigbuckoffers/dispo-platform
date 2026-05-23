@@ -348,7 +348,7 @@ export default function DealsPage() {
                             CAMPAIGN_ACTIVE:'Blast is live — buyers are being contacted now.',
                             OFFER_RECEIVED:'At least one buyer has made an offer.',
                             ACTIVE:'Active deal in progress.',
-                          }[deal.status||'DRAFT']||'No description available.'}</p>
+                          }[(deal.status||'DRAFT') as string]||'No description available.'}</p>
                         </div>
                       </div>
 
