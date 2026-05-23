@@ -319,7 +319,7 @@ export default function DealsPage() {
                 return (
                   <motion.div key={deal.id} initial={{opacity:0}} animate={{opacity:1}} transition={{delay:i*0.02}}
                     className={`group transition-colors ${t.hot?'border-l-[3px] border-orange-500/80 bg-orange-950/10 hover:bg-orange-950/20':'border-l-[3px] border-transparent hover:bg-gray-800/30'}`}>
-                    <div className="grid items-center h-11" style={{gridTemplateColumns:COLS}}>
+                    <div className="grid items-center min-h-[44px]" style={{gridTemplateColumns:COLS}}>
 
                       {/* Score */}
                       <div className="flex items-center justify-start px-2">
