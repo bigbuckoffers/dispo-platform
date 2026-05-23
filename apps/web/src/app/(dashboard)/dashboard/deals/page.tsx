@@ -9,11 +9,11 @@ import Link from 'next/link';
 import AddDealModal from '@/components/deal/AddDealModal';
 
 function tier(s: number) {
-  if (s>=85) return {l:'🔥 Hot',    t:'text-red-200',    b:'bg-red-900/80 border-red-600/70',     hot:true};
-  if (s>=75) return {l:'Strong',    t:'text-orange-200', b:'bg-orange-900/70 border-orange-700/60',hot:false};
-  if (s>=60) return {l:'Workable',  t:'text-yellow-200', b:'bg-yellow-900/60 border-yellow-700/50',hot:false};
-  if (s>=40) return {l:'Needs Info',t:'text-blue-300',   b:'bg-blue-900/60 border-blue-700/50',   hot:false};
-  return          {l:'Weak',        t:'text-gray-500',   b:'bg-gray-800 border-gray-700',          hot:false};
+  if (s>=85) return {l:'Hot',       t:'text-red-400',    border:'border-l-red-500',    hot:true};
+  if (s>=75) return {l:'Strong',    t:'text-orange-400', border:'border-l-orange-500', hot:false};
+  if (s>=60) return {l:'Workable',  t:'text-yellow-400', border:'border-l-yellow-500', hot:false};
+  if (s>=40) return {l:'Needs Info',t:'text-blue-400',   border:'border-l-blue-500',   hot:false};
+  return          {l:'Weak',        t:'text-gray-500',   border:'border-l-gray-600',   hot:false};
 }
 
 function readiness(deal: any) {
@@ -310,10 +310,10 @@ export default function DealsPage() {
                     <div className="grid items-center h-11" style={{gridTemplateColumns:COLS}}>
 
                       {/* Score */}
-                      <div className="px-2 flex items-center justify-center">
-                        <div className={`rounded-lg border text-center px-1.5 py-1 min-w-[48px] ${t.b}`}>
+                      <div className="flex items-center justify-center">
+                        <div className={`border-l-[3px] pl-2 ${t.border}`}>
                           <p className={`text-sm font-bold leading-none ${t.t}`}>{sc||'—'}</p>
-                          <p className={`text-[10px] font-medium ${t.t} opacity-80 leading-tight`}>{t.l}</p>
+                          <p className={`text-[10px] ${t.t} opacity-60 leading-tight`}>{t.l}</p>
                         </div>
                       </div>
 
