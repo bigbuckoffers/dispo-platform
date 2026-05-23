@@ -103,7 +103,7 @@ const SC: Record<string,string> = {
 };
 
 // 13 columns: score | address | city | beds | sqft | type/status | ask | 70% | public | arv | deadline | buyers | ready | action
-const COLS = '72px 220px 72px 72px 110px 84px 90px 84px 84px 80px 110px 72px 140px';
+const COLS = '72px 200px 80px 64px 120px 80px 90px 80px 80px 80px 120px 72px 130px';
 const HDRS = ['Score','Address','Beds','Sqft','Status','Ask','70% Val','Public Val','ARV','Deadline','Buyers','Ready','Action'];
 
 export default function DealsPage() {
