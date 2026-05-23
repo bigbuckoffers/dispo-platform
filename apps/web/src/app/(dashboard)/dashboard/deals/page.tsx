@@ -315,16 +315,7 @@ export default function DealsPage() {
                         </div>
                       </div>
 
-                      {/* Address */}
-                      <Link href={`/dashboard/deals/${deal.id}`} className="px-2 py-3 block group/row">
-                        <p className="text-white font-bold text-sm group-hover/row:text-blue-300 transition leading-snug">{deal.address||'No address'}</p>
-                      </Link>
-
-                      {/* City/State */}
-                      <div className="px-2 py-3">
-                        <p className="text-gray-300 text-xs font-medium">{deal.city||'—'}</p>
-                        <p className="text-gray-500 text-xs">{deal.state}{deal.zipCode?` ${deal.zipCode}`:''}</p>
-                      </div>
+                      {/* Address */}                      <Link href={`/dashboard/deals/${deal.id}`} className="px-2 py-2 block group/row">                        <p className="text-white font-bold text-sm group-hover/row:text-blue-300 transition leading-snug">{deal.address||'No address'}</p>                        <p className="text-gray-400 text-xs mt-0.5">{[deal.city,deal.state,deal.zipCode].filter(Boolean).join(', ')}</p>                      </Link>                      </div>
 
                       {/* Beds/Baths */}
                       <div className="px-2 py-3">
