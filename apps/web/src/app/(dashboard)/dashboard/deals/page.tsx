@@ -103,7 +103,7 @@ const SC: Record<string,string> = {
 };
 
 // 13 columns: score | address | city | beds | sqft | type/status | ask | 70% | public | arv | deadline | buyers | ready | action
-const COLS = '72px 200px 80px 64px 120px 80px 90px 80px 80px 80px 120px 72px 130px';
+const COLS = '72px 200px 72px 72px 110px 84px 90px 84px 84px 80px 120px 72px 130px';
 const HDRS = ['Score','Address','Beds','Sqft','Status','Ask','70% Val','Public Val','ARV','Deadline','Buyers','Ready','Action'];
 
 export default function DealsPage() {
@@ -315,7 +315,17 @@ export default function DealsPage() {
                         </div>
                       </div>
 
-                      {/* Address */}                      <Link href={`/dashboard/deals/${deal.id}`} className="px-2 py-2 block group/row">                        <p className="text-white font-bold text-sm group-hover/row:text-blue-300 transition leading-snug">{deal.address||'No address'}</p>                        <p className="text-gray-400 text-xs mt-0.5">{[deal.city,deal.state,deal.zipCode].filter(Boolean).join(', ')}</p>                      </Link>                      </div>
+                      {/* Address */}
+                      <Link href={`/dashboard/deals/${deal.id}`} className="px-2 py-2 block group/row">
+                        <p className="text-white font-bold text-sm group-hover/row:text-blue-300 transition leading-snug">{deal.address||'No address'}</p>
+                        <p className="text-gray-400 text-xs mt-0.5">{[deal.city,deal.state,deal.zipCode].filter(Boolean).join(', ')}</p>
+                      </Link>
+
+                      {/* City/State */}
+                      <div className="px-2 py-3">
+                        <p className="text-gray-300 text-xs font-medium">{deal.city||'—'}</p>
+                        <p className="text-gray-500 text-xs">{deal.state}{deal.zipCode?` ${deal.zipCode}`:''}</p>
+                      </div>
 
                       {/* Beds/Baths */}
                       <div className="px-2 py-3">
@@ -385,17 +395,15 @@ export default function DealsPage() {
 
                       {/* Buyers */}
                       <div className="px-2 py-3">
-                        <div className={`rounded-lg px-2 py-1.5 border ${dm.bg}`}>
-                          <div className="flex items-baseline gap-1.5 mb-1">
-                            <p className={`text-xl font-bold leading-none ${dm.c}`}>{b}</p>
-                            <p className={`text-xs ${dm.c} opacity-60`}>buyers</p>
-                          </div>
-                          {b>0&&<div className="flex gap-2">
-                            <span className="text-xs text-purple-400">T1 <span className="text-purple-300 font-bold">{t1}</span></span>
-                            <span className="text-xs text-blue-400">T2 <span className="text-blue-300 font-bold">{t1>0?Math.max(0,Math.round((b-t1)*0.6)):Math.round(b*0.6)}</span></span>
-                            <span className="text-xs text-gray-500">T3 <span className="text-gray-400 font-bold">{t1>0?Math.max(0,Math.round((b-t1)*0.4)):Math.round(b*0.4)}</span></span>
+                        <div className={`rounded-xl px-3 py-2.5 border ${dm.bg}`}>
+                          <p className={`text-3xl font-bold leading-none ${dm.c}`}>{b}</p>
+                          <p className={`text-xs font-semibold uppercase tracking-wide mt-0.5 mb-2 ${dm.c} opacity-70`}>{dm.l}</p>
+                          {b>0&&<div className="space-y-1 border-t border-white/5 pt-2">
+                            {t1>0&&<div className="flex items-center justify-between"><span className="flex items-center gap-1 text-xs text-purple-400"><span style={{width:6,height:6,borderRadius:'50%',background:'#a78bfa',display:'inline-block'}}/> T1</span><span className="text-purple-300 text-sm font-bold">{t1}</span></div>}
+                            {b>0&&<div className="flex items-center justify-between"><span className="flex items-center gap-1 text-xs text-blue-400"><span style={{width:6,height:6,borderRadius:'50%',background:'#60a5fa',display:'inline-block'}}/> T2</span><span className="text-blue-300 text-sm font-bold">{t1>0?Math.max(0,Math.round((b-t1)*0.6)):Math.round(b*0.6)}</span></div>}
+                            {b>0&&<div className="flex items-center justify-between"><span className="flex items-center gap-1 text-xs text-gray-500"><span style={{width:6,height:6,borderRadius:'50%',background:'#4b5563',display:'inline-block'}}/> T3</span><span className="text-gray-400 text-sm font-bold">{t1>0?Math.max(0,Math.round((b-t1)*0.4)):Math.round(b*0.4)}</span></div>}
                           </div>}
-                          {b===0&&<p className="text-red-400 text-xs font-medium">Buyer Gap</p>}
+                          {b===0&&<p className="text-red-400 text-xs mt-1">No matched buyers.<br/>Run match or find<br/>buyers in market.</p>}
                         </div>
                       </div>
 
