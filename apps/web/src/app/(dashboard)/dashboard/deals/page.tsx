@@ -73,15 +73,15 @@ function nextAction(deal: any) {
   if (b>0&&!hasPhotos)
     return {l:'Add Photos',       c:'bg-amber-700 hover:bg-amber-600 text-white'};
   if (b>0&&!hasValue)
-    return {l:'Add Public Value', c:'bg-blue-800 hover:bg-blue-700 text-blue-100'};
+    return {l:'Add Value', c:'bg-blue-800 hover:bg-blue-700 text-blue-100'};
   if (b>0&&!hasPermission)
-    return {l:'Confirm JV Perm',  c:'bg-purple-800 hover:bg-purple-700 text-purple-100'};
+    return {l:'Confirm JV',  c:'bg-purple-800 hover:bg-purple-700 text-purple-100'};
   if (deal.status==='OFFER_RECEIVED')
     return {l:'Review Offer',     c:'bg-orange-600 hover:bg-orange-500 text-white'};
   if (deal.status==='CAMPAIGN_ACTIVE')
-    return {l:'Follow Up Buyers', c:'bg-emerald-800 hover:bg-emerald-700 text-emerald-100'};
+    return {l:'Follow Up', c:'bg-emerald-800 hover:bg-emerald-700 text-emerald-100'};
   if (b===0&&hasPrice)
-    return {l:'Run Buyer Match',  c:'bg-blue-700 hover:bg-blue-600 text-white'};
+    return {l:'Run Match',  c:'bg-blue-700 hover:bg-blue-600 text-white'};
   if (b===0)
     return {l:'Find Buyers',      c:'bg-orange-800 hover:bg-orange-700 text-orange-100'};
   return   {l:'Fill In Info',     c:'bg-gray-700 hover:bg-gray-600 text-gray-200'};
@@ -117,7 +117,7 @@ const SC: Record<string,string> = {
 };
 
 // 11 columns — status badge inside address, next action at end
-const COLS = '64px 200px 72px 64px 90px 90px 90px 80px 80px 72px 130px';
+const COLS = '64px 200px 72px 64px 90px 90px 90px 80px 80px 72px 150px';
 const HDRS = ['Score','Address','Beds','Sqft','Asking','70% Val','Public Val','ARV','Deadline','Buyers','Next Action'];
 
 export default function DealsPage() {
