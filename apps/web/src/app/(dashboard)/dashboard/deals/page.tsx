@@ -319,7 +319,8 @@ export default function DealsPage() {
 
                       {/* Address */}
                       <Link href={`/dashboard/deals/${deal.id}`} className="px-2 flex flex-col justify-center group/row min-w-0">
-                        <p className="text-white font-semibold text-xs group-hover/row:text-blue-300 transition truncate leading-tight">{[deal.address,deal.city,deal.state,deal.zipCode].filter(Boolean).join(', ')}</p>
+                        <p className="text-white font-semibold text-xs group-hover/row:text-blue-300 transition truncate leading-tight">{deal.address||'No address'}</p>
+                        <p className="text-gray-500 text-[10px] truncate leading-tight">{[deal.city,deal.state,deal.zipCode].filter(Boolean).join(', ')}</p>
                       </Link>
 
 
