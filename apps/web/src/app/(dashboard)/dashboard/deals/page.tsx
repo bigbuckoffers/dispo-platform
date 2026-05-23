@@ -347,7 +347,6 @@ export default function DealsPage() {
                       {/* Status */}
                       <div className="px-2 py-3">
                         <span className={`text-xs px-1.5 py-0.5 rounded-full whitespace-nowrap ${SC[deal.status||'DRAFT']||'bg-gray-800 text-gray-400'}`}>{(deal.status||'DRAFT').replace(/_/g,' ')}</span>
-                        {deal.dealType&&<p className="text-indigo-400 text-xs font-medium mt-1">{deal.dealType}</p>}
                       </div>
 
                       {/* Ask */}
