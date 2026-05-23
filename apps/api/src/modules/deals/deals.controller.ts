@@ -24,7 +24,7 @@ export class DealsController {
   ) {}
 
   @Get()
-  findAll(@OrgId() orgId: string, @Query() query: any) {
+  findAll(@OrgId() orgId: string, @Query() query: any) async {
     return this.dealsService.findAll(orgId || await this.dealsService.getDefaultOrgId(), query);
   }
 
@@ -108,7 +108,7 @@ export class DealsController {
   }
 
   @Get(':id')
-  findOne(@OrgId() orgId: string, @Param('id', ParseUUIDPipe) id: string) {
+  async findOne(@OrgId() orgId: string, @Param('id', ParseUUIDPipe) id: string) {
     return this.dealsService.findOne(orgId || await this.dealsService.getDefaultOrgId(), id);
   }
 

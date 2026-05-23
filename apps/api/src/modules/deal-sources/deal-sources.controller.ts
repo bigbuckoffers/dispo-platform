@@ -6,7 +6,7 @@ export class DealSourcesController {
   constructor(private readonly svc: DealSourcesService) {}
 
   @Get()
-  findAll(@Query('orgId') orgId: string) {
+  async findAll(@Query('orgId') orgId: string) {
     const org = orgId || await this.svc.getDefaultOrgId();
     return this.svc.findAll(org);
   }
@@ -17,7 +17,7 @@ export class DealSourcesController {
   }
 
   @Post()
-  create(@Body() body: any) {
+  async create(@Body() body: any) {
     const orgId = body.organizationId || await this.svc.getDefaultOrgId();
     return this.svc.findOrCreate(orgId, body);
   }
