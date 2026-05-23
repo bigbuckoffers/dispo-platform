@@ -407,11 +407,19 @@ export default function DealsPage() {
                       </div>
 
                       {/* Ready */}
-                      <div className="px-2 flex flex-col items-center justify-center gap-0.5">
-                        <span className={`text-xs font-bold leading-none ${r.txt}`}>{r.pct}%</span>
-                        <div className="h-1 bg-gray-700 rounded-full" style={{width:40}}>
-                          <div className={`h-full rounded-full ${r.bar}`} style={{width:`${r.pct}%`}}/>
-                        </div>
+                      <div className="px-2 flex items-center justify-center">
+                        {r.pct>=85
+                          ? <span className="text-[10px] font-semibold text-green-400 bg-green-900/30 border border-green-800/40 px-1.5 py-0.5 rounded-full whitespace-nowrap">✓ Blast Ready</span>
+                          : r.blocker==='Photos'
+                          ? <span className="text-[10px] font-semibold text-amber-400 bg-amber-900/30 border border-amber-800/40 px-1.5 py-0.5 rounded-full whitespace-nowrap">📷 Add Photos</span>
+                          : r.blocker==='Buyers'
+                          ? <span className="text-[10px] font-semibold text-red-400 bg-red-900/30 border border-red-800/40 px-1.5 py-0.5 rounded-full whitespace-nowrap">👥 No Buyers</span>
+                          : r.blocker==='Value'
+                          ? <span className="text-[10px] font-semibold text-blue-400 bg-blue-900/30 border border-blue-800/40 px-1.5 py-0.5 rounded-full whitespace-nowrap">💲 Add Value</span>
+                          : r.blocker==='Access'
+                          ? <span className="text-[10px] font-semibold text-purple-400 bg-purple-900/30 border border-purple-800/40 px-1.5 py-0.5 rounded-full whitespace-nowrap">🔑 Add Access</span>
+                          : <span className="text-[10px] font-semibold text-gray-500 bg-gray-800 border border-gray-700 px-1.5 py-0.5 rounded-full whitespace-nowrap">+ Fill Info</span>
+                        }
                       </div>
 
 
