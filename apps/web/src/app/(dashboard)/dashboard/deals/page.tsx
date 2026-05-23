@@ -345,10 +345,12 @@ export default function DealsPage() {
                       </div>
 
                       {/* Status / Type */}
-                      <div className="px-2 py-3 space-y-1">
-                        <span className={`text-xs px-1.5 py-0.5 rounded-full ${SC[deal.status||'DRAFT']||'bg-gray-800 text-gray-400'}`}>{(deal.status||'DRAFT').replace(/_/g,' ')}</span>
-                        {deal.dealType&&<p className="text-indigo-400 text-xs font-medium">{deal.dealType}</p>}
-                        {deal.overallCondition&&deal.overallCondition!=='UNKNOWN'&&<p className="text-gray-600 text-xs">{deal.overallCondition.replace(/_/g,' ')}</p>}
+                      <div className="px-2 py-3">
+                        <span className={`text-xs px-1.5 py-0.5 rounded-full whitespace-nowrap ${SC[deal.status||'DRAFT']||'bg-gray-800 text-gray-400'}`}>{(deal.status||'DRAFT').replace(/_/g,' ')}</span>
+                        <div className="flex items-center gap-1 mt-1 flex-wrap">
+                          {deal.dealType&&<span className="text-indigo-400 text-xs font-medium">{deal.dealType}</span>}
+                          {deal.overallCondition&&deal.overallCondition!=='UNKNOWN'&&<span className="text-gray-600 text-xs">· {deal.overallCondition.replace(/_/g,' ')}</span>}
+                        </div>
                       </div>
 
                       {/* Ask */}
