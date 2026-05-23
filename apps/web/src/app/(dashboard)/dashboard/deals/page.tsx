@@ -62,32 +62,28 @@ function deadline(deal: any) {
   return            {txt:`${days}d`,         sub:s.l,    color:'text-gray-500', urgent:false};
 }
 
-function nextAction(deal: any) {
+function nextActions(deal: any) {
   const b = deal.matchedBuyerCount||0;
   const isOwn = deal.sourceType==='OWN';
   const hasPhotos = !!(deal.photosUrl||deal.googleDriveUrl||deal.photos?.length);
   const hasValue  = !!(deal.zillowEstimate||deal.realtorEstimate||deal.redfinEstimate||deal.rentcastEstimate||deal.arv);
   const hasPrice  = !!deal.askingPrice;
   const hasPermission = isOwn||!!(deal.dealSource?.permissionToMarket);
+  const actions: {l:string;c:string}[] = [];
   if (deal.status==='OFFER_RECEIVED')
-    return {l:'Review Offer',      c:'bg-orange-500/20 text-orange-300 border border-orange-500/40'};
+    return [{l:'Review Offer',     c:'bg-orange-500/20 text-orange-300 border border-orange-500/40'}];
   if (deal.status==='CAMPAIGN_ACTIVE')
-    return {l:'Follow Up Buyers',  c:'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'};
+    return [{l:'Follow Up Buyers', c:'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'}];
   if (b>0&&hasPhotos&&hasValue&&hasPrice&&hasPermission)
-    return {l:'Send Buyer Blast',  c:'bg-green-500/20 text-green-300 border border-green-500/40'};
-  if (b>0&&!hasPhotos&&isOwn)
-    return {l:'Upload Photos',     c:'bg-amber-500/20 text-amber-300 border border-amber-500/40'};
-  if (b>0&&!hasPhotos&&!isOwn)
-    return {l:'Request Photos',    c:'bg-amber-500/20 text-amber-300 border border-amber-500/40'};
-  if (b>0&&!hasPermission)
-    return {l:'Confirm JV',        c:'bg-purple-500/20 text-purple-300 border border-purple-500/40'};
-  if (b>0&&!hasValue)
-    return {l:'Add Zillow/Redfin', c:'bg-blue-500/20 text-blue-300 border border-blue-500/40'};
-  if (b===0&&(deal.dealPriorityScore||0)>=70)
-    return {l:'Find Buyers',       c:'bg-orange-500/20 text-orange-300 border border-orange-500/40'};
-  if (b===0&&hasPrice)
-    return {l:'Run Buyer Match',   c:'bg-blue-500/20 text-blue-300 border border-blue-500/40'};
-  return   {l:'Fill In Info',      c:'bg-gray-500/20 text-gray-400 border border-gray-500/40'};
+    return [{l:'Send Buyer Blast', c:'bg-green-500/20 text-green-300 border border-green-500/40'}];
+  if (!hasPhotos&&isOwn)   actions.push({l:'Upload Photos',    c:'bg-amber-500/20 text-amber-300 border border-amber-500/40'});
+  if (!hasPhotos&&!isOwn)  actions.push({l:'Request Photos',   c:'bg-amber-500/20 text-amber-300 border border-amber-500/40'});
+  if (!hasPermission&&b>0) actions.push({l:'Confirm JV',       c:'bg-purple-500/20 text-purple-300 border border-purple-500/40'});
+  if (!hasValue)           actions.push({l:'Add Zillow/Redfin',c:'bg-blue-500/20 text-blue-300 border border-blue-500/40'});
+  if (b===0&&(deal.dealPriorityScore||0)>=70) actions.push({l:'Find Buyers',    c:'bg-orange-500/20 text-orange-300 border border-orange-500/40'});
+  if (b===0&&hasPrice)     actions.push({l:'Run Buyer Match',  c:'bg-blue-500/20 text-blue-300 border border-blue-500/40'});
+  if (!hasPrice)           actions.push({l:'Add Asking Price', c:'bg-gray-500/20 text-gray-400 border border-gray-500/40'});
+  return actions.length ? actions : [{l:'Fill In Info',         c:'bg-gray-500/20 text-gray-400 border border-gray-500/40'}];
 }
 
 function signal(deal: any): string {
@@ -310,7 +306,7 @@ export default function DealsPage() {
                 const t1 = deal.tier1MatchCount||0;
                 const dm = demand(b);
                 const dl = deadline(deal);
-                const na = nextAction(deal);
+                const nas = nextActions(deal); const na = nas[0];
                 const ests = [deal.zillowEstimate,deal.realtorEstimate,deal.redfinEstimate,deal.rentcastEstimate].filter((v):v is number=>typeof v==='number'&&v>0);
                 const avgP = ests.length>0 ? Math.round(ests.reduce((a,x)=>a+x,0)/ests.length) : null;
                 const refV = avgP||(deal.arv>0?deal.arv:null);
@@ -410,10 +406,20 @@ export default function DealsPage() {
 
 
                       {/* Next Action */}
-                      <div className="px-2 flex items-center">
+                      <div className="px-2 flex items-center gap-1.5 relative group/na">
                         <Link href={`/dashboard/deals/${deal.id}`} className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold transition whitespace-nowrap ${na.c}`}>
                           {na.l} <ChevronRight size={9}/>
                         </Link>
+                        {nas.length>1&&(
+                          <span className="text-[9px] bg-gray-700 text-gray-400 rounded-full px-1.5 py-0.5 cursor-default font-semibold">+{nas.length-1}</span>
+                        )}
+                        {nas.length>1&&(
+                          <div className="absolute left-0 top-6 z-50 hidden group-hover/na:flex flex-col gap-1 bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 shadow-xl min-w-[160px]">
+                            {nas.slice(1).map((a,i)=>(
+                              <span key={i} className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap ${a.c}`}>{a.l}</span>
+                            ))}
+                          </div>
+                        )}
                       </div>
 
                     </div>
