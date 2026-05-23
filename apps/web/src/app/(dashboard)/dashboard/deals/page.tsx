@@ -340,7 +340,7 @@ export default function DealsPage() {
                       </div>
 
                       {/* Ask */}
-                      <div className="px-2 flex items-center justify-end">
+                      <div className="px-2 flex items-center justify-center">
                         <span className="text-white font-bold text-xs">{deal.askingPrice?formatCurrency(deal.askingPrice):'—'}</span>
                       </div>
 
