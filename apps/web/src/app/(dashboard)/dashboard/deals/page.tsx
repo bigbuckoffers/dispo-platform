@@ -103,8 +103,8 @@ const SC: Record<string,string> = {
 };
 
 // 13 columns: score | address | city | beds | sqft | type/status | ask | 70% | public | arv | deadline | buyers | ready | action
-const COLS = '72px 160px 120px 72px 72px 120px 84px 90px 84px 84px 80px 110px 72px 140px';
-const HDRS = ['Score','Address','Market','Beds','Sqft','Status','Ask','70% Val','Public Val','ARV','Deadline','Buyers','Ready','Action'];
+const COLS = '72px 220px 72px 72px 110px 84px 90px 84px 84px 80px 110px 72px 140px';
+const HDRS = ['Score','Address','Beds','Sqft','Status','Ask','70% Val','Public Val','ARV','Deadline','Buyers','Ready','Action'];
 
 export default function DealsPage() {
   const [showAddDeal, setShowAddDeal] = useState(false);
@@ -318,7 +318,6 @@ export default function DealsPage() {
                       {/* Address */}
                       <Link href={`/dashboard/deals/${deal.id}`} className="px-2 py-3 block group/row">
                         <p className="text-white font-bold text-sm group-hover/row:text-blue-300 transition leading-snug">{deal.address||'No address'}</p>
-                        <p className="text-gray-500 text-xs italic mt-0.5 leading-snug">{sig}</p>
                       </Link>
 
                       {/* City/State */}
