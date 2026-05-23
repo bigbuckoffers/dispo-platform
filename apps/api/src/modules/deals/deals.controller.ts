@@ -25,7 +25,7 @@ export class DealsController {
 
   @Get()
   findAll(@OrgId() orgId: string, @Query() query: any) {
-    return this.dealsService.findAll(orgId || '70dde92d-d5ae-457e-97fe-3395059433c3', query);
+    return this.dealsService.findAll(orgId || '7a0b7904-f8b2-46da-9973-30219f647483', query);
   }
 
   @Get('market-intelligence')
@@ -97,7 +97,7 @@ export class DealsController {
         ...metrics,
         marketKey,
         id: undefined,
-        organizationId: orgId || '70dde92d-d5ae-457e-97fe-3395059433c3',
+        organizationId: orgId || '7a0b7904-f8b2-46da-9973-30219f647483',
         address: dto.address || 'TBD',
         city: dto.city || '',
         state: dto.state || '',
@@ -109,7 +109,7 @@ export class DealsController {
 
   @Get(':id')
   findOne(@OrgId() orgId: string, @Param('id', ParseUUIDPipe) id: string) {
-    return this.dealsService.findOne(orgId || '70dde92d-d5ae-457e-97fe-3395059433c3', id);
+    return this.dealsService.findOne(orgId || '7a0b7904-f8b2-46da-9973-30219f647483', id);
   }
 
   @Patch(':id')

@@ -22,7 +22,7 @@ export class DealsService {
     const skip = (page - 1) * limit;
 
     const where: any = {
-      organizationId: orgId || '70dde92d-d5ae-457e-97fe-3395059433c3',
+      organizationId: orgId || '7a0b7904-f8b2-46da-9973-30219f647483',
       ...(status && { status }),
       ...(search && {
         OR: [

@@ -7,7 +7,7 @@ export class DealSourcesController {
 
   @Get()
   findAll(@Query('orgId') orgId: string) {
-    const org = orgId || '70dde92d-d5ae-457e-97fe-3395059433c3';
+    const org = orgId || '7a0b7904-f8b2-46da-9973-30219f647483';
     return this.svc.findAll(org);
   }
 
@@ -18,7 +18,7 @@ export class DealSourcesController {
 
   @Post()
   create(@Body() body: any) {
-    const orgId = body.organizationId || '70dde92d-d5ae-457e-97fe-3395059433c3';
+    const orgId = body.organizationId || '7a0b7904-f8b2-46da-9973-30219f647483';
     return this.svc.findOrCreate(orgId, body);
   }
 
