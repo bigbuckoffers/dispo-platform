@@ -1,50 +1,33 @@
 'use client';
 import { useState, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { X, Sparkles, PenLine, MessageSquare, Loader2, ChevronRight, ChevronLeft, Check } from 'lucide-react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { X, Sparkles, PenLine, MessageSquare, Loader2, ChevronRight, ChevronLeft, Check, Zap, AlertCircle } from 'lucide-react';
 import { api } from '@/lib/api';
+import { formatCurrency } from '@/lib/format';
 import toast from 'react-hot-toast';
-
 type IntakeMode = 'choose' | 'paste' | 'manual' | 'sms';
 type ManualStep = 1 | 2 | 3 | 4 | 5 | 6 | 7;
-
-interface AddDealModalProps {
-  onClose: () => void;
-  onSuccess: () => void;
-}
-
+interface AddDealModalProps { onClose: () => void; onSuccess: () => void; }
 const MANUAL_STEPS = [
-  { num: 1, label: 'Source' },
-  { num: 2, label: 'Property' },
-  { num: 3, label: 'Deal Math' },
-  { num: 4, label: 'Condition' },
-  { num: 5, label: 'Timeline' },
-  { num: 6, label: 'Links' },
-  { num: 7, label: 'Review' },
+  { num: 1, label: 'Source' }, { num: 2, label: 'Property' }, { num: 3, label: 'Deal Math' },
+  { num: 4, label: 'Condition' }, { num: 5, label: 'Timeline' }, { num: 6, label: 'Links' }, { num: 7, label: 'Review' },
 ];
-
-// Stable input component — never re-renders parent on change
 function Field({ label, id, type = 'text', placeholder = '', options, value, onChange }: {
   label: string; id: string; type?: string; placeholder?: string;
-  options?: (string | { value: string; label: string })[]; value: any;
-  onChange: (id: string, val: any) => void;
+  options?: (string | { value: string; label: string })[]; value: any; onChange: (id: string, val: any) => void;
 }) {
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const val = type === 'number' ? (parseFloat(e.target.value) || '') : e.target.value;
     onChange(id, val);
   }, [id, type, onChange]);
-
   return (
     <div>
       <label className="text-gray-400 text-xs mb-1 block">{label}</label>
       {options ? (
-        <select value={value || ''} onChange={handleChange}
-          className="w-full bg-gray-800 border border-gray-700 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500">
+        <select value={value || ''} onChange={handleChange} className="w-full bg-gray-800 border border-gray-700 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500">
           <option value="">Select...</option>
-          {options.map((o: any) => (
-            <option key={o.value || o} value={o.value || o}>{o.label || o}</option>
-          ))}
+          {options.map((o: any) => <option key={o.value || o} value={o.value || o}>{o.label || o}</option>)}
         </select>
       ) : (
         <input type={type} value={value || ''} onChange={handleChange} placeholder={placeholder}
@@ -53,11 +36,8 @@ function Field({ label, id, type = 'text', placeholder = '', options, value, onC
     </div>
   );
 }
-
 function TextArea({ label, id, placeholder, value, onChange, rows = 3 }: any) {
-  const handleChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    onChange(id, e.target.value);
-  }, [id, onChange]);
+  const handleChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => { onChange(id, e.target.value); }, [id, onChange]);
   return (
     <div>
       <label className="text-gray-400 text-xs mb-1 block">{label}</label>
@@ -66,7 +46,6 @@ function TextArea({ label, id, placeholder, value, onChange, rows = 3 }: any) {
     </div>
   );
 }
-
 export default function AddDealModal({ onClose, onSuccess }: AddDealModalProps) {
   const qc = useQueryClient();
   const [mode, setMode] = useState<IntakeMode>('choose');
@@ -75,52 +54,79 @@ export default function AddDealModal({ onClose, onSuccess }: AddDealModalProps) 
   const [facebookUrl, setFacebookUrl] = useState('');
   const [sourceType, setSourceType] = useState('MANUAL');
   const [parsedData, setParsedData] = useState<any>(null);
-  // Use a ref for form data to avoid re-renders, but also state for display
+  const [rentcastResult, setRentcastResult] = useState<any>(null);
+  const [fetchingAVM, setFetchingAVM] = useState(false);
   const formRef = useRef<Record<string, any>>({});
   const [formDisplay, setFormDisplay] = useState<Record<string, any>>({});
-
   const setField = useCallback((key: string, val: any) => {
     formRef.current = { ...formRef.current, [key]: val };
     setFormDisplay(prev => ({ ...prev, [key]: val }));
   }, []);
 
-  const parseMutation = useMutation({
-    mutationFn: () => api.post('/deals/import/raw', { rawText: pasteText, facebookUrl, sourceType }).then(r => r.data),
-    onSuccess: (data) => {
-      formRef.current = data;
-      setFormDisplay(data);
-      setParsedData(data);
-      toast.success('Deal parsed! Review and save.');
-    },
-    onError: () => toast.error('Parse failed — try manual entry'),
+  // RentCast usage
+  const { data: rcUsage } = useQuery({
+    queryKey: ['rentcast-usage'],
+    queryFn: () => api.get('/rentcast/usage').then(r => r.data).catch(() => null),
   });
 
-  const saveMutation = useMutation({
-    mutationFn: (data: any) => api.post('/deals', data).then(r => r.data),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['deals'] });
-      toast.success('Deal saved!');
-      onSuccess();
-    },
-    onError: () => toast.error('Failed to save deal'),
-  });
-
-  const handleSave = (status = 'DRAFT') => {
-    saveMutation.mutate({ ...formRef.current, status, sourceType });
+  const fetchRentcastAVM = async () => {
+    const f = formRef.current;
+    if (!f.address || !f.city || !f.state) {
+      toast.error('Fill in address, city, and state first (Step 2)');
+      return;
+    }
+    if (rcUsage?.status === 'limit_reached') {
+      toast.error('RentCast limit reached. Enter estimates manually.');
+      return;
+    }
+    setFetchingAVM(true);
+    try {
+      const res = await api.post('/rentcast/estimate', {
+        address: f.address, city: f.city, state: f.state, zipCode: f.zipCode,
+        beds: f.beds, baths: f.baths, sqft: f.sqft, propertyType: f.propertyType,
+      });
+      const data = res.data;
+      if (data.error === 'limit_reached') {
+        toast.error(data.message);
+        return;
+      }
+      if (data.value?.price) {
+        setRentcastResult(data);
+        setField('rentcastEstimate', data.value.price);
+        setField('rentcastRangeLow', data.value.priceRangeLow);
+        setField('rentcastRangeHigh', data.value.priceRangeHigh);
+        if (data.rent) setField('rentEstimate', data.rent);
+        toast.success(`RentCast AVM: ${formatCurrency(data.value.price)}`);
+        if (data.usage?.status === 'warning') toast(data.usage.message, { icon: '⚠️' });
+      } else {
+        toast.error('No estimate found for this address');
+      }
+    } catch {
+      toast.error('RentCast fetch failed');
+    } finally {
+      setFetchingAVM(false);
+    }
   };
 
+  const parseMutation = useMutation({
+    mutationFn: () => api.post('/deals/import/raw', { rawText: pasteText, facebookUrl, sourceType }).then(r => r.data),
+    onSuccess: (data) => { formRef.current = data; setFormDisplay(data); setParsedData(data); toast.success('Deal parsed! Review and save.'); },
+    onError: () => toast.error('Parse failed — try manual entry'),
+  });
+  const saveMutation = useMutation({
+    mutationFn: (data: any) => api.post('/deals', data).then(r => r.data),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['deals'] }); toast.success('Deal saved!'); onSuccess(); },
+    onError: () => toast.error('Failed to save deal'),
+  });
+  const handleSave = (status = 'DRAFT') => { saveMutation.mutate({ ...formRef.current, status, sourceType }); };
   const f = formDisplay;
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-      onClick={e => e.target === e.currentTarget && onClose()}
-    >
-      <motion.div
-        initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
-        className="bg-gray-950 border border-gray-800 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col"
-      >
+      onClick={e => e.target === e.currentTarget && onClose()}>
+      <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
+        className="bg-gray-950 border border-gray-800 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-gray-800">
           <div>
@@ -132,9 +138,21 @@ export default function AddDealModal({ onClose, onSuccess }: AddDealModalProps) 
               {mode === 'sms' && 'SMS / Twilio Deal Preview'}
             </p>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-gray-800 rounded-lg text-gray-400 transition"><X size={18} /></button>
+          <div className="flex items-center gap-3">
+            {rcUsage && rcUsage.status !== 'ok' && (
+              <div className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded-lg ${rcUsage.status === 'limit_reached' ? 'bg-red-900/40 text-red-400' : 'bg-amber-900/40 text-amber-400'}`}>
+                <AlertCircle size={11} />
+                {rcUsage.status === 'limit_reached' ? 'RentCast limit reached' : `RentCast: ${rcUsage.callsThisMonth}/${rcUsage.limit}`}
+              </div>
+            )}
+            {rcUsage && rcUsage.status === 'ok' && (
+              <div className="text-xs text-gray-600 px-2 py-1">
+                RentCast: {rcUsage.callsThisMonth}/{rcUsage.limit}
+              </div>
+            )}
+            <button onClick={onClose} className="p-2 hover:bg-gray-800 rounded-lg text-gray-400 transition"><X size={18} /></button>
+          </div>
         </div>
-
         {/* Step bar */}
         {mode === 'manual' && (
           <div className="flex px-5 pt-3 gap-1">
@@ -143,11 +161,8 @@ export default function AddDealModal({ onClose, onSuccess }: AddDealModalProps) 
             ))}
           </div>
         )}
-
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-5">
-
-          {/* CHOOSE */}
           {mode === 'choose' && (
             <div className="space-y-3">
               {[
@@ -158,17 +173,12 @@ export default function AddDealModal({ onClose, onSuccess }: AddDealModalProps) 
                 <button key={opt.id} onClick={() => setMode(opt.id as IntakeMode)}
                   className="w-full flex items-start gap-4 p-4 bg-gray-900 hover:bg-gray-800 border border-gray-800 hover:border-blue-600/50 rounded-xl transition text-left">
                   <div className={`p-2 ${opt.bg} rounded-lg mt-0.5`}><opt.icon size={20} className={opt.color} /></div>
-                  <div className="flex-1">
-                    <p className="text-white font-medium">{opt.title}</p>
-                    <p className="text-gray-500 text-sm mt-0.5">{opt.desc}</p>
-                  </div>
+                  <div className="flex-1"><p className="text-white font-medium">{opt.title}</p><p className="text-gray-500 text-sm mt-0.5">{opt.desc}</p></div>
                   <ChevronRight size={16} className="text-gray-600 mt-1 shrink-0" />
                 </button>
               ))}
             </div>
           )}
-
-          {/* PASTE */}
           {mode === 'paste' && !parsedData && (
             <div className="space-y-4">
               <div>
@@ -190,14 +200,11 @@ export default function AddDealModal({ onClose, onSuccess }: AddDealModalProps) 
               </div>
               <div>
                 <label className="text-gray-400 text-xs mb-1 block">Facebook Post URL (optional)</label>
-                <input type="url" value={facebookUrl} onChange={e => setFacebookUrl(e.target.value)}
-                  placeholder="https://facebook.com/groups/..."
+                <input type="url" value={facebookUrl} onChange={e => setFacebookUrl(e.target.value)} placeholder="https://facebook.com/groups/..."
                   className="w-full bg-gray-800 border border-gray-700 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500" />
               </div>
             </div>
           )}
-
-          {/* PARSED REVIEW */}
           {mode === 'paste' && parsedData && (
             <div className="space-y-4">
               <div className="p-3 bg-green-900/20 border border-green-800/40 rounded-lg">
@@ -212,14 +219,11 @@ export default function AddDealModal({ onClose, onSuccess }: AddDealModalProps) 
               )}
               <div className="grid grid-cols-2 gap-3">
                 {(['address','city','state','zipCode','askingPrice','arv','repairEstimate','beds'] as const).map(id => (
-                  <Field key={id} label={id} id={id} type={['askingPrice','arv','repairEstimate','beds'].includes(id) ? 'number' : 'text'}
-                    value={f[id]} onChange={setField} />
+                  <Field key={id} label={id} id={id} type={['askingPrice','arv','repairEstimate','beds'].includes(id) ? 'number' : 'text'} value={f[id]} onChange={setField} />
                 ))}
               </div>
             </div>
           )}
-
-          {/* MANUAL STEPS */}
           {mode === 'manual' && (
             <div className="space-y-4">
               {step === 1 && (
@@ -235,11 +239,8 @@ export default function AddDealModal({ onClose, onSuccess }: AddDealModalProps) 
                   <Field label="Facebook Post URL" id="facebookPostUrl" value={f.facebookPostUrl} onChange={setField} />
                   <Field label="Facebook Profile URL" id="facebookProfileUrl" value={f.facebookProfileUrl} onChange={setField} />
                   <Field label="JV Split" id="jvSplit" placeholder="50/50" value={f.jvSplit} onChange={setField} />
-                  <Field label="JV Agreement Status" id="jvAgreementStatus" value={f.jvAgreementStatus} onChange={setField}
-                    options={['Verbal','Email Agreement','Signed','Not Started']} />
-                  <div className="col-span-2">
-                    <TextArea label="Source Notes" id="sourceNotes" value={f.sourceNotes} onChange={setField} rows={2} />
-                  </div>
+                  <Field label="JV Agreement Status" id="jvAgreementStatus" value={f.jvAgreementStatus} onChange={setField} options={['Verbal','Email Agreement','Signed','Not Started']} />
+                  <div className="col-span-2"><TextArea label="Source Notes" id="sourceNotes" value={f.sourceNotes} onChange={setField} rows={2} /></div>
                 </div>
               )}
               {step === 2 && (
@@ -277,6 +278,16 @@ export default function AddDealModal({ onClose, onSuccess }: AddDealModalProps) 
                   <Field label="HOA Monthly" id="hoaMonthly" type="number" value={f.hoaMonthly} onChange={setField} />
                   <Field label="Assignment Fee" id="assignmentFee" type="number" value={f.assignmentFee} onChange={setField} />
                   <Field label="JV Fee" id="jvFee" type="number" value={f.jvFee} onChange={setField} />
+                  {rentcastResult?.value && (
+                    <div className="col-span-2 p-3 bg-blue-900/20 border border-blue-800/40 rounded-lg">
+                      <p className="text-blue-400 text-xs font-medium mb-1">⚡ RentCast AVM</p>
+                      <div className="flex gap-4 text-sm">
+                        <div><span className="text-gray-500">Value: </span><span className="text-white font-medium">{formatCurrency(rentcastResult.value.price)}</span></div>
+                        <div><span className="text-gray-500">Range: </span><span className="text-gray-300">{formatCurrency(rentcastResult.value.priceRangeLow)} – {formatCurrency(rentcastResult.value.priceRangeHigh)}</span></div>
+                        {rentcastResult.rent && <div><span className="text-gray-500">Rent: </span><span className="text-green-400">{formatCurrency(rentcastResult.rent)}/mo</span></div>}
+                      </div>
+                    </div>
+                  )}
                   {f.askingPrice && f.arv && (
                     <div className="col-span-2 p-3 bg-gray-800 rounded-lg">
                       <p className="text-gray-400 text-xs mb-1">Quick Math</p>
@@ -286,9 +297,7 @@ export default function AddDealModal({ onClose, onSuccess }: AddDealModalProps) 
                             ${((f.arv||0)-(f.askingPrice||0)-(f.repairEstimate||0)).toLocaleString()}
                           </span>
                         </div>
-                        <div><span className="text-gray-500">70% Rule: </span>
-                          <span className="text-white">${((f.arv||0)*0.70-(f.repairEstimate||0)).toLocaleString()}</span>
-                        </div>
+                        <div><span className="text-gray-500">70% Rule: </span><span className="text-white">${((f.arv||0)*0.70-(f.repairEstimate||0)).toLocaleString()}</span></div>
                       </div>
                     </div>
                   )}
@@ -301,8 +310,7 @@ export default function AddDealModal({ onClose, onSuccess }: AddDealModalProps) 
                       options={[{value:'TURNKEY',label:'Turnkey'},{value:'LIGHT_REHAB',label:'Light Rehab'},{value:'MEDIUM_REHAB',label:'Medium Rehab'},{value:'HEAVY_REHAB',label:'Heavy Rehab'},{value:'FULL_GUT',label:'Full Gut'},{value:'TEAR_DOWN',label:'Tear Down'},{value:'UNKNOWN',label:'Unknown'}]} />
                   </div>
                   {['roofCondition','hvacCondition','foundationCondition','plumbingCondition','electricalCondition','kitchenCondition','bathroomCondition','flooringCondition'].map(id => (
-                    <Field key={id} label={id.replace(/([A-Z])/g,' $1').replace('Condition','').trim()} id={id}
-                      value={f[id]} onChange={setField} options={['Good','Fair','Poor','Unknown']} />
+                    <Field key={id} label={id.replace(/([A-Z])/g,' $1').replace('Condition','').trim()} id={id} value={f[id]} onChange={setField} options={['Good','Fair','Poor','Unknown']} />
                   ))}
                   <Field label="Roof Age" id="roofAge" placeholder="5 years" value={f.roofAge} onChange={setField} />
                   <Field label="HVAC Age" id="hvacAge" placeholder="3 years" value={f.hvacAge} onChange={setField} />
@@ -335,6 +343,39 @@ export default function AddDealModal({ onClose, onSuccess }: AddDealModalProps) 
               )}
               {step === 6 && (
                 <div className="grid grid-cols-2 gap-3">
+                  {/* RentCast AVM fetch button */}
+                  <div className="col-span-2">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-gray-400 text-xs">Public Value Estimates</p>
+                      <button onClick={fetchRentcastAVM} disabled={fetchingAVM || rcUsage?.status === 'limit_reached'}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-900/40 hover:bg-blue-900/60 disabled:opacity-40 border border-blue-700/40 text-blue-400 text-xs rounded-lg transition">
+                        {fetchingAVM ? <Loader2 size={11} className="animate-spin" /> : <Zap size={11} />}
+                        {fetchingAVM ? 'Fetching...' : 'Auto-Fetch RentCast AVM'}
+                      </button>
+                    </div>
+                    {rentcastResult?.value && (
+                      <div className="p-3 bg-blue-900/20 border border-blue-800/40 rounded-lg mb-3">
+                        <div className="flex items-center justify-between">
+                          <p className="text-blue-400 text-xs font-medium">⚡ RentCast AVM fetched</p>
+                          <p className="text-gray-500 text-xs">{rcUsage?.callsThisMonth}/{rcUsage?.limit} calls used</p>
+                        </div>
+                        <div className="flex gap-4 text-sm mt-1">
+                          <div><span className="text-gray-500 text-xs">Value: </span><span className="text-white font-medium">{formatCurrency(rentcastResult.value.price)}</span></div>
+                          <div><span className="text-gray-500 text-xs">Range: </span><span className="text-gray-300 text-xs">{formatCurrency(rentcastResult.value.priceRangeLow)} – {formatCurrency(rentcastResult.value.priceRangeHigh)}</span></div>
+                        </div>
+                      </div>
+                    )}
+                    {rcUsage?.status === 'limit_reached' && (
+                      <div className="p-2.5 bg-red-900/20 border border-red-800/40 rounded-lg mb-3">
+                        <p className="text-red-400 text-xs">⚠ RentCast limit reached (50/50). Enter estimates manually or upgrade your RentCast plan.</p>
+                      </div>
+                    )}
+                    {rcUsage?.status === 'warning' && (
+                      <div className="p-2.5 bg-amber-900/20 border border-amber-800/40 rounded-lg mb-3">
+                        <p className="text-amber-400 text-xs">⚠ {rcUsage.callsThisMonth}/{rcUsage.limit} RentCast calls used this month.</p>
+                      </div>
+                    )}
+                  </div>
                   <Field label="Zillow URL" id="zillowUrl" value={f.zillowUrl} onChange={setField} />
                   <Field label="Zillow Estimate" id="zillowEstimate" type="number" value={f.zillowEstimate} onChange={setField} />
                   <Field label="Realtor.com URL" id="realtorUrl" value={f.realtorUrl} onChange={setField} />
@@ -368,13 +409,20 @@ export default function AddDealModal({ onClose, onSuccess }: AddDealModalProps) 
                         <p className="text-white text-sm mt-0.5 truncate">{v || '—'}</p>
                       </div>
                     ))}
+                    {rentcastResult?.value && (
+                      <div className="col-span-2 bg-blue-900/20 border border-blue-800/40 rounded-lg p-3">
+                        <p className="text-blue-400 text-xs font-medium mb-1">⚡ RentCast AVM</p>
+                        <div className="flex gap-4 text-sm">
+                          <div><span className="text-gray-500">Value: </span><span className="text-white font-medium">{formatCurrency(rentcastResult.value.price)}</span></div>
+                          {rentcastResult.rent && <div><span className="text-gray-500">Rent: </span><span className="text-green-400">{formatCurrency(rentcastResult.rent)}/mo</span></div>}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
             </div>
           )}
-
-          {/* SMS */}
           {mode === 'sms' && (
             <div className="space-y-4">
               <div className="p-4 bg-amber-900/20 border border-amber-800/40 rounded-xl">
@@ -385,13 +433,10 @@ export default function AddDealModal({ onClose, onSuccess }: AddDealModalProps) 
               <TextArea label="Raw SMS Text" id="rawInputText" value={f.rawInputText} onChange={setField} rows={4}
                 placeholder="3/2 Jax FL 32206, ask 78k, ARV 140k, needs 35k work, vacant" />
               <button onClick={() => { setMode('paste'); setPasteText(f.rawInputText || ''); }}
-                className="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm rounded-lg transition">
-                Parse with AI →
-              </button>
+                className="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm rounded-lg transition">Parse with AI →</button>
             </div>
           )}
         </div>
-
         {/* Footer */}
         <div className="p-5 border-t border-gray-800 flex items-center justify-between gap-3">
           {mode !== 'choose' && (
@@ -404,8 +449,7 @@ export default function AddDealModal({ onClose, onSuccess }: AddDealModalProps) 
             {mode === 'paste' && !parsedData && (
               <button onClick={() => parseMutation.mutate()} disabled={!pasteText.trim() || parseMutation.isPending}
                 className="flex items-center gap-2 px-5 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm rounded-lg font-medium transition">
-                {parseMutation.isPending ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
-                Parse Deal with AI
+                {parseMutation.isPending ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />} Parse Deal with AI
               </button>
             )}
             {mode === 'paste' && parsedData && (<>
