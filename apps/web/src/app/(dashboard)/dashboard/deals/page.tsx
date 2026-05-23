@@ -9,11 +9,11 @@ import Link from 'next/link';
 import AddDealModal from '@/components/deal/AddDealModal';
 
 function tier(s: number) {
-  if (s>=85) return {l:'Hot',       t:'text-red-400',    border:'border-l-red-500',    hot:true};
-  if (s>=75) return {l:'Strong',    t:'text-orange-400', border:'border-l-orange-500', hot:false};
-  if (s>=60) return {l:'Workable',  t:'text-yellow-400', border:'border-l-yellow-500', hot:false};
-  if (s>=40) return {l:'Needs Info',t:'text-blue-400',   border:'border-l-blue-500',   hot:false};
-  return          {l:'Weak',        t:'text-gray-500',   border:'border-l-gray-600',   hot:false};
+  if (s>=85) return {l:'Hot',       t:'text-red-400',    bdr:'border-l-red-500',    hot:true};
+  if (s>=75) return {l:'Strong',    t:'text-orange-400', bdr:'border-l-orange-400', hot:false};
+  if (s>=60) return {l:'Workable',  t:'text-yellow-400', bdr:'border-l-yellow-400', hot:false};
+  if (s>=40) return {l:'Needs Info',t:'text-blue-400',   bdr:'border-l-blue-400',   hot:false};
+  return          {l:'Weak',        t:'text-gray-500',   bdr:'border-l-gray-600',   hot:false};
 }
 
 function readiness(deal: any) {
