@@ -22,7 +22,7 @@ export class DealsService {
     const skip = (page - 1) * limit;
 
     const where: any = {
-      organizationId: orgId || '7a0b7904-f8b2-46da-9973-30219f647483',
+      organizationId: orgId || await this.prisma.organization.findFirst().then(o => o?.id || ''),
       ...(status && { status }),
       ...(search && {
         OR: [
