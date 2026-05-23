@@ -396,13 +396,14 @@ export default function DealsPage() {
                       {/* Buyers */}
                       <div className="px-2 py-3">
                         <div className={`rounded-lg px-2 py-2 border ${dm.bg}`}>
-                          <p className={`text-lg font-bold leading-none ${dm.c}`}>{b} buyers</p>
-                          <div className="mt-1 space-y-0.5">
-                            {t1>0&&<p className="text-xs text-purple-300">{t1}x Tier 1</p>}
-                            {b>t1&&b>0&&<p className="text-xs text-blue-300">{Math.round((b-t1)*0.6)}x Tier 2</p>}
-                            {b>t1&&b>0&&<p className="text-xs text-gray-400">{Math.round((b-t1)*0.4)}x Tier 3</p>}
-                            {b===0&&<p className={`text-xs ${dm.c} font-medium`}>Buyer Gap</p>}
-                          </div>
+                          <p className={`text-2xl font-bold leading-none ${dm.c}`}>{b}</p>
+                          <p className="text-gray-400 text-xs mb-1">buyers</p>
+                          {b>0&&<div className="space-y-0.5 border-t border-gray-700/50 pt-1">
+                            {t1>0&&<div className="flex justify-between"><span className="text-purple-400 text-xs">T1</span><span className="text-purple-300 text-xs font-medium">{t1}</span></div>}
+                            {b>t1&&<div className="flex justify-between"><span className="text-blue-400 text-xs">T2</span><span className="text-blue-300 text-xs font-medium">{Math.round((b-t1)*0.6)}</span></div>}
+                            {b>t1&&<div className="flex justify-between"><span className="text-gray-500 text-xs">T3</span><span className="text-gray-400 text-xs font-medium">{Math.round((b-t1)*0.4)}</span></div>}
+                          </div>}
+                          {b===0&&<p className={`text-xs ${dm.c} font-medium`}>Buyer Gap</p>}
                         </div>
                       </div>
 
