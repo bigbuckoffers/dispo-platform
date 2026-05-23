@@ -406,15 +406,6 @@ export default function DealsPage() {
 
 
 
-                      {/* Status */}
-                      <div className="px-2 flex items-center justify-center relative group/status">
-                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full whitespace-nowrap font-medium cursor-default ${SC[deal.status||'DRAFT']||'bg-gray-800 text-gray-400'}`}>{(deal.status||'DRAFT').replace(/_/g,' ')}</span>
-                        <div className="absolute right-0 top-7 z-50 hidden group-hover/status:block bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 shadow-xl w-48">
-                          <p className="text-white text-[11px] font-semibold mb-0.5">{(deal.status||'DRAFT').replace(/_/g,' ')}</p>
-                          <p className="text-gray-400 text-[10px] leading-snug">{({'DRAFT':'Not ready — still being filled out.','NEEDS_INFO':'Missing key details like price, photos, or access info.','READY_TO_MATCH':'Info complete — ready to run AI buyer matching.','MATCHED':'Buyers have been matched. Review and blast.','READY_TO_BLAST':'Matched and ready to send to your buyer list.','CAMPAIGN_ACTIVE':'Blast is live — buyers are being contacted now.','OFFER_RECEIVED':'At least one buyer has made an offer.','ACTIVE':'Active deal in progress.'} as Record<string,string>)[deal.status||'DRAFT']||'No description available.'}</p>
-                        </div>
-                      </div>
-
                       {/* Next Action */}
                       <div className="px-2 flex items-center">
                         <Link href={`/dashboard/deals/${deal.id}`} className={`inline-flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition w-full ${na.c}`}>
