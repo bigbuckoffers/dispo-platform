@@ -408,8 +408,8 @@ export default function DealsPage() {
 
                       {/* Next Action */}
                       <div className="px-2 flex items-center">
-                        <Link href={`/dashboard/deals/${deal.id}`} className={`inline-flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition w-full ${na.c}`}>
-                          {na.l} <ChevronRight size={10}/>
+                        <Link href={`/dashboard/deals/${deal.id}`} className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold transition whitespace-nowrap ${na.c}`}>
+                          {na.l} <ChevronRight size={9}/>
                         </Link>
                       </div>
 
