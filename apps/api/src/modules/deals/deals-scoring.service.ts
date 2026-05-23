@@ -68,7 +68,7 @@ export interface DealScoreResult {
 @Injectable()
 export class DealsScoringService {
 
-  score(deal: DealScoringInput): DealScoreResult {
+  calculateMetrics(deal: DealScoringInput): DealScoreResult {
     const missing: string[] = [];
     let priorityScore = 0;
 

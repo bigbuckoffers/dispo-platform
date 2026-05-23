@@ -29,7 +29,8 @@ model Organization {
 
   members      TeamMember[]
   buyers       Buyer[]
-  deals        Deal[]
+  deals                 Deal[]
+  dealSources           DealSource[]
   campaigns    Campaign[]
   subscriptions Subscription[]
   auditLogs    AuditLog[]
@@ -417,7 +418,9 @@ model Deal {
   googleMapsUrl                 String?
   streetViewUrl                 String?
   photosUrl                     String?
-  googleDriveUrl                String?
+  googleDriveUrl        String?
+  dealSourceId          String?
+  dealSource            DealSource? @relation(fields: [dealSourceId], references: [id], onDelete: SetNull)
   inspectionReportUrl           String?
   repairQuoteUrl                String?
   otherDocumentUrls             String[]
@@ -1061,4 +1064,46 @@ enum SubscriptionStatus {
   PAST_DUE
   CANCELLED
   TRIALING
+}
+
+model DealSource {
+  id                    String   @id @default(uuid())
+  organizationId        String   @db.Uuid
+  organization          Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  sourceName            String?
+  sourceType            String   @default("JV")
+  phone                 String?
+  email                 String?
+  company               String?
+  facebookProfileUrl    String?
+  facebookGroupName     String?
+  reliabilityScore      Int      @default(50)
+  reliabilityLabel      String   @default("NEW_SOURCE")
+  sourceNotes           String?
+  totalDealsSubmitted   Int      @default(0)
+  activeDeals           Int      @default(0)
+  deadDeals             Int      @default(0)
+  dealsThatGotInterest  Int      @default(0)
+  dealsThatGotOffers    Int      @default(0)
+  dealsAssigned         Int      @default(0)
+  dealsClosed           Int      @default(0)
+  badInfoCount          Int      @default(0)
+  missingInfoFrequency  Float    @default(0)
+  hadContractConfirmed  Boolean  @default(false)
+  permissionToMarket    Boolean  @default(false)
+  averageResponseTimeMin Int?
+  sendsPhotosQuickly    Boolean  @default(false)
+  providesAccessQuickly Boolean  @default(false)
+  answersQuestionsClearly Boolean @default(false)
+  goesGhostCount        Int      @default(0)
+  closedRevenueGenerated Float   @default(0)
+  isBlacklisted         Boolean  @default(false)
+  isVerified            Boolean  @default(false)
+  lastDealSubmittedAt   DateTime?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  deals                 Deal[]
+  @@index([organizationId])
+  @@index([phone])
+  @@index([email])
 }
