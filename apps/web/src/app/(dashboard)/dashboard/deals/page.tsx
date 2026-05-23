@@ -102,8 +102,8 @@ const SC: Record<string,string> = {
   OFFER_RECEIVED:'bg-orange-900/50 text-orange-300', ACTIVE:'bg-blue-900/50 text-blue-300',
 };
 
-// 13 columns: score | address | city | beds | sqft | type/status | ask | 70% | public | arv | deadline | buyers | ready | action
-const COLS = '72px 200px 72px 72px 110px 84px 90px 84px 84px 80px 120px 72px 130px';
+// 13 columns — compact single-line rows
+const COLS = '64px 220px 80px 64px 120px 90px 90px 90px 80px 80px 110px 64px 120px';
 const HDRS = ['Score','Address','Beds','Sqft','Status','Ask','70% Val','Public Val','ARV','Deadline','Buyers','Ready','Action'];
 
 export default function DealsPage() {
@@ -302,119 +302,109 @@ export default function DealsPage() {
                 const p70 = refV ? Math.round(refV*0.7) : null;
                 const under = p70&&deal.askingPrice ? deal.askingPrice<=p70 : null;
 
+                const t2count = t1>0 ? Math.max(0,Math.round((b-t1)*0.6)) : Math.round(b*0.6);
+                const t3count = t1>0 ? Math.max(0,Math.round((b-t1)*0.4)) : Math.round(b*0.4);
                 return (
                   <motion.div key={deal.id} initial={{opacity:0}} animate={{opacity:1}} transition={{delay:i*0.02}}
-                    className={`group transition-colors ${t.hot?'border-l-[3px] border-orange-500/80 bg-orange-950/15 hover:bg-orange-950/25':'border-l-[3px] border-transparent hover:bg-gray-800/25'}`}>
-                    <div className="grid items-center" style={{gridTemplateColumns:COLS}}>
+                    className={`group transition-colors ${t.hot?'border-l-[3px] border-orange-500/80 bg-orange-950/10 hover:bg-orange-950/20':'border-l-[3px] border-transparent hover:bg-gray-800/30'}`}>
+                    <div className="grid items-center h-11" style={{gridTemplateColumns:COLS}}>
 
                       {/* Score */}
-                      <div className="px-2 py-3">
-                        <div className={`rounded-xl border text-center py-1.5 ${t.b}`}>
-                          <p className={`text-lg font-bold leading-none ${t.t}`}>{sc||'—'}</p>
-                          <p className={`text-xs mt-0.5 font-medium ${t.t} opacity-90`}>{t.l}</p>
+                      <div className="px-2 flex items-center justify-center">
+                        <div className={`rounded-lg border text-center px-1.5 py-1 min-w-[48px] ${t.b}`}>
+                          <p className={`text-sm font-bold leading-none ${t.t}`}>{sc||'—'}</p>
+                          <p className={`text-[10px] font-medium ${t.t} opacity-80 leading-tight`}>{t.l}</p>
                         </div>
                       </div>
 
                       {/* Address */}
-                      <Link href={`/dashboard/deals/${deal.id}`} className="px-2 py-2 block group/row">
-                        <p className="text-white font-bold text-sm group-hover/row:text-blue-300 transition leading-snug">{deal.address||'No address'}</p>
-                        <p className="text-gray-400 text-xs mt-0.5">{[deal.city,deal.state,deal.zipCode].filter(Boolean).join(', ')}</p>
+                      <Link href={`/dashboard/deals/${deal.id}`} className="px-2 flex flex-col justify-center group/row min-w-0">
+                        <p className="text-white font-semibold text-xs group-hover/row:text-blue-300 transition truncate leading-tight">{deal.address||'No address'}</p>
+                        <p className="text-gray-500 text-[10px] truncate leading-tight">{[deal.city,deal.state,deal.zipCode].filter(Boolean).join(', ')}</p>
                       </Link>
 
 
                       {/* Beds/Baths */}
-                      <div className="px-2 py-3">
-                        {deal.beds ? (
-                          <>
-                            <p className="text-gray-200 text-sm font-medium">{deal.beds}bd/{deal.baths}ba</p>
-                            {deal.yearBuilt&&<p className="text-gray-600 text-xs">{deal.yearBuilt}</p>}
-                          </>
-                        ) : <span className="text-gray-700 text-xs">—</span>}
+                      <div className="px-2 flex items-center">
+                        {deal.beds ? <span className="text-gray-300 text-xs">{deal.beds}bd/{deal.baths}ba</span> : <span className="text-gray-700 text-xs">—</span>}
                       </div>
 
                       {/* Sqft */}
-                      <div className="px-2 py-3">
-                        {deal.sqft ? (
-                          <p className="text-gray-200 text-sm font-medium">{deal.sqft.toLocaleString()}</p>
-                        ) : <span className="text-gray-700 text-xs">—</span>}
+                      <div className="px-2 flex items-center">
+                        {deal.sqft ? <span className="text-gray-300 text-xs">{deal.sqft.toLocaleString()}</span> : <span className="text-gray-700 text-xs">—</span>}
                       </div>
 
                       {/* Status */}
-                      <div className="px-2 py-3">
-                        <span className={`text-xs px-1.5 py-0.5 rounded-full whitespace-nowrap ${SC[deal.status||'DRAFT']||'bg-gray-800 text-gray-400'}`}>{(deal.status||'DRAFT').replace(/_/g,' ')}</span>
+                      <div className="px-2 flex items-center">
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full whitespace-nowrap font-medium ${SC[deal.status||'DRAFT']||'bg-gray-800 text-gray-400'}`}>{(deal.status||'DRAFT').replace(/_/g,' ')}</span>
                       </div>
 
                       {/* Ask */}
-                      <div className="px-2 py-3 text-right">
-                        <p className="text-white font-bold text-sm">{deal.askingPrice?formatCurrency(deal.askingPrice):'—'}</p>
-                        {deal.repairEstimate>0&&<p className="text-gray-600 text-xs">+{formatCurrency(deal.repairEstimate)}</p>}
+                      <div className="px-2 flex items-center justify-end">
+                        <span className="text-white font-bold text-xs">{deal.askingPrice?formatCurrency(deal.askingPrice):'—'}</span>
                       </div>
 
                       {/* 70% */}
-                      <div className="px-2 py-3 text-right">
+                      <div className="px-2 flex flex-col items-end justify-center">
                         {p70 ? (
                           <>
-                            <p className={`font-bold text-sm ${under?'text-green-400':'text-amber-400'}`}>{formatCurrency(p70)}</p>
-                            <p className={`text-xs ${under?'text-green-600':'text-amber-600'}`}>{under?'✓ Under':'Over'}</p>
+                            <span className={`font-bold text-xs ${under?'text-green-400':'text-amber-400'}`}>{formatCurrency(p70)}</span>
+                            <span className={`text-[10px] leading-tight ${under?'text-green-600':'text-amber-600'}`}>{under?'✓ Under':'Over'}</span>
                           </>
                         ) : <span className="text-gray-700 text-xs">—</span>}
                       </div>
 
                       {/* Public Val */}
-                      <div className="px-2 py-3 text-right">
+                      <div className="px-2 flex flex-col items-end justify-center">
                         {avgP ? (
                           <>
-                            <p className="text-blue-300 text-sm font-medium">{formatCurrency(avgP)}</p>
-                            <p className="text-gray-600 text-xs">{ests.length} est.</p>
+                            <span className="text-blue-300 text-xs font-medium">{formatCurrency(avgP)}</span>
+                            <span className="text-gray-600 text-[10px]">{ests.length} est.</span>
                           </>
-                        ) : <Link href={`/dashboard/deals/${deal.id}`} className="text-gray-700 text-xs hover:text-blue-400 transition">+ Add</Link>}
+                        ) : <Link href={`/dashboard/deals/${deal.id}`} className="text-gray-700 text-[10px] hover:text-blue-400 transition">+ Add</Link>}
                       </div>
 
                       {/* ARV */}
-                      <div className="px-2 py-3 text-right">
-                        {deal.arv>0 ? (
-                          <p className="text-teal-300 text-sm font-medium">{formatCurrency(deal.arv)}</p>
-                        ) : <span className="text-gray-700 text-xs">—</span>}
+                      <div className="px-2 flex items-center justify-end">
+                        {deal.arv>0 ? <span className="text-teal-300 text-xs font-medium">{formatCurrency(deal.arv)}</span> : <span className="text-gray-700 text-xs">—</span>}
                       </div>
 
                       {/* Deadline */}
-                      <div className="px-2 py-3 text-center">
+                      <div className="px-2 flex flex-col items-center justify-center">
                         {dl ? (
                           <>
-                            <p className={`text-sm font-bold ${dl.color}`}>{dl.txt}</p>
-                            {dl.sub&&<p className="text-gray-600 text-xs">{dl.sub}</p>}
-                            {dl.urgent&&<p className="text-red-500 text-xs font-medium">⚠ Urgent</p>}
+                            <span className={`text-xs font-bold leading-tight ${dl.color}`}>{dl.txt}</span>
+                            {dl.urgent&&<span className="text-[10px] text-red-500 leading-tight">⚠ urgent</span>}
                           </>
-                        ) : <Link href={`/dashboard/deals/${deal.id}`} className="text-gray-700 text-xs hover:text-amber-400 transition">+ COE</Link>}
+                        ) : <Link href={`/dashboard/deals/${deal.id}`} className="text-gray-700 text-[10px] hover:text-amber-400 transition">+ COE</Link>}
                       </div>
 
                       {/* Buyers */}
-                      <div className="px-2 py-3">
-                        <div className={`rounded-xl px-3 py-2.5 border ${dm.bg}`}>
-                          <p className={`text-3xl font-bold leading-none ${dm.c}`}>{b}</p>
-                          <p className={`text-xs font-semibold uppercase tracking-wide mt-0.5 mb-2 ${dm.c} opacity-70`}>{dm.l}</p>
-                          {b>0&&<div className="space-y-1 border-t border-white/5 pt-2">
-                            {t1>0&&<div className="flex items-center justify-between"><span className="flex items-center gap-1 text-xs text-purple-400"><span style={{width:6,height:6,borderRadius:'50%',background:'#a78bfa',display:'inline-block'}}/> T1</span><span className="text-purple-300 text-sm font-bold">{t1}</span></div>}
-                            {b>0&&<div className="flex items-center justify-between"><span className="flex items-center gap-1 text-xs text-blue-400"><span style={{width:6,height:6,borderRadius:'50%',background:'#60a5fa',display:'inline-block'}}/> T2</span><span className="text-blue-300 text-sm font-bold">{t1>0?Math.max(0,Math.round((b-t1)*0.6)):Math.round(b*0.6)}</span></div>}
-                            {b>0&&<div className="flex items-center justify-between"><span className="flex items-center gap-1 text-xs text-gray-500"><span style={{width:6,height:6,borderRadius:'50%',background:'#4b5563',display:'inline-block'}}/> T3</span><span className="text-gray-400 text-sm font-bold">{t1>0?Math.max(0,Math.round((b-t1)*0.4)):Math.round(b*0.4)}</span></div>}
-                          </div>}
-                          {b===0&&<p className="text-red-400 text-xs mt-1">No matched buyers.<br/>Run match or find<br/>buyers in market.</p>}
-                        </div>
+                      <div className="px-2 flex items-center gap-1.5">
+                        {b>0 ? (
+                          <>
+                            <span className={`text-sm font-bold ${dm.c}`}>{b}</span>
+                            <div className="flex flex-col gap-0.5">
+                              {t1>0&&<span className="text-[9px] text-purple-400 leading-none">T1·{t1}</span>}
+                              <span className="text-[9px] text-blue-400 leading-none">T2·{t2count}</span>
+                              <span className="text-[9px] text-gray-500 leading-none">T3·{t3count}</span>
+                            </div>
+                          </>
+                        ) : <span className="text-red-500 text-[10px] font-medium">0 buyers</span>}
                       </div>
 
                       {/* Ready */}
-                      <div className="px-2 py-3 text-center">
-                        <p className={`text-lg font-bold ${r.txt}`}>{r.pct}%</p>
-                        <div className="w-full h-1 bg-gray-700 rounded-full mt-0.5 mb-0.5">
+                      <div className="px-2 flex flex-col items-center justify-center gap-0.5">
+                        <span className={`text-xs font-bold leading-none ${r.txt}`}>{r.pct}%</span>
+                        <div className="h-1 bg-gray-700 rounded-full" style={{width:40}}>
                           <div className={`h-full rounded-full ${r.bar}`} style={{width:`${r.pct}%`}}/>
                         </div>
-                        {r.blocker&&<p className="text-gray-600 text-xs">No {r.blocker}</p>}
                       </div>
 
                       {/* Action */}
-                      <div className="px-2 py-3">
-                        <Link href={`/dashboard/deals/${deal.id}`} className={`inline-flex items-center justify-center gap-1 px-2.5 py-2 rounded-lg text-xs transition w-full ${ab.c}`}>
-                          {ab.l}<ChevronRight size={11}/>
+                      <div className="px-2 flex items-center">
+                        <Link href={`/dashboard/deals/${deal.id}`} className={`inline-flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] transition w-full font-medium ${ab.c}`}>
+                          {ab.l}<ChevronRight size={10}/>
                         </Link>
                       </div>
 
