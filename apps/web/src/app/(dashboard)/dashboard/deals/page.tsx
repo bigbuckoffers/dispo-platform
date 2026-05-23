@@ -272,7 +272,7 @@ export default function DealsPage() {
 
           {/* Column headers */}
           <div className="grid border-b border-gray-700 bg-gray-800/60 text-gray-500 text-xs font-semibold uppercase tracking-wide" style={{gridTemplateColumns:COLS}}>
-            {HDRS.map(h=><div key={h} className="px-2 py-3 whitespace-nowrap">{h}</div>)}
+            {HDRS.map(h=><div key={h} className="px-2 py-3 whitespace-nowrap text-center">{h}</div>)}
           </div>
 
           {isLoading ? (
