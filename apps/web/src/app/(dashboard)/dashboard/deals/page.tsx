@@ -104,7 +104,7 @@ const SC: Record<string,string> = {
 
 // 13 columns — compact single-line rows
 const COLS = '64px 180px 80px 64px 90px 90px 90px 80px 80px 110px 64px 120px';
-const HDRS = ['Score','Address','Beds','Sqft','Status','Asking','70% Val','Public Val','ARV','Deadline','Buyers','Ready','Action'];
+const HDRS = ['Score','Address','Beds','Sqft','Asking','70% Val','Public Val','ARV','Deadline','Buyers','Ready','Status'];
 
 export default function DealsPage() {
   const [showAddDeal, setShowAddDeal] = useState(false);
