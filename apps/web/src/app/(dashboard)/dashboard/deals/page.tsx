@@ -380,7 +380,7 @@ export default function DealsPage() {
                       </div>
 
                       {/* Buyers */}
-                      <div className="px-2 flex items-center relative group/buyers">
+                      <div className="px-2 flex items-center justify-center relative group/buyers">
                         {b>0 ? (
                           <>
                             <span className={`text-sm font-bold cursor-default ${dm.c}`}>{b}</span>
