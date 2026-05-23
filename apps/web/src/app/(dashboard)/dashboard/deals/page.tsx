@@ -395,15 +395,15 @@ export default function DealsPage() {
 
                       {/* Buyers */}
                       <div className="px-2 py-3">
-                        <div className={`rounded-lg px-2 py-2 border ${dm.bg}`}>
-                          <p className={`text-2xl font-bold leading-none ${dm.c}`}>{b}</p>
-                          <p className="text-gray-400 text-xs mb-1">buyers</p>
-                          {b>0&&<div className="space-y-0.5 border-t border-gray-700/50 pt-1">
-                            {t1>0&&<div className="flex justify-between"><span className="text-purple-400 text-xs">T1</span><span className="text-purple-300 text-xs font-medium">{t1}</span></div>}
-                            {b>t1&&<div className="flex justify-between"><span className="text-blue-400 text-xs">T2</span><span className="text-blue-300 text-xs font-medium">{Math.round((b-t1)*0.6)}</span></div>}
-                            {b>t1&&<div className="flex justify-between"><span className="text-gray-500 text-xs">T3</span><span className="text-gray-400 text-xs font-medium">{Math.round((b-t1)*0.4)}</span></div>}
+                        <div className={`rounded-xl px-3 py-2.5 border ${dm.bg}`}>
+                          <p className={`text-3xl font-bold leading-none ${dm.c}`}>{b}</p>
+                          <p className={`text-xs font-semibold uppercase tracking-wide mt-0.5 mb-2 ${dm.c} opacity-70`}>{dm.l}</p>
+                          {b>0&&<div className="space-y-1 border-t border-white/5 pt-2">
+                            {t1>0&&<div className="flex items-center justify-between"><span className="flex items-center gap-1 text-xs text-purple-400"><span style={{width:6,height:6,borderRadius:'50%',background:'#a78bfa',display:'inline-block'}}/> T1</span><span className="text-purple-300 text-sm font-bold">{t1}</span></div>}
+                            {b>0&&<div className="flex items-center justify-between"><span className="flex items-center gap-1 text-xs text-blue-400"><span style={{width:6,height:6,borderRadius:'50%',background:'#60a5fa',display:'inline-block'}}/> T2</span><span className="text-blue-300 text-sm font-bold">{t1>0?Math.max(0,Math.round((b-t1)*0.6)):Math.round(b*0.6)}</span></div>}
+                            {b>0&&<div className="flex items-center justify-between"><span className="flex items-center gap-1 text-xs text-gray-500"><span style={{width:6,height:6,borderRadius:'50%',background:'#4b5563',display:'inline-block'}}/> T3</span><span className="text-gray-400 text-sm font-bold">{t1>0?Math.max(0,Math.round((b-t1)*0.4)):Math.round(b*0.4)}</span></div>}
                           </div>}
-                          {b===0&&<p className={`text-xs ${dm.c} font-medium`}>Buyer Gap</p>}
+                          {b===0&&<p className="text-red-400 text-xs mt-1">No matched buyers.<br/>Run match or find<br/>buyers in market.</p>}
                         </div>
                       </div>
 
