@@ -62,15 +62,29 @@ function deadline(deal: any) {
   return            {txt:`${days}d`,         sub:s.l,    color:'text-gray-500', urgent:false};
 }
 
-function actionBtn(deal: any, score: number) {
+function nextAction(deal: any) {
   const b = deal.matchedBuyerCount||0;
-  const a = deal.nextBestAction||'';
-  if (score>=75&&b>=3)               return {l:'Sell This Deal', c:'bg-blue-600 hover:bg-blue-500 text-white font-bold'};
-  if (deal.status==='READY_TO_BLAST')return {l:'Generate Blast', c:'bg-green-800 hover:bg-green-700 text-green-200 border border-green-700/50'};
-  if (b===0||a.toLowerCase().includes('match')) return {l:'Run Match',    c:'bg-blue-900/70 hover:bg-blue-900 text-blue-200 border border-blue-700/40'};
-  if (a.toLowerCase().includes('photo'))        return {l:'Get Photos',   c:'bg-amber-900/60 hover:bg-amber-900 text-amber-200 border border-amber-700/40'};
-  if (a.toLowerCase().includes('buyer'))        return {l:'Find Buyers',  c:'bg-orange-900/60 hover:bg-orange-900 text-orange-200 border border-orange-700/40'};
-  return {l:'Review', c:'bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700'};
+  const hasPhotos = !!(deal.photosUrl||deal.googleDriveUrl||deal.photos?.length);
+  const hasValue  = !!(deal.zillowEstimate||deal.realtorEstimate||deal.redfinEstimate||deal.rentcastEstimate||deal.arv);
+  const hasPrice  = !!deal.askingPrice;
+  const hasPermission = deal.sourceType==='OWN'||!!(deal.dealSource?.permissionToMarket);
+  if (b>0&&hasPhotos&&hasValue&&hasPrice&&hasPermission)
+    return {l:'Send Blast',       c:'bg-green-700 hover:bg-green-600 text-white'};
+  if (b>0&&!hasPhotos)
+    return {l:'Add Photos',       c:'bg-amber-700 hover:bg-amber-600 text-white'};
+  if (b>0&&!hasValue)
+    return {l:'Add Public Value', c:'bg-blue-800 hover:bg-blue-700 text-blue-100'};
+  if (b>0&&!hasPermission)
+    return {l:'Confirm JV Perm',  c:'bg-purple-800 hover:bg-purple-700 text-purple-100'};
+  if (deal.status==='OFFER_RECEIVED')
+    return {l:'Review Offer',     c:'bg-orange-600 hover:bg-orange-500 text-white'};
+  if (deal.status==='CAMPAIGN_ACTIVE')
+    return {l:'Follow Up Buyers', c:'bg-emerald-800 hover:bg-emerald-700 text-emerald-100'};
+  if (b===0&&hasPrice)
+    return {l:'Run Buyer Match',  c:'bg-blue-700 hover:bg-blue-600 text-white'};
+  if (b===0)
+    return {l:'Find Buyers',      c:'bg-orange-800 hover:bg-orange-700 text-orange-100'};
+  return   {l:'Fill In Info',     c:'bg-gray-700 hover:bg-gray-600 text-gray-200'};
 }
 
 function signal(deal: any): string {
@@ -102,9 +116,9 @@ const SC: Record<string,string> = {
   OFFER_RECEIVED:'bg-orange-900/50 text-orange-300', ACTIVE:'bg-blue-900/50 text-blue-300',
 };
 
-// 13 columns — compact single-line rows
-const COLS = '64px 180px 80px 64px 90px 90px 90px 80px 80px 110px 64px 120px';
-const HDRS = ['Score','Address','Beds','Sqft','Asking','70% Val','Public Val','ARV','Deadline','Buyers','Ready','Status'];
+// 11 columns — status badge inside address, next action at end
+const COLS = '64px 200px 72px 64px 90px 90px 90px 80px 80px 72px 130px';
+const HDRS = ['Score','Address','Beds','Sqft','Asking','70% Val','Public Val','ARV','Deadline','Buyers','Next Action'];
 
 export default function DealsPage() {
   const [showAddDeal, setShowAddDeal] = useState(false);
@@ -293,9 +307,7 @@ export default function DealsPage() {
                 const t1 = deal.tier1MatchCount||0;
                 const dm = demand(b);
                 const dl = deadline(deal);
-                const ab = actionBtn(deal, sc);
-                const sig = signal(deal);
-
+                const na = nextAction(deal);
                 const ests = [deal.zillowEstimate,deal.realtorEstimate,deal.redfinEstimate,deal.rentcastEstimate].filter((v):v is number=>typeof v==='number'&&v>0);
                 const avgP = ests.length>0 ? Math.round(ests.reduce((a,x)=>a+x,0)/ests.length) : null;
                 const refV = avgP||(deal.arv>0?deal.arv:null);
@@ -318,9 +330,10 @@ export default function DealsPage() {
                       </div>
 
                       {/* Address */}
-                      <Link href={`/dashboard/deals/${deal.id}`} className="px-2 flex flex-col justify-center group/row min-w-0">
+                      <Link href={`/dashboard/deals/${deal.id}`} className="px-2 flex flex-col justify-center group/row min-w-0 gap-0.5">
                         <p className="text-white font-semibold text-xs group-hover/row:text-blue-300 transition truncate leading-tight">{deal.address||'No address'}</p>
                         <p className="text-gray-500 text-[10px] truncate leading-tight">{[deal.city,deal.state,deal.zipCode].filter(Boolean).join(', ')}</p>
+                        <span className={`text-[9px] px-1 py-0.5 rounded font-semibold w-fit leading-none ${SC[deal.status||'DRAFT']||'bg-gray-700 text-gray-400'}`}>{(deal.status||'DRAFT').replace(/_/g,' ')}</span>
                       </Link>
 
 
@@ -388,21 +401,7 @@ export default function DealsPage() {
                         ) : <span className="text-red-500 text-sm font-bold">0</span>}
                       </div>
 
-                      {/* Ready */}
-                      <div className="px-2 flex items-center justify-center">
-                        {r.pct>=85
-                          ? <span className="text-[10px] font-semibold text-green-400 bg-green-900/30 border border-green-800/40 px-1.5 py-0.5 rounded-full whitespace-nowrap">✓ Blast Ready</span>
-                          : r.blocker==='Photos'
-                          ? <span className="text-[10px] font-semibold text-amber-400 bg-amber-900/30 border border-amber-800/40 px-1.5 py-0.5 rounded-full whitespace-nowrap">📷 Add Photos</span>
-                          : r.blocker==='Buyers'
-                          ? <span className="text-[10px] font-semibold text-red-400 bg-red-900/30 border border-red-800/40 px-1.5 py-0.5 rounded-full whitespace-nowrap">👥 No Buyers</span>
-                          : r.blocker==='Value'
-                          ? <span className="text-[10px] font-semibold text-blue-400 bg-blue-900/30 border border-blue-800/40 px-1.5 py-0.5 rounded-full whitespace-nowrap">💲 Add Value</span>
-                          : r.blocker==='Access'
-                          ? <span className="text-[10px] font-semibold text-purple-400 bg-purple-900/30 border border-purple-800/40 px-1.5 py-0.5 rounded-full whitespace-nowrap">🔑 Add Access</span>
-                          : <span className="text-[10px] font-semibold text-gray-500 bg-gray-800 border border-gray-700 px-1.5 py-0.5 rounded-full whitespace-nowrap">+ Fill Info</span>
-                        }
-                      </div>
+
 
 
 
@@ -414,6 +413,13 @@ export default function DealsPage() {
                           <p className="text-white text-[11px] font-semibold mb-0.5">{(deal.status||'DRAFT').replace(/_/g,' ')}</p>
                           <p className="text-gray-400 text-[10px] leading-snug">{({'DRAFT':'Not ready — still being filled out.','NEEDS_INFO':'Missing key details like price, photos, or access info.','READY_TO_MATCH':'Info complete — ready to run AI buyer matching.','MATCHED':'Buyers have been matched. Review and blast.','READY_TO_BLAST':'Matched and ready to send to your buyer list.','CAMPAIGN_ACTIVE':'Blast is live — buyers are being contacted now.','OFFER_RECEIVED':'At least one buyer has made an offer.','ACTIVE':'Active deal in progress.'} as Record<string,string>)[deal.status||'DRAFT']||'No description available.'}</p>
                         </div>
+                      </div>
+
+                      {/* Next Action */}
+                      <div className="px-2 flex items-center">
+                        <Link href={`/dashboard/deals/${deal.id}`} className={`inline-flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition w-full ${na.c}`}>
+                          {na.l} <ChevronRight size={10}/>
+                        </Link>
                       </div>
 
                     </div>
