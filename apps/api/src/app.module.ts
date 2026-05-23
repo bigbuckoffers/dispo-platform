@@ -17,6 +17,7 @@ import { AiModule } from './modules/ai/ai.module';
 import { BillingModule } from './modules/billing/billing.module';
 import { TeamsModule } from './modules/teams/teams.module';
 import { RentCastModule } from './modules/rentcast/rentcast.module';
+import { DealSourcesModule } from './modules/deal-sources/deal-sources.module';
 
 @Module({
   imports: [
@@ -76,6 +77,7 @@ import { RentCastModule } from './modules/rentcast/rentcast.module';
     BillingModule,
     TeamsModule,
     RentCastModule,
+    DealSourcesModule,
   ],
 })
 export class AppModule {}
