@@ -344,13 +344,10 @@ export default function DealsPage() {
                         ) : <span className="text-gray-700 text-xs">—</span>}
                       </div>
 
-                      {/* Status / Type */}
+                      {/* Status */}
                       <div className="px-2 py-3">
                         <span className={`text-xs px-1.5 py-0.5 rounded-full whitespace-nowrap ${SC[deal.status||'DRAFT']||'bg-gray-800 text-gray-400'}`}>{(deal.status||'DRAFT').replace(/_/g,' ')}</span>
-                        <div className="flex items-center gap-1 mt-1 flex-wrap">
-                          {deal.dealType&&<span className="text-indigo-400 text-xs font-medium">{deal.dealType}</span>}
-                          {deal.overallCondition&&deal.overallCondition!=='UNKNOWN'&&<span className="text-gray-600 text-xs">· {deal.overallCondition.replace(/_/g,' ')}</span>}
-                        </div>
+                        {deal.dealType&&<p className="text-indigo-400 text-xs font-medium mt-1">{deal.dealType}</p>}
                       </div>
 
                       {/* Ask */}
