@@ -390,7 +390,7 @@ export default function DealsPage() {
                               <div className="flex items-center justify-between gap-3"><span className="text-[10px] text-gray-500">Tier 3</span><span className="text-gray-400 text-xs font-bold">{t3count}</span></div>
                             </div>
                           </>
-                        ) : <span className="text-red-500 text-sm font-bold">0/span>}
+                        ) : <span className="text-red-500 text-sm font-bold">0</span>}
                       </div>
 
                       {/* Ready */}
