@@ -334,24 +334,6 @@ export default function DealsPage() {
                         {deal.sqft ? <span className="text-gray-300 text-xs">{deal.sqft.toLocaleString()}</span> : <span className="text-gray-700 text-xs">—</span>}
                       </div>
 
-                      {/* Status */}
-                      <div className="px-2 flex items-center justify-center relative group/status">
-                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full whitespace-nowrap font-medium cursor-default ${SC[deal.status||'DRAFT']||'bg-gray-800 text-gray-400'}`}>{(deal.status||'DRAFT').replace(/_/g,' ')}</span>
-                        <div className="absolute left-0 top-7 z-50 hidden group-hover/status:block bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 shadow-xl w-48">
-                          <p className="text-white text-[11px] font-semibold mb-0.5">{(deal.status||'DRAFT').replace(/_/g,' ')}</p>
-                          <p className="text-gray-400 text-[10px] leading-snug">{{
-                            DRAFT:'Not ready — still being filled out.',
-                            NEEDS_INFO:'Missing key details like price, photos, or access info.',
-                            READY_TO_MATCH:'Info complete — ready to run AI buyer matching.',
-                            MATCHED:'Buyers have been matched. Review and blast.',
-                            READY_TO_BLAST:'Matched and ready to send to your buyer list.',
-                            CAMPAIGN_ACTIVE:'Blast is live — buyers are being contacted now.',
-                            OFFER_RECEIVED:'At least one buyer has made an offer.',
-                            ACTIVE:'Active deal in progress.',
-                          }[(deal.status||'DRAFT') as string]||'No description available.'}</p>
-                        </div>
-                      </div>
-
                       {/* Ask */}
                       <div className="px-2 flex items-center justify-center">
                         <span className="text-white font-bold text-xs">{deal.askingPrice?formatCurrency(deal.askingPrice):'—'}</span>
