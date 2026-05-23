@@ -19,6 +19,11 @@ export class DealSourcesService {
   constructor(private prisma: PrismaService) {}
 
   // Find or create a source by phone, facebook URL, email, or name
+  async getDefaultOrgId(): Promise<string> {
+    const org = await this.prisma.organization.findFirst();
+    return org?.id || '';
+  }
+
   async findOrCreate(orgId: string, data: {
     sourceName?: string;
     sourceType?: string;

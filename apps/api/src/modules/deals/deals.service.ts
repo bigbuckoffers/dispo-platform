@@ -17,6 +17,11 @@ export class DealsService {
     private eventEmitter: EventEmitter2,
   ) {}
 
+  async getDefaultOrgId(): Promise<string> {
+    const org = await this.prisma.organization.findFirst();
+    return org?.id || '';
+  }
+
   async findAll(orgId: string, query: any) {
     const { page = 1, limit = 20, status, search } = query;
     const skip = (page - 1) * limit;
