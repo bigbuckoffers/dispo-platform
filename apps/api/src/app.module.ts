@@ -16,6 +16,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { AiModule } from './modules/ai/ai.module';
 import { BillingModule } from './modules/billing/billing.module';
 import { TeamsModule } from './modules/teams/teams.module';
+import { RentCastModule } from './modules/rentcast/rentcast.module';
 
 @Module({
   imports: [
@@ -74,6 +75,7 @@ import { TeamsModule } from './modules/teams/teams.module';
     AiModule,
     BillingModule,
     TeamsModule,
+    RentCastModule,
   ],
 })
 export class AppModule {}
