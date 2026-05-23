@@ -64,27 +64,30 @@ function deadline(deal: any) {
 
 function nextAction(deal: any) {
   const b = deal.matchedBuyerCount||0;
+  const isOwn = deal.sourceType==='OWN';
   const hasPhotos = !!(deal.photosUrl||deal.googleDriveUrl||deal.photos?.length);
   const hasValue  = !!(deal.zillowEstimate||deal.realtorEstimate||deal.redfinEstimate||deal.rentcastEstimate||deal.arv);
   const hasPrice  = !!deal.askingPrice;
-  const hasPermission = deal.sourceType==='OWN'||!!(deal.dealSource?.permissionToMarket);
-  if (b>0&&hasPhotos&&hasValue&&hasPrice&&hasPermission)
-    return {l:'Send Blast',       c:'bg-green-700 hover:bg-green-600 text-white'};
-  if (b>0&&!hasPhotos)
-    return {l:'Add Photos',       c:'bg-amber-700 hover:bg-amber-600 text-white'};
-  if (b>0&&!hasValue)
-    return {l:'Add Value', c:'bg-blue-800 hover:bg-blue-700 text-blue-100'};
-  if (b>0&&!hasPermission)
-    return {l:'Confirm JV',  c:'bg-purple-800 hover:bg-purple-700 text-purple-100'};
+  const hasPermission = isOwn||!!(deal.dealSource?.permissionToMarket);
   if (deal.status==='OFFER_RECEIVED')
-    return {l:'Review Offer',     c:'bg-orange-600 hover:bg-orange-500 text-white'};
+    return {l:'Review Offer',      c:'bg-orange-500/20 text-orange-300 border border-orange-500/40'};
   if (deal.status==='CAMPAIGN_ACTIVE')
-    return {l:'Follow Up', c:'bg-emerald-800 hover:bg-emerald-700 text-emerald-100'};
+    return {l:'Follow Up Buyers',  c:'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'};
+  if (b>0&&hasPhotos&&hasValue&&hasPrice&&hasPermission)
+    return {l:'Send Buyer Blast',  c:'bg-green-500/20 text-green-300 border border-green-500/40'};
+  if (b>0&&!hasPhotos&&isOwn)
+    return {l:'Upload Photos',     c:'bg-amber-500/20 text-amber-300 border border-amber-500/40'};
+  if (b>0&&!hasPhotos&&!isOwn)
+    return {l:'Request Photos',    c:'bg-amber-500/20 text-amber-300 border border-amber-500/40'};
+  if (b>0&&!hasPermission)
+    return {l:'Confirm JV',        c:'bg-purple-500/20 text-purple-300 border border-purple-500/40'};
+  if (b>0&&!hasValue)
+    return {l:'Add Zillow/Redfin', c:'bg-blue-500/20 text-blue-300 border border-blue-500/40'};
+  if (b===0&&(deal.dealPriorityScore||0)>=70)
+    return {l:'Find Buyers',       c:'bg-orange-500/20 text-orange-300 border border-orange-500/40'};
   if (b===0&&hasPrice)
-    return {l:'Run Match',  c:'bg-blue-700 hover:bg-blue-600 text-white'};
-  if (b===0)
-    return {l:'Find Buyers',      c:'bg-orange-800 hover:bg-orange-700 text-orange-100'};
-  return   {l:'Fill In Info',     c:'bg-gray-700 hover:bg-gray-600 text-gray-200'};
+    return {l:'Run Buyer Match',   c:'bg-blue-500/20 text-blue-300 border border-blue-500/40'};
+  return   {l:'Fill In Info',      c:'bg-gray-500/20 text-gray-400 border border-gray-500/40'};
 }
 
 function signal(deal: any): string {
