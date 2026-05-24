@@ -185,29 +185,49 @@ function PhotoGallery({ deal }: { deal: any }) {
 }
 
 function LocationPanel({ deal, mapsUrl, streetViewUrl }: any) {
+  const [view, setView] = useState<'map'|'satellite'|'street'>('map');
   const addr = encodeURIComponent(`${deal.address}, ${deal.city}, ${deal.state} ${deal.zipCode}`);
-  const satelliteUrl = `https://www.google.com/maps/search/?api=1&query=${addr}`;
+  const addrShort = encodeURIComponent(`${deal.address}, ${deal.city}, ${deal.state}`);
+
+  const embedSrc = view === 'street'
+    ? `https://www.google.com/maps/embed/v1/streetview?key=AIzaSyD-9tSrke72PouQMnMX-a7eZSW0jkFMBWY&location=${addrShort}&heading=210&pitch=10&fov=90`
+    : view === 'satellite'
+    ? `https://www.google.com/maps/embed/v1/place?key=AIzaSyD-9tSrke72PouQMnMX-a7eZSW0jkFMBWY&q=${addr}&maptype=satellite&zoom=18`
+    : `https://www.google.com/maps/embed/v1/place?key=AIzaSyD-9tSrke72PouQMnMX-a7eZSW0jkFMBWY&q=${addr}&zoom=15`;
 
   return (
-    <div className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden flex flex-col" style={{minHeight:280}}>
-      <div className="px-4 py-3 border-b border-gray-800 flex items-center gap-2">
-        <MapPin size={14} className="text-gray-400" />
-        <span className="text-white text-sm font-medium">Location Intelligence</span>
+    <div className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden flex flex-col">
+      <div className="px-4 py-3 border-b border-gray-800 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <MapPin size={14} className="text-gray-400" />
+          <span className="text-white text-sm font-medium">Location</span>
+        </div>
+        <div className="flex gap-1">
+          {(['map','satellite','street'] as const).map(v => (
+            <button key={v} onClick={() => setView(v)}
+              className={`text-[10px] px-2.5 py-1 rounded-full font-medium transition capitalize ${view===v ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-gray-200'}`}>
+              {v}
+            </button>
+          ))}
+        </div>
       </div>
-      <div className="flex-1 flex flex-col justify-center p-5 gap-2">
+      <div className="relative" style={{height:260}}>
+        <iframe
+          src={embedSrc}
+          width="100%"
+          height="100%"
+          style={{border:0}}
+          allowFullScreen
+          loading="lazy"
+          referrerPolicy="no-referrer-when-downgrade"
+          className="w-full h-full"
+        />
+      </div>
+      <div className="px-3 py-2 border-t border-gray-800 flex gap-2">
         <a href={mapsUrl} target="_blank" rel="noopener noreferrer"
-          className="flex items-center justify-center gap-2 w-full px-3 py-3 bg-blue-900/40 hover:bg-blue-900/60 border border-blue-700/40 text-blue-300 text-sm rounded-xl transition font-medium">
-          <Globe size={15} /> Open Google Maps
+          className="flex items-center gap-1 text-[10px] text-gray-500 hover:text-blue-400 transition">
+          <ExternalLink size={9} /> Open in Maps
         </a>
-        <a href={satelliteUrl} target="_blank" rel="noopener noreferrer"
-          className="flex items-center justify-center gap-2 w-full px-3 py-2.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-300 text-sm rounded-xl transition">
-          <Eye size={14} /> Satellite View
-        </a>
-        <a href={streetViewUrl} target="_blank" rel="noopener noreferrer"
-          className="flex items-center justify-center gap-2 w-full px-3 py-2.5 bg-green-900/40 hover:bg-green-900/60 border border-green-700/40 text-green-300 text-sm rounded-xl transition">
-          <Eye size={14} /> Street View
-        </a>
-        {deal.address && <p className="text-gray-600 text-xs text-center mt-1">{deal.address}, {deal.city}, {deal.state}</p>}
       </div>
     </div>
   );
