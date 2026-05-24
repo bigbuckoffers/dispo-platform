@@ -106,36 +106,106 @@ function GeneratedOutput({ content, onClose }: { content: string; onClose: () =>
   );
 }
 
-function PhotoGallery({ deal }: { deal: any }) {
+function PhotoGallery({ deal, onUpdate }: { deal: any; onUpdate: (data: any) => void }) {
   const [activeIdx, setActiveIdx] = useState(0);
+  const [showDriveInput, setShowDriveInput] = useState(false);
+  const [showUrlInput, setShowUrlInput] = useState(false);
+  const [driveInput, setDriveInput] = useState('');
+  const [urlInput, setUrlInput] = useState('');
+  const [dragging, setDragging] = useState(false);
   const photos: string[] = deal.photos?.filter(Boolean) || [];
   const hasDrive = !!deal.googleDriveUrl;
   const hasPhotos = photos.length > 0;
 
+  const saveDriveLink = () => {
+    if (!driveInput.trim()) return;
+    onUpdate({ googleDriveUrl: driveInput.trim() });
+    setDriveInput('');
+    setShowDriveInput(false);
+  };
+
+  const savePhotoUrl = () => {
+    if (!urlInput.trim()) return;
+    const updated = [...photos, urlInput.trim()];
+    onUpdate({ photos: updated });
+    setUrlInput('');
+    setShowUrlInput(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragging(false);
+    const text = e.dataTransfer.getData('text');
+    if (text && (text.startsWith('http') || text.startsWith('https'))) {
+      const updated = [...photos, text.trim()];
+      onUpdate({ photos: updated });
+    }
+  };
+
+  const ActionButtons = () => (
+    <div className="flex gap-2 flex-wrap">
+      <button onClick={() => { setShowUrlInput(!showUrlInput); setShowDriveInput(false); }}
+        className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs rounded-lg transition border border-gray-700">
+        <Link size={11} /> Add Photo URL
+      </button>
+      <button onClick={() => { setShowDriveInput(!showDriveInput); setShowUrlInput(false); }}
+        className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs rounded-lg transition border border-gray-700">
+        <FolderOpen size={11} /> {hasDrive ? 'Update Drive Link' : 'Add Drive Link'}
+      </button>
+      {hasDrive && (
+        <a href={deal.googleDriveUrl} target="_blank" rel="noopener noreferrer"
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-900/40 hover:bg-blue-900/60 text-blue-300 text-xs rounded-lg transition border border-blue-700/40">
+          <FolderOpen size={11} /> Open Drive
+        </a>
+      )}
+    </div>
+  );
+
+  const Inputs = () => (
+    <>
+      {showUrlInput && (
+        <div className="flex gap-2 mt-2">
+          <input value={urlInput} onChange={e => setUrlInput(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && savePhotoUrl()}
+            placeholder="Paste image URL (https://...)"
+            className="flex-1 bg-gray-800 border border-gray-700 text-gray-300 text-xs rounded-lg px-3 py-1.5 focus:outline-none focus:border-blue-500" />
+          <button onClick={savePhotoUrl} className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs rounded-lg transition">Add</button>
+          <button onClick={() => setShowUrlInput(false)} className="px-2 py-1.5 bg-gray-700 text-gray-400 text-xs rounded-lg transition"><X size={11}/></button>
+        </div>
+      )}
+      {showDriveInput && (
+        <div className="flex gap-2 mt-2">
+          <input value={driveInput} onChange={e => setDriveInput(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && saveDriveLink()}
+            placeholder="Paste Google Drive folder URL"
+            className="flex-1 bg-gray-800 border border-gray-700 text-gray-300 text-xs rounded-lg px-3 py-1.5 focus:outline-none focus:border-blue-500" />
+          <button onClick={saveDriveLink} className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs rounded-lg transition">Save</button>
+          <button onClick={() => setShowDriveInput(false)} className="px-2 py-1.5 bg-gray-700 text-gray-400 text-xs rounded-lg transition"><X size={11}/></button>
+        </div>
+      )}
+    </>
+  );
+
   if (!hasPhotos) {
     return (
-      <div className="relative bg-gray-900 rounded-xl border border-gray-800 overflow-hidden flex flex-col" style={{minHeight:280}}>
-        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
-          <Camera size={40} className="text-gray-700 mb-3" />
-          <p className="text-gray-400 font-medium text-sm mb-1">Photos Missing</p>
-          <p className="text-gray-600 text-xs mb-4">Drag & drop photos or paste a Google Drive folder link.</p>
-          {hasDrive && (
-            <a href={deal.googleDriveUrl} target="_blank" rel="noopener noreferrer"
-              className="flex items-center gap-1.5 px-3 py-2 bg-blue-900/40 border border-blue-700/40 text-blue-300 text-xs rounded-lg hover:bg-blue-900/60 transition mb-3">
-              <FolderOpen size={12} /> Open Google Drive Folder
-            </a>
-          )}
+      <div className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden flex flex-col" style={{minHeight:280}}>
+        <div className="px-4 py-3 border-b border-gray-800 flex items-center gap-2">
+          <Camera size={14} className="text-gray-400" />
+          <span className="text-white text-sm font-medium">Photos</span>
+          <span className="text-amber-400 text-xs flex items-center gap-1 ml-auto"><AlertCircle size={11}/>Missing</span>
         </div>
-        <div className="p-3 border-t border-gray-800 flex gap-2 flex-wrap">
-          <button className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs rounded-lg transition border border-gray-700">
-            <Upload size={11} /> Upload Photos
-          </button>
-          <button className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs rounded-lg transition border border-gray-700">
-            <FolderOpen size={11} /> Add Drive Link
-          </button>
-          <button className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs rounded-lg transition border border-gray-700">
-            <Link size={11} /> Add Photo URL
-          </button>
+        <div
+          onDragOver={e => { e.preventDefault(); setDragging(true); }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={handleDrop}
+          className={`flex-1 flex flex-col items-center justify-center p-6 text-center transition ${dragging ? 'bg-blue-900/20 border-2 border-dashed border-blue-500' : ''}`}>
+          <Camera size={36} className="text-gray-700 mb-3" />
+          <p className="text-gray-400 font-medium text-sm mb-1">Photos Missing</p>
+          <p className="text-gray-600 text-xs">Drag & drop a photo URL, or add links below.</p>
+        </div>
+        <div className="p-3 border-t border-gray-800 space-y-2">
+          <ActionButtons />
+          <Inputs />
         </div>
       </div>
     );
@@ -143,8 +213,14 @@ function PhotoGallery({ deal }: { deal: any }) {
 
   return (
     <div className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+      <div className="px-4 py-3 border-b border-gray-800 flex items-center gap-2">
+        <Camera size={14} className="text-gray-400" />
+        <span className="text-white text-sm font-medium">Photos</span>
+        <span className="text-gray-500 text-xs ml-auto">{photos.length} photo{photos.length !== 1 ? 's' : ''}</span>
+      </div>
       <div className="relative bg-gray-800" style={{aspectRatio:'16/9'}}>
-        <img src={photos[activeIdx]} alt="Property" className="w-full h-full object-cover" />
+        <img src={photos[activeIdx]} alt="Property" className="w-full h-full object-cover"
+          onError={e => { (e.target as any).style.display='none'; }} />
         {photos.length > 1 && (
           <>
             <button onClick={() => setActiveIdx(i => (i - 1 + photos.length) % photos.length)}
@@ -169,16 +245,9 @@ function PhotoGallery({ deal }: { deal: any }) {
           ))}
         </div>
       )}
-      <div className="px-3 pb-3 flex gap-2">
-        <button className="flex items-center gap-1.5 px-2.5 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs rounded-lg transition border border-gray-700">
-          <Upload size={11} /> Upload
-        </button>
-        {hasDrive && (
-          <a href={deal.googleDriveUrl} target="_blank" rel="noopener noreferrer"
-            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs rounded-lg transition border border-gray-700">
-            <FolderOpen size={11} /> Drive Folder
-          </a>
-        )}
+      <div className="p-3 border-t border-gray-800 space-y-2">
+        <ActionButtons />
+        <Inputs />
       </div>
     </div>
   );
@@ -329,6 +398,12 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['deal', id] }); toast.success('Status updated'); },
   });
 
+  const updateDeal = useMutation({
+    mutationFn: (data: any) => api.patch(`/deals/${id}`, data).then(r => r.data),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['deal', id] }); toast.success('Saved!'); },
+    onError: () => toast.error('Failed to save'),
+  });
+
   if (isLoading) return <div className="p-6 text-gray-500 text-sm">Loading deal...</div>;
   if (!deal) return <div className="p-6 text-red-400 text-sm">Deal not found. <a href="/dashboard/deals" className="underline">Go back</a></div>;
 
@@ -419,7 +494,7 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
 
       {/* VISUAL DEAL SNAPSHOT */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <PhotoGallery deal={deal} />
+        <PhotoGallery deal={deal} onUpdate={(data) => updateDeal.mutate(data)} />
         <LocationPanel deal={deal} mapsUrl={mapsUrl} streetViewUrl={streetViewUrl} />
       </div>
 
