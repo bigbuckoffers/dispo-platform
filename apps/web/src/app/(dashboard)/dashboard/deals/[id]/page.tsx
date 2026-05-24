@@ -190,10 +190,10 @@ function LocationPanel({ deal, mapsUrl, streetViewUrl }: any) {
   const addrShort = encodeURIComponent(`${deal.address}, ${deal.city}, ${deal.state}`);
 
   const embedSrc = view === 'street'
-    ? `https://www.google.com/maps/embed/v1/streetview?key=AIzaSyD-9tSrke72PouQMnMX-a7eZSW0jkFMBWY&location=${addrShort}&heading=210&pitch=10&fov=90`
+    ? `https://www.google.com/maps/embed/v1/streetview?key=AIzaSyCyZoYeXKHEDYrp2X8UpKe2c2j4_WtHGgY&location=${addrShort}&heading=210&pitch=10&fov=90`
     : view === 'satellite'
-    ? `https://www.google.com/maps/embed/v1/place?key=AIzaSyD-9tSrke72PouQMnMX-a7eZSW0jkFMBWY&q=${addr}&maptype=satellite&zoom=18`
-    : `https://www.google.com/maps/embed/v1/place?key=AIzaSyD-9tSrke72PouQMnMX-a7eZSW0jkFMBWY&q=${addr}&zoom=15`;
+    ? `https://www.google.com/maps/embed/v1/place?key=AIzaSyCyZoYeXKHEDYrp2X8UpKe2c2j4_WtHGgY&q=${addr}&maptype=satellite&zoom=18`
+    : `https://www.google.com/maps/embed/v1/place?key=AIzaSyCyZoYeXKHEDYrp2X8UpKe2c2j4_WtHGgY&q=${addr}&zoom=15`;
 
   return (
     <div className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden flex flex-col">
