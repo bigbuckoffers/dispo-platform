@@ -284,7 +284,7 @@ export default function DealsPage() {
         <div style={{minWidth:'1200px'}}>
 
           {/* Column headers */}
-          <div className="grid border-b border-gray-700 bg-gray-800/60 text-gray-500 text-xs font-semibold uppercase tracking-wide" style={{gridTemplateColumns:COLS}}>
+          <div className="grid border-b border-gray-700 bg-gray-800/60 text-gray-500 text-xs font-semibold uppercase tracking-wide" style={{gridTemplateColumns:COLS, width:"fit-content", minWidth:"100%"}}>
             {HDRS.map((h,i)=><div key={h} className={`px-2 py-3 whitespace-nowrap ${i===1?'text-left':'text-center'}`}>{h}</div>)}
           </div>
 
@@ -318,7 +318,7 @@ export default function DealsPage() {
                 return (
                   <motion.div key={deal.id} initial={{opacity:0}} animate={{opacity:1}} transition={{delay:i*0.02}}
                     className={`group transition-colors ${t.hot?'border-l-[3px] border-orange-500/80 bg-orange-950/10 hover:bg-orange-950/20':'border-l-[3px] border-transparent hover:bg-gray-800/30'}`}>
-                    <div className="grid items-center min-h-[44px]" style={{gridTemplateColumns:COLS}}>
+                    <div className="grid items-center min-h-[44px]" style={{gridTemplateColumns:COLS, width:"fit-content", minWidth:"100%"}}>
 
                       {/* Score */}
                       <div className="flex items-center justify-start px-2">
