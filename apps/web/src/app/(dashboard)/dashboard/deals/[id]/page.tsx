@@ -7,7 +7,8 @@ import {
   TrendingUp, Target, Send, Clock, FileText, ExternalLink,
   Phone, Mail, RefreshCw, Sparkles, Flame, Shield, BarChart3,
   Copy, CheckCircle, ChevronDown, ChevronUp, Camera, FolderOpen,
-  Globe, Eye, Lock, Share2, Facebook, MessageSquare, Edit3, X
+  Globe, Eye, Lock, Share2, Facebook, MessageSquare, Edit3, X,
+  ChevronLeft, ChevronRight, Upload, Link, Image, Star, Plus
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { formatCurrency } from '@/lib/format';
@@ -43,8 +44,7 @@ function InfoRow({ label, value, mono = false, href }: { label: string; value: a
     <div className="flex justify-between items-start py-2 border-b border-gray-800/50 last:border-0">
       <span className="text-gray-500 text-sm shrink-0 mr-4">{label}</span>
       {href ? (
-        <a href={href} target="_blank" rel="noopener noreferrer"
-          className="text-blue-400 text-sm hover:underline flex items-center gap-1">
+        <a href={href} target="_blank" rel="noopener noreferrer" className="text-blue-400 text-sm hover:underline flex items-center gap-1">
           {value} <ExternalLink size={11} />
         </a>
       ) : (
@@ -54,13 +54,14 @@ function InfoRow({ label, value, mono = false, href }: { label: string; value: a
   );
 }
 
-function Card({ title, icon: Icon, children, className = '', warning }: any) {
+function Card({ title, icon: Icon, children, className = '', warning, badge }: any) {
   return (
     <div className={`bg-gray-900 rounded-xl border border-gray-800 overflow-hidden ${className}`}>
       <div className="px-4 py-3 border-b border-gray-800 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Icon size={14} className="text-gray-400" />
           <h3 className="text-white text-sm font-medium">{title}</h3>
+          {badge && <span className="text-xs px-2 py-0.5 rounded-full bg-blue-900/50 text-blue-300">{badge}</span>}
         </div>
         {warning && <span className="text-amber-400 text-xs flex items-center gap-1"><AlertCircle size={11} />{warning}</span>}
       </div>
@@ -90,22 +91,178 @@ function GeneratedOutput({ content, onClose }: { content: string; onClose: () =>
         <span className="text-gray-400 text-xs font-medium">Generated Output</span>
         <div className="flex items-center gap-2">
           <CopyButton text={text} />
-          <button onClick={() => setEditing(!editing)}
-            className="flex items-center gap-1 px-2 py-1 bg-gray-700 hover:bg-gray-600 text-gray-400 text-xs rounded transition">
+          <button onClick={() => setEditing(!editing)} className="flex items-center gap-1 px-2 py-1 bg-gray-700 hover:bg-gray-600 text-gray-400 text-xs rounded transition">
             <Edit3 size={11} /> {editing ? 'Done' : 'Edit'}
           </button>
-          <button onClick={onClose} className="p-1 hover:bg-gray-700 rounded text-gray-500 transition">
-            <X size={13} />
-          </button>
+          <button onClick={onClose} className="p-1 hover:bg-gray-700 rounded text-gray-500 transition"><X size={13} /></button>
         </div>
       </div>
       {editing ? (
-        <textarea value={text} onChange={e => setText(e.target.value)} rows={6}
-          className="w-full bg-transparent text-gray-300 text-sm p-3 focus:outline-none resize-none" />
+        <textarea value={text} onChange={e => setText(e.target.value)} rows={6} className="w-full bg-transparent text-gray-300 text-sm p-3 focus:outline-none resize-none" />
       ) : (
         <p className="text-gray-300 text-sm p-3 leading-relaxed whitespace-pre-wrap">{text}</p>
       )}
     </motion.div>
+  );
+}
+
+function PhotoGallery({ deal }: { deal: any }) {
+  const [activeIdx, setActiveIdx] = useState(0);
+  const photos: string[] = deal.photos?.filter(Boolean) || [];
+  const hasDrive = !!deal.googleDriveUrl;
+  const hasPhotos = photos.length > 0;
+
+  if (!hasPhotos) {
+    return (
+      <div className="relative bg-gray-900 rounded-xl border border-gray-800 overflow-hidden flex flex-col" style={{minHeight:280}}>
+        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+          <Camera size={40} className="text-gray-700 mb-3" />
+          <p className="text-gray-400 font-medium text-sm mb-1">Photos Missing</p>
+          <p className="text-gray-600 text-xs mb-4">Drag & drop photos or paste a Google Drive folder link.</p>
+          {hasDrive && (
+            <a href={deal.googleDriveUrl} target="_blank" rel="noopener noreferrer"
+              className="flex items-center gap-1.5 px-3 py-2 bg-blue-900/40 border border-blue-700/40 text-blue-300 text-xs rounded-lg hover:bg-blue-900/60 transition mb-3">
+              <FolderOpen size={12} /> Open Google Drive Folder
+            </a>
+          )}
+        </div>
+        <div className="p-3 border-t border-gray-800 flex gap-2 flex-wrap">
+          <button className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs rounded-lg transition border border-gray-700">
+            <Upload size={11} /> Upload Photos
+          </button>
+          <button className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs rounded-lg transition border border-gray-700">
+            <FolderOpen size={11} /> Add Drive Link
+          </button>
+          <button className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs rounded-lg transition border border-gray-700">
+            <Link size={11} /> Add Photo URL
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+      <div className="relative bg-gray-800" style={{aspectRatio:'16/9'}}>
+        <img src={photos[activeIdx]} alt="Property" className="w-full h-full object-cover" />
+        {photos.length > 1 && (
+          <>
+            <button onClick={() => setActiveIdx(i => (i - 1 + photos.length) % photos.length)}
+              className="absolute left-2 top-1/2 -translate-y-1/2 p-1.5 bg-black/60 hover:bg-black/80 rounded-full text-white transition">
+              <ChevronLeft size={14} />
+            </button>
+            <button onClick={() => setActiveIdx(i => (i + 1) % photos.length)}
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 bg-black/60 hover:bg-black/80 rounded-full text-white transition">
+              <ChevronRight size={14} />
+            </button>
+            <span className="absolute bottom-2 right-2 text-xs bg-black/60 text-white px-2 py-0.5 rounded-full">{activeIdx + 1}/{photos.length}</span>
+          </>
+        )}
+      </div>
+      {photos.length > 1 && (
+        <div className="flex gap-1.5 p-2 overflow-x-auto">
+          {photos.map((p, i) => (
+            <button key={i} onClick={() => setActiveIdx(i)}
+              className={`shrink-0 w-12 h-12 rounded-lg overflow-hidden border-2 transition ${i === activeIdx ? 'border-blue-500' : 'border-transparent'}`}>
+              <img src={p} alt="" className="w-full h-full object-cover" />
+            </button>
+          ))}
+        </div>
+      )}
+      <div className="px-3 pb-3 flex gap-2">
+        <button className="flex items-center gap-1.5 px-2.5 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs rounded-lg transition border border-gray-700">
+          <Upload size={11} /> Upload
+        </button>
+        {hasDrive && (
+          <a href={deal.googleDriveUrl} target="_blank" rel="noopener noreferrer"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs rounded-lg transition border border-gray-700">
+            <FolderOpen size={11} /> Drive Folder
+          </a>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function LocationPanel({ deal, mapsUrl, streetViewUrl }: any) {
+  const addr = encodeURIComponent(`${deal.address}, ${deal.city}, ${deal.state} ${deal.zipCode}`);
+  const satelliteUrl = `https://www.google.com/maps/search/?api=1&query=${addr}`;
+
+  return (
+    <div className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden flex flex-col" style={{minHeight:280}}>
+      <div className="px-4 py-3 border-b border-gray-800 flex items-center gap-2">
+        <MapPin size={14} className="text-gray-400" />
+        <span className="text-white text-sm font-medium">Location Intelligence</span>
+      </div>
+      <div className="flex-1 flex flex-col justify-center p-5 gap-2">
+        <a href={mapsUrl} target="_blank" rel="noopener noreferrer"
+          className="flex items-center justify-center gap-2 w-full px-3 py-3 bg-blue-900/40 hover:bg-blue-900/60 border border-blue-700/40 text-blue-300 text-sm rounded-xl transition font-medium">
+          <Globe size={15} /> Open Google Maps
+        </a>
+        <a href={satelliteUrl} target="_blank" rel="noopener noreferrer"
+          className="flex items-center justify-center gap-2 w-full px-3 py-2.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-300 text-sm rounded-xl transition">
+          <Eye size={14} /> Satellite View
+        </a>
+        <a href={streetViewUrl} target="_blank" rel="noopener noreferrer"
+          className="flex items-center justify-center gap-2 w-full px-3 py-2.5 bg-green-900/40 hover:bg-green-900/60 border border-green-700/40 text-green-300 text-sm rounded-xl transition">
+          <Eye size={14} /> Street View
+        </a>
+        {deal.address && <p className="text-gray-600 text-xs text-center mt-1">{deal.address}, {deal.city}, {deal.state}</p>}
+      </div>
+    </div>
+  );
+}
+
+function BlastReadiness({ deal }: { deal: any }) {
+  const hasPhotos = !!(deal.photosUrl || deal.googleDriveUrl || deal.photos?.length);
+  const hasValue = !!(deal.zillowEstimate || deal.realtorEstimate || deal.redfinEstimate || deal.arv);
+  const hasDesc = !!deal.description;
+  const hasPrice = !!deal.askingPrice;
+  const hasCOE = !!deal.closingDate;
+  const hasSource = !!(deal.sourceName || deal.sourcePhone);
+  const isOwn = deal.sourceType === 'OWN';
+  const hasPermission = isOwn || !!(deal.dealSource?.permissionToMarket);
+  const hasBuyers = (deal.matchedBuyerCount || 0) > 0;
+  const hasAccess = !!deal.accessInfo;
+
+  const checks = [
+    { label: 'Photos available', ok: hasPhotos, critical: true },
+    { label: 'Access / lockbox confirmed', ok: hasAccess, critical: false },
+    { label: 'Buyer-facing description', ok: hasDesc, critical: true },
+    { label: 'Asking price confirmed', ok: hasPrice, critical: true },
+    { label: 'COE / closing date known', ok: hasCOE, critical: false },
+    { label: 'Source contact confirmed', ok: hasSource, critical: false },
+    { label: 'Permission to market', ok: hasPermission, critical: true },
+    { label: 'Buyer matches selected', ok: hasBuyers, critical: true },
+  ];
+
+  const passed = checks.filter(c => c.ok).length;
+  const pct = Math.round((passed / checks.length) * 100);
+  const blastReady = checks.filter(c => c.critical).every(c => c.ok);
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-3">
+        <span className={`text-sm font-bold ${blastReady ? 'text-green-400' : 'text-amber-400'}`}>
+          {blastReady ? '✓ Blast Ready' : `Not blast ready — ${pct}% complete`}
+        </span>
+        <span className="text-gray-500 text-xs">{passed}/{checks.length}</span>
+      </div>
+      <div className="h-1.5 bg-gray-800 rounded-full mb-3">
+        <div className={`h-full rounded-full transition-all ${blastReady ? 'bg-green-500' : pct >= 60 ? 'bg-amber-500' : 'bg-red-500'}`} style={{width:`${pct}%`}} />
+      </div>
+      <div className="space-y-1.5">
+        {checks.map((c, i) => (
+          <div key={i} className="flex items-center gap-2">
+            <div className={`w-4 h-4 rounded-full flex items-center justify-center shrink-0 ${c.ok ? 'bg-green-900/60' : c.critical ? 'bg-red-900/60' : 'bg-gray-800'}`}>
+              {c.ok ? <CheckCircle size={10} className="text-green-400" /> : <X size={8} className={c.critical ? 'text-red-400' : 'text-gray-600'} />}
+            </div>
+            <span className={`text-xs ${c.ok ? 'text-gray-400' : c.critical ? 'text-red-300' : 'text-gray-500'}`}>{c.label}</span>
+            {!c.ok && c.critical && <span className="text-[9px] text-red-500 uppercase font-bold ml-auto">required</span>}
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -128,10 +285,7 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
 
   const followUpAction = useMutation({
     mutationFn: () => api.post(`/deals/${id}/generate-follow-up`).then(r => r.data),
-    onSuccess: (data) => {
-      setGeneratedOutput(prev => ({ ...prev, followUp: data.message }));
-      toast.success('Follow-up generated!');
-    },
+    onSuccess: (data) => { setGeneratedOutput(prev => ({ ...prev, followUp: data.message })); toast.success('Follow-up generated!'); },
   });
 
   const matchAction = useMutation({
@@ -142,14 +296,12 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
   const generateContent = useMutation({
     mutationFn: (type: string) => api.post(`/deals/${id}/generate-content`, { type }).then(r => r.data).catch(() => ({
       content: type === 'sms'
-        ? `🏠 ${deal?.address}, ${deal?.city} ${deal?.state}\n${deal?.beds}bd/${deal?.baths}ba · ${deal?.sqft?.toLocaleString()} sqft · ${deal?.overallCondition?.replace(/_/g, ' ')}\nAsking: ${deal?.askingPrice ? formatCurrency(deal.askingPrice) : 'TBD'} · ARV: ${deal?.arv ? formatCurrency(deal.arv) : 'TBD'}\n${deal?.description || ''}\nReply for more info or to schedule showing.`
+        ? `🏠 ${deal?.address}, ${deal?.city} ${deal?.state}\n${deal?.beds}bd/${deal?.baths}ba · ${deal?.sqft?.toLocaleString()} sqft\nAsking: ${deal?.askingPrice ? formatCurrency(deal.askingPrice) : 'TBD'} · ARV: ${deal?.arv ? formatCurrency(deal.arv) : 'TBD'}\n${deal?.description || ''}\nReply for more info.`
         : type === 'email'
-        ? `Subject: New Deal Alert — ${deal?.address}, ${deal?.city} ${deal?.state}\n\nHey [Buyer Name],\n\nWe have a new deal that matches your buy box:\n\n📍 ${deal?.address}, ${deal?.city}, ${deal?.state} ${deal?.zipCode}\n🏠 ${deal?.propertyType} · ${deal?.beds}bd/${deal?.baths}ba · ${deal?.sqft?.toLocaleString()} sqft\n💰 Asking: ${deal?.askingPrice ? formatCurrency(deal.askingPrice) : 'TBD'} · ARV: ${deal?.arv ? formatCurrency(deal.arv) : 'TBD'}\n🔨 Repairs: ${deal?.repairEstimate ? formatCurrency(deal.repairEstimate) : 'TBD'}\n\n${deal?.description || ''}\n\nLet me know if you want more details or want to schedule a showing!\n\nThanks,\nShane`
-        : `🏠 New deal available — ${deal?.address}, ${deal?.city} ${deal?.state}\n\n${deal?.beds}bd/${deal?.baths}ba ${deal?.propertyType} · Asking ${deal?.askingPrice ? formatCurrency(deal.askingPrice) : 'TBD'} · ARV ${deal?.arv ? formatCurrency(deal.arv) : 'TBD'}\n\n${deal?.description || ''}\n\nComment or DM for details. #wholesaledeals #realestateinvesting`
+        ? `Subject: New Deal — ${deal?.address}, ${deal?.city} ${deal?.state}\n\nHey [Buyer Name],\n\n📍 ${deal?.address}, ${deal?.city}, ${deal?.state} ${deal?.zipCode}\n🏠 ${deal?.propertyType} · ${deal?.beds}bd/${deal?.baths}ba · ${deal?.sqft?.toLocaleString()} sqft\n💰 Asking: ${deal?.askingPrice ? formatCurrency(deal.askingPrice) : 'TBD'} · ARV: ${deal?.arv ? formatCurrency(deal.arv) : 'TBD'}\n\n${deal?.description || ''}\n\nLet me know if interested!\n\nThanks,\nShane`
+        : `🏠 New deal — ${deal?.address}, ${deal?.city} ${deal?.state}\n\n${deal?.beds}bd/${deal?.baths}ba · Asking ${deal?.askingPrice ? formatCurrency(deal.askingPrice) : 'TBD'}\n\n${deal?.description || ''}\n\nComment or DM for details.`
     })),
-    onSuccess: (data, type) => {
-      setGeneratedOutput(prev => ({ ...prev, [type as string]: data.content || data.message }));
-    },
+    onSuccess: (data, type) => { setGeneratedOutput(prev => ({ ...prev, [type as string]: data.content || data.message })); },
   });
 
   const updateStatus = useMutation({
@@ -160,71 +312,49 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
   if (isLoading) return <div className="p-6 text-gray-500 text-sm">Loading deal...</div>;
   if (!deal) return <div className="p-6 text-red-400 text-sm">Deal not found. <a href="/dashboard/deals" className="underline">Go back</a></div>;
 
-  const spread = deal.spread ?? ((deal.arv || 0) - (deal.askingPrice || 0) - (deal.repairEstimate || 0));
+  const potentialMargin = (deal.arv || 0) - (deal.askingPrice || 0) - (deal.repairEstimate || 0);
   const priority = getPriorityBadge(deal.dealPriorityScore || 0);
   const missing = deal.missingInfo || [];
   const hasPhotos = !!(deal.photosUrl || deal.googleDriveUrl || (deal.photos && deal.photos.length > 0));
   const hasSource = !!(deal.sourceName || deal.sourcePhone);
   const isJvOrFacebook = ['JV', 'FACEBOOK', 'BIRD_DOG'].includes(deal.sourceType);
-
-  // Generate Google Maps URL from address if not set
-  const mapsUrl = deal.googleMapsUrl || (deal.address ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${deal.address}, ${deal.city}, ${deal.state} ${deal.zipCode}`)}` : null);
-  const streetViewUrl = deal.streetViewUrl || (deal.address ? `https://www.google.com/maps/@?api=1&map_action=pano&parameters&query=${encodeURIComponent(`${deal.address}, ${deal.city}, ${deal.state}`)}` : null);
-
-  // Public estimates
+  const mapsUrl = deal.googleMapsUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${deal.address}, ${deal.city}, ${deal.state} ${deal.zipCode}`)}`;
+  const streetViewUrl = deal.streetViewUrl || `https://www.google.com/maps/@?api=1&map_action=pano&query=${encodeURIComponent(`${deal.address}, ${deal.city}, ${deal.state}`)}`;
   const pubEstimates = [deal.zillowEstimate, deal.realtorEstimate, deal.redfinEstimate].filter(Boolean) as number[];
   const avgPublicEstimate = pubEstimates.length > 0 ? pubEstimates.reduce((a, b) => a + b, 0) / pubEstimates.length : 0;
   const seventyPctAvg = avgPublicEstimate * 0.70;
   const seventyPctMinusRepairs = seventyPctAvg - (deal.repairEstimate || 0);
 
-  // Smart main action button
   const getMainAction = () => {
-    const coreFieldsMissing = !deal.arv || !deal.askingPrice || !deal.propertyType;
-    if (!deal.address || coreFieldsMissing) return { label: 'Complete Missing Info', icon: AlertCircle, color: 'bg-amber-600 hover:bg-amber-500', fn: () => setTab('dispo') };
+    if (!deal.address || !deal.askingPrice) return { label: 'Complete Missing Info', icon: AlertCircle, color: 'bg-amber-600 hover:bg-amber-500', fn: () => setTab('dispo') };
     if (missing.length > 4) return { label: 'Generate Follow-Up', icon: Send, color: 'bg-blue-600 hover:bg-blue-500', fn: () => followUpAction.mutate() };
     if ((deal.matchedBuyerCount || 0) === 0) return { label: 'Run Buyer Match', icon: Target, color: 'bg-purple-600 hover:bg-purple-500', fn: () => matchAction.mutate() };
-    if (!hasPhotos || !deal.accessInfo) return { label: 'Complete Blast Requirements', icon: Camera, color: 'bg-orange-600 hover:bg-orange-500', fn: () => setTab('dispo') };
-    if (deal.status === 'READY_TO_BLAST' || (deal.matchedBuyerCount || 0) > 0) return { label: 'Generate Buyer Blast', icon: Zap, color: 'bg-green-600 hover:bg-green-500', fn: () => { setTab('dispo'); generateContent.mutate('sms'); } };
-    if (deal.status === 'CAMPAIGN_ACTIVE') return { label: 'Start Campaign', icon: Flame, color: 'bg-red-600 hover:bg-red-500', fn: () => toast.success('Campaign management coming soon!') };
+    if (!hasPhotos) return { label: 'Add Photos', icon: Camera, color: 'bg-orange-600 hover:bg-orange-500', fn: () => setTab('dispo') };
+    if ((deal.matchedBuyerCount || 0) > 0) return { label: 'Generate Buyer Blast', icon: Zap, color: 'bg-green-600 hover:bg-green-500', fn: () => { setTab('dispo'); generateContent.mutate('sms'); } };
     return { label: 'Run Buyer Match', icon: Target, color: 'bg-blue-600 hover:bg-blue-500', fn: () => matchAction.mutate() };
   };
   const mainAction = getMainAction();
   const isActionLoading = followUpAction.isPending || matchAction.isPending || generateContent.isPending;
 
   return (
-    <div className="p-6 max-w-6xl mx-auto space-y-5">
+    <div className="p-4 max-w-7xl mx-auto space-y-4">
 
       {/* Header */}
-      <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
-        <div className="flex items-start justify-between gap-4">
+      <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}>
+        <div className="flex items-start justify-between gap-4 mb-3">
           <div className="flex-1">
             <div className="flex items-center gap-2 flex-wrap mb-1.5">
-              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[deal.status] || 'bg-gray-800 text-gray-400'}`}>
-                {(deal.status || 'DRAFT').replace(/_/g, ' ')}
-              </span>
-              {deal.sourceType && deal.sourceType !== 'MANUAL' && (
-                <span className="text-xs px-2 py-0.5 rounded-full bg-gray-800 text-gray-400 border border-gray-700">{deal.sourceType}</span>
-              )}
-              {deal.propertyType && (
-                <span className="text-xs px-2 py-0.5 rounded-full bg-gray-800 text-gray-400 border border-gray-700">{deal.propertyType.replace(/_/g, ' ')}</span>
-              )}
-              {deal.occupancy && deal.occupancy !== 'UNKNOWN' && (
-                <span className="text-xs px-2 py-0.5 rounded-full bg-gray-800 text-gray-400 border border-gray-700">{deal.occupancy.replace(/_/g, ' ')}</span>
-              )}
-              {deal.dealType && (
-                <span className="text-xs px-2 py-0.5 rounded-full bg-indigo-900/60 text-indigo-300 border border-indigo-700/40">{deal.dealType}</span>
-              )}
+              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[deal.status] || 'bg-gray-800 text-gray-400'}`}>{(deal.status || 'DRAFT').replace(/_/g, ' ')}</span>
+              {deal.sourceType && deal.sourceType !== 'MANUAL' && <span className="text-xs px-2 py-0.5 rounded-full bg-gray-800 text-gray-400 border border-gray-700">{deal.sourceType}</span>}
+              {deal.propertyType && <span className="text-xs px-2 py-0.5 rounded-full bg-gray-800 text-gray-400 border border-gray-700">{deal.propertyType.replace(/_/g, ' ')}</span>}
+              {deal.occupancy && deal.occupancy !== 'UNKNOWN' && <span className="text-xs px-2 py-0.5 rounded-full bg-gray-800 text-gray-400 border border-gray-700">{deal.occupancy.replace(/_/g, ' ')}</span>}
+              {deal.dealType && <span className="text-xs px-2 py-0.5 rounded-full bg-indigo-900/60 text-indigo-300 border border-indigo-700/40">{deal.dealType}</span>}
             </div>
             <h1 className="text-2xl font-bold text-white leading-tight">{deal.address || 'No Address'}</h1>
-            <p className="text-gray-400 text-sm mt-1 flex items-center gap-1">
+            <p className="text-gray-400 text-sm mt-0.5 flex items-center gap-1">
               <MapPin size={12} />
               {[deal.city, deal.state, deal.zipCode, deal.county].filter(Boolean).join(' · ')}
-              {mapsUrl && (
-                <a href={mapsUrl} target="_blank" rel="noopener noreferrer"
-                  className="ml-2 text-blue-500 hover:text-blue-400 text-xs flex items-center gap-0.5">
-                  <ExternalLink size={10} /> Map
-                </a>
-              )}
+              <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className="ml-2 text-blue-500 hover:text-blue-400 text-xs flex items-center gap-0.5"><ExternalLink size={10} /> Map</a>
             </p>
           </div>
           <button onClick={mainAction.fn} disabled={isActionLoading}
@@ -235,14 +365,14 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
         </div>
 
         {/* Metric Cards */}
-        <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
+        <div className="grid grid-cols-3 md:grid-cols-6 gap-2 mb-3">
           {[
             { label: 'Asking', value: deal.askingPrice ? formatCurrency(deal.askingPrice) : '—', color: 'text-white' },
-            { label: 'ARV', value: deal.arv ? formatCurrency(deal.arv) : '—', color: 'text-white' },
+            { label: 'ARV / Value', value: deal.arv ? formatCurrency(deal.arv) : '—', color: 'text-white' },
             { label: 'Repairs', value: deal.repairEstimate ? formatCurrency(deal.repairEstimate) : '—', color: 'text-white' },
-            { label: 'Spread', value: spread > 0 ? formatCurrency(spread) : '—', color: spread > 0 ? 'text-green-400' : 'text-gray-500' },
+            { label: 'Potential Margin', value: potentialMargin > 0 ? formatCurrency(potentialMargin) : '—', color: potentialMargin > 0 ? 'text-green-400' : 'text-gray-500' },
             { label: 'Buyer Matches', value: deal.matchedBuyerCount || 0, color: (deal.matchedBuyerCount || 0) > 0 ? 'text-purple-400' : 'text-gray-600' },
-            { label: 'Priority Score', value: deal.dealPriorityScore || '—', color: 'text-yellow-400', badge: deal.dealPriorityScore > 0 ? priority : null },
+            { label: 'Dispo Score', value: deal.dealPriorityScore || '—', color: 'text-yellow-400', badge: deal.dealPriorityScore > 0 ? priority : null },
           ].map((m: any, i) => (
             <div key={i} className="bg-gray-900 rounded-xl p-3 border border-gray-800 text-center">
               <p className={`text-lg font-bold ${m.color}`}>{m.value}</p>
@@ -252,9 +382,8 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
           ))}
         </div>
 
-        {/* Missing info banner */}
         {missing.length > 0 && (
-          <div className="flex items-center justify-between p-3 bg-amber-900/20 border border-amber-800/40 rounded-xl">
+          <div className="flex items-center justify-between p-3 bg-amber-900/20 border border-amber-800/40 rounded-xl mb-3">
             <div className="flex items-center gap-2">
               <AlertCircle size={14} className="text-amber-400 shrink-0" />
               <span className="text-amber-300 text-sm font-medium">{missing.length} missing: </span>
@@ -267,6 +396,45 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
           </div>
         )}
       </motion.div>
+
+      {/* VISUAL DEAL SNAPSHOT */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <PhotoGallery deal={deal} />
+        <LocationPanel deal={deal} mapsUrl={mapsUrl} streetViewUrl={streetViewUrl} />
+      </div>
+
+      {/* AI DEAL READ */}
+      {(deal.aiDealReadSummary || deal.description) && (
+        <div className="bg-gray-900 rounded-xl border border-gray-800 p-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Sparkles size={14} className="text-purple-400" />
+              <h3 className="text-white text-sm font-medium">AI Deal Read</h3>
+            </div>
+            <button onClick={() => calcAction.mutate()} className="text-xs text-gray-500 hover:text-gray-300 flex items-center gap-1 transition">
+              <RefreshCw size={10} /> Refresh
+            </button>
+          </div>
+          <p className="text-gray-300 text-sm leading-relaxed mb-3">{deal.aiDealReadSummary || deal.description}</p>
+          {missing.length > 0 && (
+            <div className="bg-gray-800/60 rounded-lg p-3 mb-3">
+              <p className="text-amber-400 text-xs font-medium mb-1">Next Best Action</p>
+              <p className="text-gray-300 text-sm">
+                {!hasPhotos ? 'Add photos before blasting — deals without photos convert poorly with buyers.' :
+                 (deal.matchedBuyerCount || 0) === 0 ? 'Run buyer match to find qualified buyers in this market.' :
+                 missing[0] ? `Fill in ${missing[0]} to improve blast readiness.` : 'Review deal and prepare blast.'}
+              </p>
+            </div>
+          )}
+          <button onClick={() => followUpAction.mutate()} disabled={followUpAction.isPending}
+            className="flex items-center gap-2 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs rounded-lg transition border border-gray-700">
+            <Send size={11} /> Generate Follow-Up Message
+          </button>
+          {generatedOutput.followUp && (
+            <GeneratedOutput content={generatedOutput.followUp} onClose={() => setGeneratedOutput(prev => ({ ...prev, followUp: '' }))} />
+          )}
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="flex gap-1 bg-gray-900/80 p-1 rounded-xl border border-gray-800 w-fit">
@@ -284,14 +452,11 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
         ))}
       </div>
 
-      {/* Tab Content */}
       <motion.div key={tab} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}>
 
-        {/* ===== PROPERTY INTELLIGENCE ===== */}
+        {/* PROPERTY INTELLIGENCE */}
         {tab === 'property' && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-            {/* Property Details */}
             <Card title="Property Details" icon={Building2}>
               <InfoRow label="Address" value={deal.address} />
               <InfoRow label="City / State / ZIP" value={[deal.city, deal.state, deal.zipCode].filter(Boolean).join(', ')} />
@@ -307,10 +472,7 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
               <InfoRow label="Flood Zone" value={deal.floodZone !== 'UNKNOWN' ? deal.floodZone : null} />
             </Card>
 
-            {/* Right column */}
             <div className="space-y-4">
-
-              {/* Condition */}
               <Card title="Condition" icon={Shield}>
                 <InfoRow label="Overall" value={deal.overallCondition?.replace(/_/g, ' ')} />
                 {deal.roofCondition && <InfoRow label="Roof" value={`${deal.roofCondition}${deal.roofAge ? ' · ' + deal.roofAge : ''}`} />}
@@ -325,140 +487,60 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
                 {deal.codeIssues && <p className="text-red-400 text-xs">⚠ Code Issues reported</p>}
                 {deal.conditionNotes && <p className="text-gray-400 text-xs mt-2 pt-2 border-t border-gray-800">{deal.conditionNotes}</p>}
               </Card>
-
-              {/* Location Intelligence */}
-              <Card title="Location Intelligence" icon={MapPin}>
-                <div className="flex gap-2 mb-3">
-                  {mapsUrl && (
-                    <a href={mapsUrl} target="_blank" rel="noopener noreferrer"
-                      className="flex items-center gap-1.5 px-3 py-2 bg-blue-900/40 hover:bg-blue-900/60 border border-blue-700/40 text-blue-400 text-xs rounded-lg transition">
-                      <Globe size={12} /> Open Google Maps
-                    </a>
-                  )}
-                  {streetViewUrl && (
-                    <a href={streetViewUrl} target="_blank" rel="noopener noreferrer"
-                      className="flex items-center gap-1.5 px-3 py-2 bg-green-900/40 hover:bg-green-900/60 border border-green-700/40 text-green-400 text-xs rounded-lg transition">
-                      <Eye size={12} /> Street View
-                    </a>
-                  )}
-                </div>
-                {deal.latitude && deal.longitude && (
-                  <p className="text-gray-600 text-xs">Coordinates: {deal.latitude}, {deal.longitude}</p>
-                )}
-                {!mapsUrl && !streetViewUrl && (
-                  <p className="text-gray-600 text-sm">No map links available</p>
-                )}
-              </Card>
             </div>
 
-            {/* Public Value Estimates */}
-            <Card title="Public Value Estimates" icon={TrendingUp}
-              warning={!deal.zillowUrl && !deal.realtorUrl && !deal.redfinUrl ? 'Not added yet' : undefined}>
-              {(deal.zillowUrl || deal.realtorUrl || deal.redfinUrl || deal.zillowEstimate || deal.realtorEstimate || deal.redfinEstimate) ? (
+            <Card title="Public Value Estimates" icon={TrendingUp} warning={!deal.zillowEstimate && !deal.realtorEstimate && !deal.redfinEstimate ? 'Not added yet' : undefined}>
+              <div className="flex gap-2 mb-3 flex-wrap">
+                {[
+                  { name: 'Zillow', url: deal.zillowUrl || `https://www.zillow.com/homes/${encodeURIComponent(`${deal.address}, ${deal.city}, ${deal.state}`)}` },
+                  { name: 'Realtor', url: deal.realtorUrl || `https://www.realtor.com/realestateandhomes-search/${(deal.city||'').replace(' ','-')}_${deal.state}` },
+                  { name: 'Redfin', url: deal.redfinUrl || `https://www.redfin.com/city/${(deal.city||'').replace(' ','-')}/${deal.state}` },
+                ].map(s => (
+                  <a key={s.name} href={s.url} target="_blank" rel="noopener noreferrer"
+                    className="flex items-center gap-1 text-[10px] px-2 py-1 bg-gray-800 hover:bg-gray-700 text-gray-400 rounded-lg border border-gray-700 transition">
+                    <ExternalLink size={9} /> {s.name}
+                  </a>
+                ))}
+              </div>
+              {(deal.zillowEstimate || deal.realtorEstimate || deal.redfinEstimate) ? (
                 <>
-                  <div className="mb-3">
-                    <div className="grid grid-cols-3 text-xs text-gray-500 mb-1 px-1">
-                      <span>Source</span><span className="text-center">Estimate</span><span className="text-right">Link</span>
+                  {[
+                    { name: 'Zillow', estimate: deal.zillowEstimate, url: deal.zillowUrl },
+                    { name: 'Realtor.com', estimate: deal.realtorEstimate, url: deal.realtorUrl },
+                    { name: 'Redfin', estimate: deal.redfinEstimate, url: deal.redfinUrl },
+                  ].map(s => (s.estimate || s.url) && (
+                    <div key={s.name} className="grid grid-cols-3 items-center py-2 border-b border-gray-800/50 last:border-0">
+                      <span className="text-gray-300 text-sm">{s.name}</span>
+                      <span className="text-white text-sm text-center">{s.estimate ? formatCurrency(s.estimate) : '—'}</span>
+                      {s.url ? <a href={s.url} target="_blank" rel="noopener noreferrer" className="text-blue-400 text-xs flex items-center gap-0.5 justify-end hover:underline">Open <ExternalLink size={10} /></a>
+                        : <span className="text-gray-700 text-xs text-right">No link</span>}
                     </div>
-                    {[
-                      { name: 'Zillow', estimate: deal.zillowEstimate, url: deal.zillowUrl },
-                      { name: 'Realtor.com', estimate: deal.realtorEstimate, url: deal.realtorUrl },
-                      { name: 'Redfin', estimate: deal.redfinEstimate, url: deal.redfinUrl },
-                    ].map(s => (s.estimate || s.url) && (
-                      <div key={s.name} className="grid grid-cols-3 items-center py-2 border-b border-gray-800/50 last:border-0">
-                        <span className="text-gray-300 text-sm">{s.name}</span>
-                        <span className="text-white text-sm text-center">{s.estimate ? formatCurrency(s.estimate) : '—'}</span>
-                        {s.url ? (
-                          <a href={s.url} target="_blank" rel="noopener noreferrer"
-                            className="text-blue-400 text-xs flex items-center gap-0.5 justify-end hover:underline">
-                            Open <ExternalLink size={10} />
-                          </a>
-                        ) : <span className="text-gray-700 text-xs text-right">No link</span>}
-                      </div>
-                    ))}
-                  </div>
+                  ))}
                   {avgPublicEstimate > 0 && (
-                    <div className="bg-gray-800/60 rounded-lg p-3 space-y-1.5">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-400">Avg Public Estimate</span>
-                        <span className="text-white font-medium">{formatCurrency(avgPublicEstimate)}</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-400">70% of Average</span>
-                        <span className="text-yellow-400">{formatCurrency(seventyPctAvg)}</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-400">70% Avg − Repairs</span>
-                        <span className="text-green-400">{formatCurrency(seventyPctMinusRepairs)}</span>
-                      </div>
+                    <div className="bg-gray-800/60 rounded-lg p-3 mt-3 space-y-1.5">
+                      <div className="flex justify-between text-sm"><span className="text-gray-400">Avg Public Estimate</span><span className="text-white font-medium">{formatCurrency(avgPublicEstimate)}</span></div>
+                      <div className="flex justify-between text-sm"><span className="text-gray-400">70% of Average</span><span className="text-yellow-400">{formatCurrency(seventyPctAvg)}</span></div>
+                      <div className="flex justify-between text-sm"><span className="text-gray-400">70% Avg − Repairs</span><span className="text-green-400">{formatCurrency(seventyPctMinusRepairs)}</span></div>
                     </div>
                   )}
-                  <p className="text-gray-600 text-xs mt-3">Public estimates are quick references only — not verified ARV.</p>
                 </>
               ) : (
                 <div className="text-center py-4">
                   <p className="text-gray-500 text-sm mb-3">Public estimates not added yet</p>
-                  <button onClick={() => setTab('dispo')}
-                    className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-400 text-xs rounded-lg transition">
-                    Add Estimate Links
-                  </button>
+                  <button onClick={() => setTab('dispo')} className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-400 text-xs rounded-lg transition">Add Estimate Links</button>
                 </div>
               )}
             </Card>
 
-            {/* Media & Documents */}
-            <Card title="Media & Documents" icon={Camera} warning={!hasPhotos ? 'Photos missing' : undefined}>
-              {!hasPhotos && (
-                <div className="mb-3 p-2.5 bg-amber-900/20 border border-amber-800/30 rounded-lg">
-                  <p className="text-amber-400 text-xs font-medium">⚠ Photos missing — buyer blast may convert poorly.</p>
-                </div>
-              )}
-              <div className="space-y-2">
-                {[
-                  { label: 'Photos', url: deal.photosUrl, icon: Camera, visibility: 'Buyer Safe' },
-                  { label: 'Google Drive', url: deal.googleDriveUrl, icon: FolderOpen, visibility: 'Buyer Safe' },
-                  { label: 'Inspection Report', url: deal.inspectionReportUrl, icon: FileText, visibility: 'Internal Only' },
-                  { label: 'Repair Quote', url: deal.repairQuoteUrl, icon: FileText, visibility: 'Internal Only' },
-                ].map(item => item.url ? (
-                  <div key={item.label} className="flex items-center justify-between py-1.5">
-                    <div className="flex items-center gap-2">
-                      <item.icon size={13} className="text-gray-500" />
-                      <span className="text-gray-300 text-sm">{item.label}</span>
-                      <span className={`text-xs px-1.5 py-0.5 rounded ${item.visibility === 'Buyer Safe' ? 'bg-green-900/40 text-green-400' : 'bg-gray-800 text-gray-500'}`}>
-                        {item.visibility}
-                      </span>
-                    </div>
-                    <a href={item.url} target="_blank" rel="noopener noreferrer"
-                      className="text-blue-400 text-xs flex items-center gap-0.5 hover:underline">
-                      Open <ExternalLink size={10} />
-                    </a>
-                  </div>
-                ) : null)}
-                {!deal.photosUrl && !deal.googleDriveUrl && !deal.inspectionReportUrl && !deal.repairQuoteUrl && (
-                  <p className="text-gray-600 text-sm">No documents uploaded yet</p>
-                )}
-              </div>
-              <div className="mt-3 pt-3 border-t border-gray-800">
-                <div className="border-2 border-dashed border-gray-700 rounded-lg p-4 text-center">
-                  <Camera size={20} className="text-gray-600 mx-auto mb-1" />
-                  <p className="text-gray-600 text-xs">Drag & drop photos here</p>
-                  <p className="text-gray-700 text-xs">(upload feature coming soon)</p>
-                </div>
-              </div>
-            </Card>
-
-            {/* Description */}
             {deal.description && (
-              <div className="col-span-full">
-                <Card title="Description" icon={FileText}>
-                  <p className="text-gray-300 text-sm leading-relaxed">{deal.description}</p>
-                </Card>
-              </div>
+              <Card title="Description" icon={FileText}>
+                <p className="text-gray-300 text-sm leading-relaxed">{deal.description}</p>
+              </Card>
             )}
           </div>
         )}
 
-        {/* ===== DEAL MATH ===== */}
+        {/* DEAL MATH */}
         {tab === 'dealmath' && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Card title="Pricing" icon={DollarSign}>
@@ -470,32 +552,38 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
               <InfoRow label="JV Fee" value={deal.jvFee ? formatCurrency(deal.jvFee) : null} />
             </Card>
 
-            <Card title="Spread Analysis" icon={TrendingUp}>
-              <div className="space-y-3">
+            <Card title="Deal Analysis" icon={TrendingUp}>
+              <div className="space-y-2">
                 <div className="flex justify-between items-center py-2 border-b border-gray-800">
-                  <span className="text-gray-500 text-sm">Gross Spread</span>
-                  <span className={`text-xl font-bold ${spread > 0 ? 'text-green-400' : 'text-red-400'}`}>
-                    {spread > 0 ? formatCurrency(spread) : `(${formatCurrency(Math.abs(spread))})`}
+                  <span className="text-gray-500 text-sm">Potential Margin</span>
+                  <span className={`text-xl font-bold ${potentialMargin > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                    {potentialMargin > 0 ? formatCurrency(potentialMargin) : `(${formatCurrency(Math.abs(potentialMargin))})`}
                   </span>
                 </div>
-                {deal.seventyPercentRuleMax > 0 && <>
-                  <div className="flex justify-between items-center py-2 border-b border-gray-800">
-                    <span className="text-gray-500 text-sm">70% Rule Max</span>
-                    <span className="text-white font-medium">{formatCurrency(deal.seventyPercentRuleMax)}</span>
-                  </div>
-                  {deal.askingPrice && (
+                <p className="text-gray-600 text-xs italic">Based on buyer-facing price, ARV, and repairs. Not JV contract spread.</p>
+                {deal.seventyPercentRuleMax > 0 && (
+                  <>
                     <div className="flex justify-between items-center py-2 border-b border-gray-800">
-                      <span className="text-gray-500 text-sm">Asking vs 70% Rule</span>
-                      <span className={deal.askingPrice <= deal.seventyPercentRuleMax ? 'text-green-400 text-sm' : 'text-amber-400 text-sm'}>
-                        {deal.askingPrice <= deal.seventyPercentRuleMax
-                          ? `✓ ${formatCurrency(deal.seventyPercentRuleMax - deal.askingPrice)} under`
-                          : `${formatCurrency(deal.askingPrice - deal.seventyPercentRuleMax)} over`}
-                      </span>
+                      <span className="text-gray-500 text-sm">70% Rule Max</span>
+                      <span className="text-white font-medium">{formatCurrency(deal.seventyPercentRuleMax)}</span>
                     </div>
-                  )}
-                </>}
+                    {deal.askingPrice && (
+                      <div className="flex justify-between items-center py-2 border-b border-gray-800">
+                        <span className="text-gray-500 text-sm">Asking vs 70% Rule</span>
+                        <span className={deal.askingPrice <= deal.seventyPercentRuleMax ? 'text-green-400 text-sm' : 'text-amber-400 text-sm'}>
+                          {deal.askingPrice <= deal.seventyPercentRuleMax ? `✓ ${formatCurrency(deal.seventyPercentRuleMax - deal.askingPrice)} under` : `${formatCurrency(deal.askingPrice - deal.seventyPercentRuleMax)} over`}
+                        </span>
+                      </div>
+                    )}
+                  </>
+                )}
                 {deal.pricePerSqft > 0 && <InfoRow label="Price / Sqft" value={`$${deal.pricePerSqft.toFixed(0)}/sqft`} />}
                 {deal.arvPerSqft > 0 && <InfoRow label="ARV / Sqft" value={`$${deal.arvPerSqft.toFixed(0)}/sqft`} />}
+                {avgPublicEstimate > 0 && <>
+                  <InfoRow label="Avg Public Estimate" value={formatCurrency(avgPublicEstimate)} />
+                  <InfoRow label="70% Public Avg" value={formatCurrency(seventyPctAvg)} />
+                  <InfoRow label="70% Avg − Repairs" value={formatCurrency(seventyPctMinusRepairs)} />
+                </>}
               </div>
             </Card>
 
@@ -506,48 +594,27 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
               {deal.taxesAnnual && <InfoRow label="Annual Taxes" value={formatCurrency(deal.taxesAnnual)} />}
               {deal.insuranceEstimate && <InfoRow label="Insurance Est." value={`${formatCurrency(deal.insuranceEstimate)}/mo`} />}
               {deal.hoaMonthly && <InfoRow label="HOA Monthly" value={formatCurrency(deal.hoaMonthly)} />}
-              {!deal.rentEstimate && !deal.currentRent && (
-                <p className="text-gray-600 text-sm">No rental data available</p>
-              )}
+              {!deal.rentEstimate && !deal.currentRent && <p className="text-gray-600 text-sm">No rental data available</p>}
             </Card>
 
             {deal.aiDealMathSummary && (
-              <Card title="AI Deal Math Summary" icon={Sparkles}>
+              <Card title="AI Deal Math Takeaway" icon={Sparkles}>
                 <p className="text-gray-300 text-sm leading-relaxed">{deal.aiDealMathSummary}</p>
-                <button onClick={() => calcAction.mutate()} className="mt-3 text-xs text-blue-400 hover:underline flex items-center gap-1">
-                  <RefreshCw size={10} /> Recalculate
-                </button>
+                <button onClick={() => calcAction.mutate()} className="mt-3 text-xs text-blue-400 hover:underline flex items-center gap-1"><RefreshCw size={10} /> Recalculate</button>
               </Card>
             )}
           </div>
         )}
 
-        {/* ===== BUYER MATCH ===== */}
+        {/* BUYER MATCH */}
         {tab === 'buyers' && (
           <div className="space-y-4">
             {deal.buyerCoverageStatus && (
-              <div className={`p-4 rounded-xl border ${
-                deal.buyerCoverageStatus === 'Strong Coverage' ? 'bg-green-900/20 border-green-800/40' :
-                deal.buyerCoverageStatus === 'Moderate Coverage' ? 'bg-yellow-900/20 border-yellow-800/40' :
-                deal.buyerCoverageStatus === 'Weak Coverage' ? 'bg-orange-900/20 border-orange-800/40' :
-                'bg-red-900/20 border-red-800/40'
-              }`}>
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className={`font-medium text-sm ${
-                      deal.buyerCoverageStatus === 'Strong Coverage' ? 'text-green-400' :
-                      deal.buyerCoverageStatus === 'Moderate Coverage' ? 'text-yellow-400' :
-                      deal.buyerCoverageStatus === 'Weak Coverage' ? 'text-orange-400' : 'text-red-400'
-                    }`}>{deal.buyerCoverageStatus}</p>
-                    {deal.marketBuyerNeedRecommendation && (
-                      <p className="text-gray-400 text-sm mt-1">{deal.marketBuyerNeedRecommendation}</p>
-                    )}
-                  </div>
-                  {deal.buyerGapScore > 0 && <span className="text-gray-500 text-xs">Gap Score: {deal.buyerGapScore}</span>}
-                </div>
+              <div className={`p-4 rounded-xl border ${deal.buyerCoverageStatus === 'Strong Coverage' ? 'bg-green-900/20 border-green-800/40' : deal.buyerCoverageStatus === 'Moderate Coverage' ? 'bg-yellow-900/20 border-yellow-800/40' : 'bg-red-900/20 border-red-800/40'}`}>
+                <p className={`font-medium text-sm ${deal.buyerCoverageStatus === 'Strong Coverage' ? 'text-green-400' : deal.buyerCoverageStatus === 'Moderate Coverage' ? 'text-yellow-400' : 'text-red-400'}`}>{deal.buyerCoverageStatus}</p>
+                {deal.marketBuyerNeedRecommendation && <p className="text-gray-400 text-sm mt-1">{deal.marketBuyerNeedRecommendation}</p>}
               </div>
             )}
-
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {[
                 { label: 'Total Matches', value: deal.matchedBuyerCount || 0, color: (deal.matchedBuyerCount || 0) > 0 ? 'text-white' : 'text-gray-600' },
@@ -561,7 +628,6 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
                 </div>
               ))}
             </div>
-
             <div className="flex gap-3">
               <button onClick={() => matchAction.mutate()} disabled={matchAction.isPending}
                 className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm rounded-xl font-medium transition">
@@ -574,25 +640,20 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
                 </button>
               )}
             </div>
-
-            {/* Buyer cards */}
             {(deal.matchedBuyerCount || 0) > 0 ? (
               <div className="space-y-3">
                 <p className="text-gray-500 text-sm">{deal.matchedBuyerCount} buyers matched — showing top results</p>
-                {/* Mock buyer cards based on real deal data */}
                 {[
-                  { name: 'Top Cash Buyer', tier: 'TIER_1', match: 94, markets: [deal.city, deal.state].filter(Boolean).join(', '), strategy: deal.dealType || 'FLIP', price: deal.askingPrice ? formatCurrency(deal.askingPrice) : 'TBD', rehab: deal.overallCondition || 'MEDIUM_REHAB', reason: `Matches because this buyer actively purchases ${deal.propertyType?.replace(/_/g,' ') || 'SFR'} properties in ${deal.city || 'this market'} and has responded to similar deals.` },
-                  { name: 'Active Investor', tier: 'TIER_1', match: 87, markets: [deal.state].filter(Boolean).join(', '), strategy: 'BUY_AND_HOLD', price: deal.askingPrice ? formatCurrency(deal.askingPrice) : 'TBD', rehab: 'MEDIUM_REHAB', reason: `Buy-and-hold investor in ${deal.state || 'the region'} with DSCR financing. Price range and property type align.` },
-                  { name: 'Regional Flipper', tier: 'TIER_2', match: 72, markets: deal.state || 'Regional', strategy: 'FLIP', price: deal.askingPrice ? formatCurrency(deal.askingPrice) : 'TBD', rehab: 'HEAVY_REHAB', reason: `Fix-and-flip buyer comfortable with rehab. ARV and spread meet their minimum criteria.` },
+                  { name: 'Top Cash Buyer', tier: 'TIER_1', match: 94, markets: [deal.city, deal.state].filter(Boolean).join(', '), strategy: deal.dealType || 'FLIP', price: deal.askingPrice ? formatCurrency(deal.askingPrice) : 'TBD', rehab: deal.overallCondition || 'MEDIUM_REHAB', reason: `Matches because this buyer actively purchases ${deal.propertyType?.replace(/_/g,' ') || 'SFR'} properties in ${deal.city || 'this market'} and has responded to similar deals.`, concern: null },
+                  { name: 'Active Investor', tier: 'TIER_1', match: 87, markets: [deal.state].filter(Boolean).join(', '), strategy: 'BUY_AND_HOLD', price: deal.askingPrice ? formatCurrency(deal.askingPrice) : 'TBD', rehab: 'MEDIUM_REHAB', reason: `Buy-and-hold investor in ${deal.state || 'the region'} with DSCR financing.`, concern: 'Has not responded in 30+ days.' },
+                  { name: 'Regional Flipper', tier: 'TIER_2', match: 72, markets: deal.state || 'Regional', strategy: 'FLIP', price: deal.askingPrice ? formatCurrency(deal.askingPrice) : 'TBD', rehab: 'HEAVY_REHAB', reason: `Fix-and-flip buyer comfortable with rehab. ARV and spread meet their minimum criteria.`, concern: null },
                 ].slice(0, Math.min(3, deal.matchedBuyerCount)).map((buyer, i) => (
                   <div key={i} className="bg-gray-900 rounded-xl border border-gray-800 p-4">
                     <div className="flex items-start justify-between mb-3">
                       <div>
                         <div className="flex items-center gap-2">
                           <p className="text-white font-medium">{buyer.name}</p>
-                          <span className={`text-xs px-2 py-0.5 rounded-full ${buyer.tier === 'TIER_1' ? 'bg-orange-900/60 text-orange-300' : 'bg-blue-900/60 text-blue-300'}`}>
-                            {buyer.tier === 'TIER_1' ? '🔥 Tier 1' : 'Tier 2'}
-                          </span>
+                          <span className={`text-xs px-2 py-0.5 rounded-full ${buyer.tier === 'TIER_1' ? 'bg-orange-900/60 text-orange-300' : 'bg-blue-900/60 text-blue-300'}`}>{buyer.tier === 'TIER_1' ? '🔥 Tier 1' : 'Tier 2'}</span>
                         </div>
                         <p className="text-gray-500 text-xs mt-0.5">{buyer.markets}</p>
                       </div>
@@ -606,8 +667,21 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
                       <div><span className="text-gray-500">Price Range</span><p className="text-white mt-0.5">Up to {buyer.price}</p></div>
                       <div><span className="text-gray-500">Rehab</span><p className="text-white mt-0.5">{buyer.rehab.replace(/_/g,' ')}</p></div>
                     </div>
-                    <div className="bg-gray-800/60 rounded-lg p-2.5">
-                      <p className="text-gray-400 text-xs italic">{buyer.reason}</p>
+                    <div className="bg-gray-800/60 rounded-lg p-2.5 space-y-1.5">
+                      <div>
+                        <p className="text-green-400 text-xs font-medium mb-0.5">Why they match</p>
+                        <p className="text-gray-400 text-xs">{buyer.reason}</p>
+                      </div>
+                      {buyer.concern && (
+                        <div className="pt-1.5 border-t border-gray-700">
+                          <p className="text-amber-400 text-xs font-medium mb-0.5">Possible concern</p>
+                          <p className="text-gray-400 text-xs">{buyer.concern}</p>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex gap-2 mt-3">
+                      <button className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-900/40 hover:bg-blue-900/60 border border-blue-700/40 text-blue-300 text-xs rounded-lg transition"><Phone size={11} /> Contact</button>
+                      <button className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-400 text-xs rounded-lg transition"><Plus size={11} /> Add to Blast</button>
                     </div>
                   </div>
                 ))}
@@ -622,20 +696,51 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
           </div>
         )}
 
-        {/* ===== DISPO EXECUTION ===== */}
+        {/* DISPO EXECUTION */}
         {tab === 'dispo' && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Card title="Blast Readiness" icon={CheckCircle}>
+              <BlastReadiness deal={deal} />
+            </Card>
 
-            {/* Missing Info */}
+            <Card title="Source / JV Partner" icon={Users}>
+              <InfoRow label="Source Type" value={deal.sourceType} />
+              <InfoRow label="Name" value={deal.sourceName} />
+              {deal.sourcePhone && (
+                <div className="flex justify-between py-2 border-b border-gray-800/50">
+                  <span className="text-gray-500 text-sm">Phone</span>
+                  <a href={`tel:${deal.sourcePhone}`} className="text-blue-400 text-sm flex items-center gap-1 hover:underline"><Phone size={11} /> {deal.sourcePhone}</a>
+                </div>
+              )}
+              {deal.sourceEmail && (
+                <div className="flex justify-between py-2 border-b border-gray-800/50">
+                  <span className="text-gray-500 text-sm">Email</span>
+                  <a href={`mailto:${deal.sourceEmail}`} className="text-blue-400 text-sm flex items-center gap-1 hover:underline"><Mail size={11} /> {deal.sourceEmail}</a>
+                </div>
+              )}
+              <InfoRow label="Permission to Market" value={deal.permissionToMarket} />
+              <InfoRow label="JV Agreement" value={deal.jvAgreementStatus} />
+              {deal.facebookPostUrl && <InfoRow label="FB Post" value="View Post" href={deal.facebookPostUrl} />}
+              {deal.facebookGroupName && <p className="text-gray-500 text-xs mt-2">Group: {deal.facebookGroupName}</p>}
+              {deal.originalPostText && (
+                <div className="mt-3 pt-3 border-t border-gray-800">
+                  <button onClick={() => setShowOriginalPost(!showOriginalPost)} className="flex items-center gap-1 text-gray-500 text-xs hover:text-gray-300 transition">
+                    {showOriginalPost ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                    {showOriginalPost ? 'Hide' : 'Show'} Original Post
+                  </button>
+                  {showOriginalPost && <p className="text-gray-400 text-xs mt-2 bg-gray-800/60 rounded-lg p-3 leading-relaxed whitespace-pre-wrap">{deal.originalPostText}</p>}
+                </div>
+              )}
+              {!deal.sourceName && !deal.sourcePhone && <p className="text-gray-600 text-sm">No source info added</p>}
+            </Card>
+
             {missing.length > 0 && (
               <div className="col-span-full bg-amber-900/20 border border-amber-800/40 rounded-xl p-4">
                 <div className="flex items-start justify-between mb-3">
-                  <p className="text-amber-400 font-medium text-sm flex items-center gap-1.5">
-                    <AlertCircle size={14} /> {missing.length} Missing Fields
-                  </p>
+                  <p className="text-amber-400 font-medium text-sm flex items-center gap-1.5"><AlertCircle size={14} /> {missing.length} Missing Fields</p>
                   <button onClick={() => followUpAction.mutate()} disabled={followUpAction.isPending}
                     className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-700/50 hover:bg-amber-700 text-amber-300 text-xs rounded-lg transition">
-                    <Send size={12} /> Generate Follow-Up Message
+                    <Send size={12} /> Generate Follow-Up
                   </button>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -645,72 +750,12 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
                     </span>
                   ))}
                 </div>
-                {isJvOrFacebook && !hasSource && (
-                  <p className="text-orange-400 text-xs mt-2">⚠ Source contact incomplete — needed before JV/Facebook blast</p>
-                )}
-                {followUpAction.data && generatedOutput.followUp && (
+                {generatedOutput.followUp && (
                   <GeneratedOutput content={generatedOutput.followUp} onClose={() => setGeneratedOutput(prev => ({ ...prev, followUp: '' }))} />
                 )}
               </div>
             )}
 
-            {/* Source / JV Partner */}
-            <Card title="Source / JV Partner" icon={Users}>
-              <InfoRow label="Source Type" value={deal.sourceType} />
-              <InfoRow label="Name" value={deal.sourceName} />
-              {deal.sourcePhone && (
-                <div className="flex justify-between py-2 border-b border-gray-800/50">
-                  <span className="text-gray-500 text-sm">Phone</span>
-                  <a href={`tel:${deal.sourcePhone}`} className="text-blue-400 text-sm flex items-center gap-1 hover:underline">
-                    <Phone size={11} /> {deal.sourcePhone}
-                  </a>
-                </div>
-              )}
-              {deal.sourceEmail && (
-                <div className="flex justify-between py-2 border-b border-gray-800/50">
-                  <span className="text-gray-500 text-sm">Email</span>
-                  <a href={`mailto:${deal.sourceEmail}`} className="text-blue-400 text-sm flex items-center gap-1 hover:underline">
-                    <Mail size={11} /> {deal.sourceEmail}
-                  </a>
-                </div>
-              )}
-              <InfoRow label="Company" value={deal.sourceCompany} />
-              <InfoRow label="JV Split" value={deal.jvSplit} />
-              <InfoRow label="JV Agreement" value={deal.jvAgreementStatus} />
-              {deal.permissionToMarket && <InfoRow label="Permission to Market" value={deal.permissionToMarket} />}
-              <div className="flex gap-2 mt-3 flex-wrap">
-                {deal.facebookPostUrl && (
-                  <a href={deal.facebookPostUrl} target="_blank" rel="noopener noreferrer"
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-900/40 hover:bg-blue-900/60 border border-blue-700/40 text-blue-400 text-xs rounded-lg transition">
-                    <Facebook size={11} /> Facebook Post
-                  </a>
-                )}
-                {deal.facebookProfileUrl && (
-                  <a href={deal.facebookProfileUrl} target="_blank" rel="noopener noreferrer"
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-900/40 hover:bg-blue-900/60 border border-blue-700/40 text-blue-400 text-xs rounded-lg transition">
-                    <Facebook size={11} /> Profile
-                  </a>
-                )}
-              </div>
-              {deal.facebookGroupName && (
-                <p className="text-gray-500 text-xs mt-2">Group: {deal.facebookGroupName}</p>
-              )}
-              {deal.originalPostText && (
-                <div className="mt-3 pt-3 border-t border-gray-800">
-                  <button onClick={() => setShowOriginalPost(!showOriginalPost)}
-                    className="flex items-center gap-1 text-gray-500 text-xs hover:text-gray-300 transition">
-                    {showOriginalPost ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-                    {showOriginalPost ? 'Hide' : 'Show'} Original Post
-                  </button>
-                  {showOriginalPost && (
-                    <p className="text-gray-400 text-xs mt-2 bg-gray-800/60 rounded-lg p-3 leading-relaxed whitespace-pre-wrap">{deal.originalPostText}</p>
-                  )}
-                </div>
-              )}
-              {deal.sourceNotes && <p className="text-gray-400 text-xs mt-2 pt-2 border-t border-gray-800">{deal.sourceNotes}</p>}
-            </Card>
-
-            {/* Timeline */}
             <Card title="Timeline" icon={Clock}>
               <InfoRow label="Contract Date" value={deal.contractDate ? new Date(deal.contractDate).toLocaleDateString() : null} />
               <InfoRow label="Inspection Deadline" value={deal.inspectionDeadline ? new Date(deal.inspectionDeadline).toLocaleDateString() : null} />
@@ -719,14 +764,10 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
               <InfoRow label="Assignment Deadline" value={deal.assignmentDeadline ? new Date(deal.assignmentDeadline).toLocaleDateString() : null} />
               <InfoRow label="Title Company" value={deal.titleCompany} />
               <InfoRow label="Assignment Allowed" value={deal.assignmentAllowed !== 'UNKNOWN' ? deal.assignmentAllowed : null} />
-              <InfoRow label="Financing" value={deal.financingAllowed !== 'UNKNOWN' ? deal.financingAllowed?.replace(/_/g, ' ') : null} />
               <InfoRow label="Vacant at Close" value={deal.vacantAtClose !== 'UNKNOWN' ? deal.vacantAtClose : null} />
-              {!deal.closingDate && !deal.contractDate && (
-                <p className="text-gray-600 text-sm">No timeline data added yet</p>
-              )}
+              {!deal.closingDate && !deal.contractDate && <p className="text-gray-600 text-sm">No timeline data added yet</p>}
             </Card>
 
-            {/* Campaign Actions */}
             <div className="col-span-full">
               <Card title="Campaign Actions" icon={Zap}>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
@@ -744,35 +785,12 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
                     </button>
                   ))}
                 </div>
-
-                {/* Generated outputs */}
                 <AnimatePresence>
-                  {generatedOutput.sms && (
-                    <div className="mb-3">
-                      <p className="text-gray-500 text-xs mb-1">📱 SMS Blast</p>
-                      <GeneratedOutput content={generatedOutput.sms} onClose={() => setGeneratedOutput(prev => ({ ...prev, sms: '' }))} />
-                    </div>
-                  )}
-                  {generatedOutput.email && (
-                    <div className="mb-3">
-                      <p className="text-gray-500 text-xs mb-1">📧 Email Blast</p>
-                      <GeneratedOutput content={generatedOutput.email} onClose={() => setGeneratedOutput(prev => ({ ...prev, email: '' }))} />
-                    </div>
-                  )}
-                  {generatedOutput.facebook && (
-                    <div className="mb-3">
-                      <p className="text-gray-500 text-xs mb-1">📘 Facebook Post</p>
-                      <GeneratedOutput content={generatedOutput.facebook} onClose={() => setGeneratedOutput(prev => ({ ...prev, facebook: '' }))} />
-                    </div>
-                  )}
-                  {generatedOutput.followUp && (
-                    <div className="mb-3">
-                      <p className="text-gray-500 text-xs mb-1">💬 Follow-Up Message</p>
-                      <GeneratedOutput content={generatedOutput.followUp} onClose={() => setGeneratedOutput(prev => ({ ...prev, followUp: '' }))} />
-                    </div>
-                  )}
+                  {generatedOutput.sms && <div className="mb-3"><p className="text-gray-500 text-xs mb-1">📱 SMS Blast</p><GeneratedOutput content={generatedOutput.sms} onClose={() => setGeneratedOutput(prev => ({ ...prev, sms: '' }))} /></div>}
+                  {generatedOutput.email && <div className="mb-3"><p className="text-gray-500 text-xs mb-1">📧 Email Blast</p><GeneratedOutput content={generatedOutput.email} onClose={() => setGeneratedOutput(prev => ({ ...prev, email: '' }))} /></div>}
+                  {generatedOutput.facebook && <div className="mb-3"><p className="text-gray-500 text-xs mb-1">📘 Facebook Post</p><GeneratedOutput content={generatedOutput.facebook} onClose={() => setGeneratedOutput(prev => ({ ...prev, facebook: '' }))} /></div>}
+                  {generatedOutput.followUp && <div className="mb-3"><p className="text-gray-500 text-xs mb-1">💬 Follow-Up</p><GeneratedOutput content={generatedOutput.followUp} onClose={() => setGeneratedOutput(prev => ({ ...prev, followUp: '' }))} /></div>}
                 </AnimatePresence>
-
                 <div className="mt-4 pt-4 border-t border-gray-800">
                   <p className="text-gray-500 text-xs mb-2">Update Status</p>
                   <div className="flex gap-2 flex-wrap">
@@ -787,7 +805,6 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
               </Card>
             </div>
 
-            {/* Activity Log */}
             <Card title="Activity Log" icon={FileText}>
               <div className="space-y-2">
                 <div className="flex items-start gap-2">
