@@ -630,22 +630,52 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
         </div>
 
         {/* Metric Cards */}
-        <div className="grid grid-cols-3 md:grid-cols-6 gap-2 mb-3">
-          {[
-            { label: 'Asking', value: deal.askingPrice ? formatCurrency(deal.askingPrice) : '—', color: 'text-white', sub: pricePositionLabel, subColor: pricePositionColor },
-            { label: deal.arv ? 'ARV' : avgPublicEstimate ? 'Public Value' : 'ARV / Value', value: (deal.arv || avgPublicEstimate) ? formatCurrency(deal.arv || avgPublicEstimate) : '—', color: 'text-white', sub: deal.arv ? null : avgPublicEstimate ? 'Zestimate' : null, subColor: 'text-gray-500' },
-            { label: 'Repairs', value: deal.repairEstimate ? formatCurrency(deal.repairEstimate) : '—', color: 'text-white' },
-            { label: 'Potential Margin', value: potentialMargin > 0 ? formatCurrency(potentialMargin) : '—', color: potentialMargin > 0 ? 'text-green-400' : 'text-gray-500' },
-            { label: 'Buyer Matches', value: deal.matchedBuyerCount || 0, color: (deal.matchedBuyerCount || 0) > 0 ? 'text-purple-400' : 'text-gray-600' },
-            { label: 'Dispo Score', value: deal.dealPriorityScore || '—', color: 'text-yellow-400', badge: deal.dealPriorityScore > 0 ? priority : null },
-          ].map((m: any, i) => (
-            <div key={i} className="bg-gray-900 rounded-xl p-3 border border-gray-800 text-center">
-              <p className={`text-lg font-bold ${m.color}`}>{m.value}</p>
-              <p className="text-gray-500 text-xs mt-0.5">{m.label}</p>
-              {m.sub && <p className={`text-[10px] mt-0.5 font-medium ${m.subColor || 'text-gray-500'}`}>{m.sub}</p>}
-              {m.badge && <span className={`text-xs px-1.5 py-0.5 rounded mt-1 inline-block ${m.badge.bg}`}>{m.badge.label}</span>}
-            </div>
-          ))}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-3">
+          {/* Asking */}
+          <div className="bg-gray-900 rounded-xl p-3 border border-gray-800 text-center">
+            <p className="text-lg font-bold text-white">{deal.askingPrice ? formatCurrency(deal.askingPrice) : '—'}</p>
+            <p className="text-gray-500 text-xs mt-0.5">Asking</p>
+            {pricePositionLabel && <p className={`text-[10px] mt-0.5 font-semibold ${pricePositionColor}`}>{pricePositionLabel}</p>}
+          </div>
+          {/* Public Value + 70% */}
+          <div className="bg-gray-900 rounded-xl p-3 border border-gray-800 text-center">
+            {avgPublicEstimate > 0 ? (
+              <>
+                <p className="text-lg font-bold text-white">{formatCurrency(avgPublicEstimate)}</p>
+                <p className="text-gray-500 text-xs mt-0.5">{pubEstimates.length > 1 ? 'Avg Public Value' : 'Zestimate'}</p>
+                <p className="text-yellow-400 text-[10px] mt-0.5 font-medium">70%: {formatCurrency(threshold70)}</p>
+              </>
+            ) : (
+              <>
+                <p className="text-lg font-bold text-gray-600">—</p>
+                <p className="text-gray-500 text-xs mt-0.5">Public Value</p>
+                <p className="text-gray-700 text-[10px] mt-0.5">Fetch Zestimate</p>
+              </>
+            )}
+          </div>
+          {/* ARV */}
+          <div className="bg-gray-900 rounded-xl p-3 border border-gray-800 text-center">
+            <p className="text-lg font-bold text-white">{deal.arv ? formatCurrency(deal.arv) : '—'}</p>
+            <p className="text-gray-500 text-xs mt-0.5">ARV</p>
+            {!deal.arv && <p className="text-gray-700 text-[10px] mt-0.5">Not entered</p>}
+          </div>
+          {/* Repairs */}
+          <div className="bg-gray-900 rounded-xl p-3 border border-gray-800 text-center">
+            <p className="text-lg font-bold text-white">{deal.repairEstimate ? formatCurrency(deal.repairEstimate) : '—'}</p>
+            <p className="text-gray-500 text-xs mt-0.5">Repairs</p>
+            {!deal.repairEstimate && <p className="text-gray-700 text-[10px] mt-0.5">Not entered</p>}
+          </div>
+          {/* Buyers */}
+          <div className="bg-gray-900 rounded-xl p-3 border border-gray-800 text-center">
+            <p className={`text-lg font-bold ${(deal.matchedBuyerCount||0) > 0 ? 'text-purple-400' : 'text-gray-600'}`}>{deal.matchedBuyerCount || 0}</p>
+            <p className="text-gray-500 text-xs mt-0.5">Buyer Matches</p>
+          </div>
+        </div>
+        {/* Dispo Score — separate row */}
+        <div className="flex items-center gap-2 mb-3">
+          <span className="text-gray-500 text-xs">Dispo Score:</span>
+          <span className="text-yellow-400 text-sm font-bold">{deal.dealPriorityScore || '—'}</span>
+          {deal.dealPriorityScore > 0 && <span className={`text-xs px-2 py-0.5 rounded ${priority.bg}`}>{priority.label}</span>}
         </div>
 
         {sellBlockers.length > 0 && (
