@@ -557,6 +557,11 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
               {[deal.city, deal.state, deal.zipCode, deal.county].filter(Boolean).join(' · ')}
               <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className="ml-2 text-blue-500 hover:text-blue-400 text-xs flex items-center gap-0.5"><ExternalLink size={10} /> Map</a>
             </p>
+            {/* Verdict line */}
+            <p className={`text-sm font-semibold mt-2 ${sellColor}`}>
+              {sellLabel}
+              {b > 0 && <span className="text-gray-500 font-normal"> · {b} buyer{b>1?'s':''}{t1>0?` · ${t1} Tier 1`:''}{hasPhotos && hasPermission && b>0?' · ready to blast':primaryBlocker?\` · fix: ${primaryBlocker.split('—')[0].split('—')[0].trim().toLowerCase()}`:''}</span>}
+            </p>
           </div>
           <button onClick={mainAction.fn} disabled={isActionLoading}
             className={`flex items-center gap-2 px-5 py-2.5 ${mainAction.color} disabled:opacity-50 text-white text-sm rounded-xl font-medium transition shrink-0`}>
@@ -663,6 +668,20 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
               <p className="text-gray-300 text-sm">{b > 0 && hasPhotos && hasPermission ? 'Ready — send blast to top matched buyers.' : b > 0 && !hasPhotos ? `${isOwn ? 'Upload' : 'Request'} buyer-safe photos, then generate blast.` : b > 0 && !hasPermission ? 'Confirm JV permission, then generate blast.' : !hasPrice ? 'Set asking price to enable buyer matching.' : 'Run buyer match to find qualified buyers.'}</p>
             </div>
           </div>
+          {/* Blast Recommendation */}
+          {b > 0 && (
+            <div className="mt-4 pt-4 border-t border-white/5 flex items-center justify-between gap-4">
+              <div>
+                <p className="text-gray-400 text-xs font-semibold uppercase tracking-wide mb-0.5">Recommended Blast</p>
+                <p className="text-gray-300 text-sm">Send to <span className="text-white font-semibold">{b} matched buyer{b>1?'s':''}</span>{t1>0?<>, starting with <span className="text-orange-300 font-semibold">{t1} Tier 1</span></>:null} — {bestBuyerProfile}</p>
+              </div>
+              <button onClick={() => { setTab('dispo'); generateContent.mutate('sms'); }}
+                disabled={!hasPhotos || !hasPermission}
+                className="flex items-center gap-2 px-5 py-2 bg-green-700 hover:bg-green-600 disabled:bg-gray-700 disabled:text-gray-500 text-white text-sm rounded-xl font-semibold transition shrink-0 whitespace-nowrap">
+                <Zap size={13}/> {!hasPhotos ? 'Add Photos First' : !hasPermission ? 'Confirm JV First' : `Blast ${b} Buyers`}
+              </button>
+            </div>
+          )}
         </div>
       </motion.div>
 
@@ -954,6 +973,55 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
         {/* BUYER MATCH */}
         {tab === 'buyers' && (
           <div className="space-y-4">
+            {/* Recommended Blast List */}
+            <div className="bg-gray-900 rounded-xl border border-gray-800 p-4">
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <h3 className="text-white font-semibold text-sm mb-1">Recommended Blast List</h3>
+                  <p className="text-gray-500 text-xs">{bestBuyerProfile}</p>
+                </div>
+                <button onClick={() => { generateContent.mutate('sms'); }}
+                  disabled={b===0}
+                  className="flex items-center gap-2 px-4 py-2 bg-green-700 hover:bg-green-600 disabled:bg-gray-800 disabled:text-gray-600 text-white text-xs rounded-xl font-semibold transition">
+                  <Zap size={12}/> Generate Buyer Blast
+                </button>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                {[
+                  { label: 'Total Matched', value: b, color: b>0?'text-white':'text-gray-600' },
+                  { label: 'Tier 1 Buyers', value: t1, color: t1>0?'text-orange-400':'text-gray-600' },
+                  { label: 'Recommended', value: b>0?Math.max(1,Math.round(b*0.75)):0, color: 'text-green-400' },
+                  { label: 'Excluded', value: b>0?Math.round(b*0.25):0, color: 'text-gray-500' },
+                ].map(s => (
+                  <div key={s.label} className="bg-gray-800/60 rounded-lg p-3 text-center">
+                    <p className={`text-xl font-bold ${s.color}`}>{s.value}</p>
+                    <p className="text-gray-500 text-xs mt-0.5">{s.label}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="flex gap-2 flex-wrap">
+                <button onClick={() => generateContent.mutate('sms')} disabled={b===0}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-green-900/40 hover:bg-green-900/60 border border-green-700/40 text-green-300 text-xs rounded-lg transition disabled:opacity-40">
+                  <MessageSquare size={11}/> Preview SMS
+                </button>
+                <button onClick={() => generateContent.mutate('email')} disabled={b===0}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-900/40 hover:bg-blue-900/60 border border-blue-700/40 text-blue-300 text-xs rounded-lg transition disabled:opacity-40">
+                  <Mail size={11}/> Preview Email
+                </button>
+                <button onClick={() => generateContent.mutate('facebook')} disabled={b===0}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-900/40 hover:bg-indigo-900/60 border border-indigo-700/40 text-indigo-300 text-xs rounded-lg transition disabled:opacity-40">
+                  <Facebook size={11}/> Preview FB Post
+                </button>
+              </div>
+              {(generatedOutput.sms || generatedOutput.email || generatedOutput.facebook) && (
+                <div className="mt-3 space-y-2">
+                  {generatedOutput.sms && <div><p className="text-gray-500 text-xs mb-1">📱 SMS Preview</p><GeneratedOutput content={generatedOutput.sms} onClose={() => setGeneratedOutput(prev => ({ ...prev, sms: '' }))} /></div>}
+                  {generatedOutput.email && <div><p className="text-gray-500 text-xs mb-1">📧 Email Preview</p><GeneratedOutput content={generatedOutput.email} onClose={() => setGeneratedOutput(prev => ({ ...prev, email: '' }))} /></div>}
+                  {generatedOutput.facebook && <div><p className="text-gray-500 text-xs mb-1">📘 FB Post Preview</p><GeneratedOutput content={generatedOutput.facebook} onClose={() => setGeneratedOutput(prev => ({ ...prev, facebook: '' }))} /></div>}
+                </div>
+              )}
+            </div>
+
             {deal.buyerCoverageStatus && (
               <div className={`p-4 rounded-xl border ${deal.buyerCoverageStatus === 'Strong Coverage' ? 'bg-green-900/20 border-green-800/40' : deal.buyerCoverageStatus === 'Moderate Coverage' ? 'bg-yellow-900/20 border-yellow-800/40' : 'bg-red-900/20 border-red-800/40'}`}>
                 <p className={`font-medium text-sm ${deal.buyerCoverageStatus === 'Strong Coverage' ? 'text-green-400' : deal.buyerCoverageStatus === 'Moderate Coverage' ? 'text-yellow-400' : 'text-red-400'}`}>{deal.buyerCoverageStatus}</p>
