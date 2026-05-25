@@ -416,17 +416,29 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
     : sellScore >= 60 ? 'Workable — Fix Blockers'
     : sellScore >= 40 ? 'Needs Work'
     : 'Not Ready';
+  const scoreSublabel = 'Dispo Opportunity Score';
   const scoreColor = sellScore >= 75 ? 'text-green-400' : sellScore >= 60 ? 'text-blue-400' : sellScore >= 40 ? 'text-yellow-400' : 'text-red-400';
   const scoreBg = sellScore >= 75 ? 'border-green-800/40 bg-green-900/10' : sellScore >= 60 ? 'border-blue-800/40 bg-blue-900/10' : sellScore >= 40 ? 'border-yellow-800/40 bg-yellow-900/10' : 'border-red-800/40 bg-red-900/10';
   const scoreBar = sellScore >= 75 ? 'bg-green-500' : sellScore >= 60 ? 'bg-blue-500' : sellScore >= 40 ? 'bg-yellow-500' : 'bg-red-500';
 
   // ── Primary action ────────────────────────────────────────────────────
-  const primaryAction = deal.status === 'OFFER_RECEIVED' ? { label: 'Review Offer', color: 'bg-orange-600 hover:bg-orange-500', icon: CheckCircle, fn: () => setTab('dispo') }
-    : deal.status === 'CAMPAIGN_ACTIVE' ? { label: 'Follow Up Buyers', color: 'bg-emerald-600 hover:bg-emerald-500', icon: Send, fn: () => setTab('dispo') }
-    : b > 0 && hasPhotos && hasPermission ? { label: `Blast ${b} Buyers`, color: 'bg-green-600 hover:bg-green-500', icon: Zap, fn: () => { setTab('dispo'); generateContent.mutate('sms'); } }
-    : b > 0 && !hasPhotos ? { label: isOwn ? 'Upload Photos' : 'Request Photos', color: 'bg-amber-600 hover:bg-amber-500', icon: Camera, fn: () => setTab('dispo') }
-    : b > 0 && !hasPermission ? { label: 'Confirm JV Permission', color: 'bg-purple-600 hover:bg-purple-500', icon: Shield, fn: () => setTab('source') }
-    : deal.askingPrice ? { label: 'Run Buyer Match', color: 'bg-blue-600 hover:bg-blue-500', icon: Target, fn: () => matchAction.mutate() }
+  // Primary action: single most important next step
+  const missingPhotos = !hasPhotos;
+  const missingPermission = !hasPermission && !isOwn;
+  const primaryAction = deal.status === 'OFFER_RECEIVED'
+    ? { label: 'Review Offer', color: 'bg-orange-600 hover:bg-orange-500', icon: CheckCircle, fn: () => setTab('dispo') }
+    : deal.status === 'CAMPAIGN_ACTIVE'
+    ? { label: 'Follow Up Buyers', color: 'bg-emerald-600 hover:bg-emerald-500', icon: Send, fn: () => setTab('dispo') }
+    : b > 0 && !missingPhotos && !missingPermission
+    ? { label: `Blast ${b} Buyers`, color: 'bg-green-600 hover:bg-green-500', icon: Zap, fn: () => { setTab('dispo'); generateContent.mutate('sms'); } }
+    : missingPermission && missingPhotos
+    ? { label: 'Request Missing Info', color: 'bg-amber-600 hover:bg-amber-500', icon: AlertCircle, fn: () => setTab('source') }
+    : missingPermission
+    ? { label: 'Confirm JV Permission', color: 'bg-purple-600 hover:bg-purple-500', icon: Shield, fn: () => setTab('source') }
+    : missingPhotos
+    ? { label: isOwn ? 'Upload Photos' : 'Request Photos', color: 'bg-amber-600 hover:bg-amber-500', icon: Camera, fn: () => setTab('dispo') }
+    : b === 0 && deal.askingPrice
+    ? { label: 'Run Buyer Match', color: 'bg-blue-600 hover:bg-blue-500', icon: Target, fn: () => matchAction.mutate() }
     : { label: 'Complete Deal Info', color: 'bg-amber-600 hover:bg-amber-500', icon: AlertCircle, fn: () => setTab('dispo') };
 
   const TABS = [
@@ -495,6 +507,7 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
                     <span className="text-gray-500 text-xs">/100</span>
                   </div>
                   <p className={`text-sm font-bold ${scoreColor}`}>{scoreLabel}</p>
+                <p className="text-gray-600 text-[10px] mt-0.5">Dispo Opportunity Score</p>
                 </div>
                 <div className="w-16 h-16">
                   <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
@@ -514,10 +527,40 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
                 ))}
               </div>
               {sellBlockers.length > 0 && (
-                <div className="space-y-1 pt-2 border-t border-white/5">
-                  {sellBlockers.slice(0,3).map((bl,i) => (
-                    <div key={i} className="flex items-start gap-1.5 text-xs text-amber-300">
-                      <AlertCircle size={11} className="text-amber-400 shrink-0 mt-0.5"/>
+                <div className="pt-2 border-t border-white/5 space-y-2">
+                  <p className="text-gray-600 text-[10px] font-bold uppercase tracking-wide">Blockers to fix</p>
+                  {missingPermission && (
+                    <div className="bg-amber-900/20 border border-amber-800/40 rounded-lg p-2.5">
+                      <div className="flex items-start gap-1.5 mb-1.5">
+                        <AlertCircle size={10} className="text-amber-400 shrink-0 mt-0.5"/>
+                        <p className="text-amber-300 text-xs font-semibold">JV Permission Required</p>
+                      </div>
+                      <p className="text-gray-500 text-[10px] mb-2">Confirm permission before marketing this JV deal.</p>
+                      <button onClick={() => setTab('source')} className="flex items-center gap-1 px-2.5 py-1 bg-amber-700/50 hover:bg-amber-700/70 text-amber-200 text-[10px] rounded-lg transition font-medium">
+                        <Shield size={9}/> Confirm JV Permission
+                      </button>
+                    </div>
+                  )}
+                  {missingPhotos && (
+                    <div className="bg-red-900/20 border border-red-800/40 rounded-lg p-2.5">
+                      <div className="flex items-start gap-1.5 mb-1.5">
+                        <Camera size={10} className="text-red-400 shrink-0 mt-0.5"/>
+                        <p className="text-red-300 text-xs font-semibold">Photos Required</p>
+                      </div>
+                      <p className="text-gray-500 text-[10px] mb-2">Buyers need photos before blasting.</p>
+                      <div className="flex gap-1.5">
+                        <button onClick={() => setTab('overview')} className="flex items-center gap-1 px-2.5 py-1 bg-red-700/50 hover:bg-red-700/70 text-red-200 text-[10px] rounded-lg transition font-medium">
+                          <Upload size={9}/> Upload Photos
+                        </button>
+                        <button onClick={() => toast('Request photos from source via phone/text')} className="flex items-center gap-1 px-2.5 py-1 bg-gray-800 hover:bg-gray-700 text-gray-400 text-[10px] rounded-lg transition">
+                          <Send size={9}/> Request Photos
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  {sellBlockers.filter(bl => !bl.includes('Photos') && !bl.includes('JV') && !bl.includes('permission')).slice(0,2).map((bl,i) => (
+                    <div key={i} className="flex items-start gap-1.5 text-xs text-gray-500">
+                      <AlertCircle size={10} className="text-gray-600 shrink-0 mt-0.5"/>
                       {bl.split('—')[0].trim()}
                     </div>
                   ))}
@@ -526,25 +569,31 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
             </div>
 
             {/* Recommended Blast */}
-            <div className={`rounded-xl p-4 ${b>0&&hasPhotos&&hasPermission ? 'bg-green-900/20 border border-green-800/40' : 'bg-gray-900 border border-gray-800'}`}>
+            <div className={`rounded-xl p-4 ${b>0&&!missingPhotos&&!missingPermission ? 'bg-green-900/20 border border-green-800/40' : 'bg-gray-900 border border-gray-800'}`}>
               <p className="text-gray-500 text-[10px] font-bold uppercase tracking-wide mb-2">Recommended Blast</p>
               {b > 0 ? (
                 <>
-                  <p className="text-white text-sm font-semibold mb-0.5">{b} buyer{b>1?'s':''} matched{t1>0?`, ${t1} Tier 1 first`:''}</p>
-                  <p className="text-gray-500 text-xs mb-3">{deal.city || 'Local'} {deal.dealType==='SUBTO'?'creative / Subto buyers':'cash buyers and flippers'}</p>
-                  {b>0&&hasPhotos&&hasPermission ? (
-                    <button onClick={() => { setTab('dispo'); generateContent.mutate('sms'); }}
-                      className="w-full flex items-center justify-center gap-2 py-2 bg-green-600 hover:bg-green-500 text-white text-sm rounded-lg font-bold transition">
-                      <Zap size={13}/> Blast {b} Buyers
-                    </button>
+                  <div className="flex items-baseline gap-2 mb-0.5">
+                    <span className="text-white text-sm font-semibold">{b} buyer{b>1?'s':''} matched</span>
+                    {t1>0&&<span className="text-orange-400 text-xs font-bold">{t1} Tier 1 first</span>}
+                  </div>
+                  <p className="text-gray-500 text-xs mb-3">Audience: {deal.city || 'Local'} {deal.dealType==='SUBTO'?'creative / Subto buyers':'cash buyers and flippers'}</p>
+                  {!missingPhotos && !missingPermission ? (
+                    <>
+                      <p className="text-green-400 text-xs mb-2 font-medium">✓ Ready to blast</p>
+                      <button onClick={() => { setTab('dispo'); generateContent.mutate('sms'); }}
+                        className="w-full flex items-center justify-center gap-2 py-2.5 bg-green-600 hover:bg-green-500 text-white text-sm rounded-lg font-bold transition">
+                        <Zap size={13}/> Blast {b} Buyers
+                      </button>
+                    </>
                   ) : (
                     <>
-                      <div className="text-xs text-amber-300 mb-2">
-                        {!hasPhotos && <p>· Photos required before blast</p>}
-                        {!hasPermission && !isOwn && <p>· JV permission required before blast</p>}
+                      <div className="space-y-1 mb-3">
+                        {missingPermission && <p className="text-amber-400 text-xs flex items-center gap-1"><AlertCircle size={10}/> JV permission required before blast</p>}
+                        {missingPhotos && <p className="text-red-400 text-xs flex items-center gap-1"><Camera size={10}/> Photos required before blast</p>}
                       </div>
                       <button onClick={primaryAction.fn}
-                        className={`w-full flex items-center justify-center gap-2 py-2 ${primaryAction.color} text-white text-sm rounded-lg font-medium transition`}>
+                        className={`w-full flex items-center justify-center gap-2 py-2.5 ${primaryAction.color} text-white text-sm rounded-lg font-semibold transition`}>
                         <primaryAction.icon size={13}/>
                         {primaryAction.label}
                       </button>
@@ -553,9 +602,10 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
                 </>
               ) : (
                 <>
-                  <p className="text-gray-500 text-sm mb-3">No buyers matched yet for this deal.</p>
+                  <p className="text-gray-500 text-sm mb-1">No buyers matched yet.</p>
+                  <p className="text-gray-600 text-xs mb-3">Run buyer match to build your blast list.</p>
                   <button onClick={() => matchAction.mutate()} disabled={matchAction.isPending}
-                    className="w-full flex items-center justify-center gap-2 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm rounded-lg font-medium transition disabled:opacity-50">
+                    className="w-full flex items-center justify-center gap-2 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm rounded-lg font-semibold transition disabled:opacity-50">
                     <Target size={13}/> {matchAction.isPending ? 'Matching...' : 'Run Buyer Match'}
                   </button>
                 </>
@@ -564,18 +614,39 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
 
             {/* Dispo Strategy quick view */}
             <div className="bg-gray-900 rounded-xl border border-gray-800 p-4 flex-1">
-              <p className="text-gray-500 text-[10px] font-bold uppercase tracking-wide mb-2">Dispo Angle</p>
-              <p className="text-gray-300 text-xs leading-relaxed">
-                {deal.dealType==='SUBTO' ? 'Market as creative finance / Subto with assumable debt and cash flow.'
-                  : (deal.overallCondition||'').includes('HEAVY') ? 'Market as value-add heavy rehab for cash buyers and flippers.'
-                  : `Market as off-market ${(deal.propertyType||'SFR').replace(/_/g,' ').toLowerCase()} with buyer demand in ${deal.city||'this market'}.`}
-              </p>
-              {deal.description && (
-                <>
-                  <p className="text-gray-500 text-[10px] font-bold uppercase tracking-wide mb-1 mt-3">Pitch Line</p>
-                  <p className="text-gray-400 text-xs leading-relaxed line-clamp-2">{deal.description}</p>
-                </>
-              )}
+              <p className="text-gray-500 text-[10px] font-bold uppercase tracking-wide mb-2">Dispo Strategy</p>
+              <div className="space-y-2.5">
+                <div>
+                  <p className="text-gray-600 text-[10px] font-semibold uppercase mb-0.5">Angle</p>
+                  <p className="text-gray-300 text-xs leading-relaxed">
+                    {deal.dealType==='SUBTO'
+                      ? `Market as creative finance Subto with assumable debt and cash flow in ${deal.city||'this market'}.`
+                      : (deal.overallCondition||'').includes('HEAVY')
+                      ? `Market as value-add heavy rehab — strong spread for experienced flippers in ${deal.city||'this market'}.`
+                      : `Market as off-market ${deal.beds||''}bd/${deal.baths||''}ba in ${deal.city||'this market'} with strong public value gap and active buyer demand.`}
+                  </p>
+                </div>
+                {deal.description && (
+                  <div>
+                    <p className="text-gray-600 text-[10px] font-semibold uppercase mb-0.5">Buyer Pitch</p>
+                    <p className="text-gray-400 text-xs leading-relaxed line-clamp-2">{deal.description}</p>
+                  </div>
+                )}
+                <div>
+                  <p className="text-gray-600 text-[10px] font-semibold uppercase mb-0.5">Buyer Type</p>
+                  <p className="text-gray-400 text-xs">{deal.city||'Local'} {deal.dealType==='SUBTO'?'creative / Subto buyers comfortable with seller financing':'cash buyers and medium-rehab flippers'}.</p>
+                </div>
+                {(missingPhotos || missingPermission) && (
+                  <div className="pt-2 border-t border-gray-800">
+                    <p className="text-amber-500 text-[10px] font-semibold uppercase mb-0.5">Risk Notes</p>
+                    <p className="text-gray-500 text-[10px]">
+                      {missingPermission && 'JV permission not confirmed. '}
+                      {missingPhotos && 'Photos missing. '}
+                      Do not blast until blockers are resolved.
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -610,10 +681,16 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
                   </div>
                 )}
                 {gap !== 0 && refValue > 0 && deal.askingPrice && (
-                  <div className={`text-xs font-semibold text-center py-1.5 rounded-lg ${gap>0?'bg-green-900/30 text-green-400':'bg-red-900/30 text-red-400'}`}>
-                    {gap > 0 ? `${formatCurrency(Math.abs(gap))} under threshold` : `${formatCurrency(Math.abs(gap))} over threshold`}
+                  <div className={`text-center py-2 rounded-lg ${gap>0?'bg-green-900/30':'bg-red-900/30'}`}>
+                    <p className={`text-xs font-bold ${gap>0?'text-green-400':'text-red-400'}`}>
+                      {gap > 0 ? `Ask is ${formatCurrency(Math.abs(gap))} under 70%` : `Ask is ${formatCurrency(Math.abs(gap))} over 70%`}
+                    </p>
+                    <p className={`text-[10px] font-semibold mt-0.5 ${gap>20000?'text-green-500':gap>0?'text-green-400':gap>-20000?'text-yellow-400':'text-red-400'}`}>
+                      {gap>20000?'Strong Price Signal':gap>0?'Near Investor Threshold':gap>-20000?'Slightly Over Threshold':'Overpriced vs Public Value'}
+                    </p>
                   </div>
                 )}
+                {!deal.arv && refValue > 0 && <p className="text-gray-700 text-[10px] italic">ARV Pending — public value used as quick reference</p>}
                 {!refValue && (
                   <button onClick={fetchZestimate} disabled={zestimateFetching}
                     className="w-full flex items-center justify-center gap-1.5 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs rounded-lg transition border border-gray-700 mt-1">
