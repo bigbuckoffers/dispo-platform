@@ -506,23 +506,32 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
   const sellReasons: string[] = [];
   const sellBlockers: string[] = [];
   let sellScore = 0;
-  if (b > 0)         { sellScore += 25; sellReasons.push(`${b} matched buyer${b>1?'s':''}`); }
-  else                 { sellBlockers.push('No buyer matches — run match first'); }
-  if (t1 > 0)        { sellScore += 15; sellReasons.push(`${t1} Tier 1 buyer${t1>1?'s':''}`); }
-  if (hasPhotos)      { sellScore += 15; sellReasons.push('Photos available'); }
-  else                 { sellBlockers.push('Photos missing — buyers need to see the property'); }
-  if (hasPrice)       { sellScore += 10; }
-  else                 { sellBlockers.push('Asking price not set'); }
-  if (hasValue)       { sellScore += 10; sellReasons.push('Value/ARV data available'); }
-  else                 { sellBlockers.push('No ARV or public value estimates'); }
-  if (underValue || underArv) { sellScore += 10; sellReasons.push('Ask appears under market value'); }
-  if (hasDesc)        { sellScore += 5; }
-  if (hasPermission)  { sellScore += 5; }
-  else if (!isOwn)     { sellBlockers.push('JV permission to market not confirmed'); }
-  if (hasCOE)         { sellScore += 5; sellReasons.push('Closing date confirmed'); }
-  sellScore = Math.max(0, Math.min(100, sellScore + 10));
+  // Positive signals
+  if (b > 0)                    { sellScore += 25; sellReasons.push(`${b} matched buyer${b>1?'s':''}`); }
+  if (t1 > 0)                   { sellScore += 15; sellReasons.push(`${t1} Tier 1 buyer${t1>1?'s':''}`); }
+  if (hasPhotos)                 { sellScore += 15; sellReasons.push('Photos confirmed'); }
+  if (hasPrice)                  { sellScore += 10; }
+  if (hasValue)                  { sellScore += 10; sellReasons.push('Value/ARV data available'); }
+  if (underValue || underArv)    { sellScore += 10; sellReasons.push('Ask appears under market value'); }
+  if (hasDesc)                   { sellScore += 5; }
+  if (hasPermission)             { sellScore += 5; }
+  if (hasCOE)                    { sellScore += 5; sellReasons.push('Closing date confirmed'); }
+  // Hard caps for blockers — score cannot exceed cap if blocker exists
+  if (!b)          { sellScore = Math.min(sellScore, 60); sellBlockers.push('No buyer matches — run match first'); }
+  if (!hasPhotos)  { sellScore = Math.min(sellScore, 82); sellBlockers.push('Photos missing — buyers need to see the property'); }
+  if (!hasValue)   { sellScore = Math.min(sellScore, 70); sellBlockers.push('No ARV or public value estimates'); }
+  if (!hasPrice)   { sellScore = Math.min(sellScore, 55); sellBlockers.push('Asking price not set'); }
+  if (!hasPermission && !isOwn) { sellScore = Math.min(sellScore, 70); sellBlockers.push('JV permission to market not confirmed'); }
+  if (!hasCOE)     { sellScore = Math.min(sellScore, 88); }
+  if (!hasDesc)    { sellScore = Math.min(sellScore, 85); }
+  sellScore = Math.max(0, Math.min(100, sellScore));
 
-  const sellLabel = sellScore >= 85 ? 'Hot — Highly Sellable' : sellScore >= 75 ? 'Strong Dispo Opportunity' : sellScore >= 60 ? 'Workable — Needs a Push' : sellScore >= 40 ? 'Needs Info / Not Ready' : 'Weak — Not Ready to Sell';
+  const primaryBlocker = sellBlockers[0] || null;
+  const sellLabel = sellScore >= 90 ? 'Highly Sellable — Ready to Blast'
+    : sellScore >= 75 ? `Strong Dispo Opportunity${primaryBlocker ? ' — 1 blocker' : ''}`
+    : sellScore >= 60 ? `Workable — ${sellBlockers.length} blocker${sellBlockers.length>1?'s':''} to fix`
+    : sellScore >= 40 ? 'Needs Info — Not Ready to Blast'
+    : 'Weak — Not Ready to Sell';
   const sellColor = sellScore >= 75 ? 'text-green-400' : sellScore >= 60 ? 'text-blue-400' : sellScore >= 40 ? 'text-yellow-400' : 'text-red-400';
   const sellBorderBg = sellScore >= 75 ? 'border-green-800/30 bg-green-900/5' : sellScore >= 60 ? 'border-blue-800/30 bg-blue-900/5' : sellScore >= 40 ? 'border-yellow-800/30 bg-yellow-900/5' : 'border-red-800/30 bg-red-900/5';
   const sellBar = sellScore >= 75 ? 'bg-green-500' : sellScore >= 60 ? 'bg-blue-500' : sellScore >= 40 ? 'bg-yellow-500' : 'bg-red-500';
@@ -574,16 +583,16 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
           ))}
         </div>
 
-        {missing.length > 0 && (
+        {sellBlockers.length > 0 && (
           <div className="flex items-center justify-between p-3 bg-amber-900/20 border border-amber-800/40 rounded-xl mb-3">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 min-w-0">
               <AlertCircle size={14} className="text-amber-400 shrink-0" />
-              <span className="text-amber-300 text-sm font-medium">{missing.length} missing: </span>
-              <span className="text-gray-400 text-sm">{missing.slice(0, 4).join(' · ')}{missing.length > 4 ? ` +${missing.length - 4} more` : ''}</span>
+              <span className="text-amber-300 text-sm font-medium shrink-0">{sellBlockers.length} blocker{sellBlockers.length>1?'s':''}: </span>
+              <span className="text-gray-400 text-sm truncate">{sellBlockers.slice(0,2).map(b=>b.split('—')[0].trim()).join(' · ')}{sellBlockers.length>2?` +${sellBlockers.length-2} more`:''}</span>
             </div>
             <button onClick={() => followUpAction.mutate()} disabled={followUpAction.isPending}
-              className="text-xs px-3 py-1.5 bg-amber-700/50 hover:bg-amber-700 text-amber-300 rounded-lg transition">
-              Generate Follow-Up
+              className="text-xs px-3 py-1.5 bg-amber-700/50 hover:bg-amber-700 text-amber-300 rounded-lg transition shrink-0 ml-2">
+              Request Info
             </button>
           </div>
         )}
@@ -600,6 +609,7 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
                 <div>
                   <p className="text-white font-bold text-base leading-tight">Deal Sellability</p>
                   <p className={`text-sm font-medium ${sellColor}`}>{sellLabel}</p>
+                {primaryBlocker && <p className="text-gray-500 text-xs mt-0.5">Fix: {primaryBlocker.split('—')[0].trim()}</p>}
                 </div>
               </div>
               <div className="flex items-center gap-2 mt-1">
@@ -663,37 +673,57 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
       </div>
 
       {/* AI DEAL READ */}
-      {(deal.aiDealReadSummary || deal.description) && (
-        <div className="bg-gray-900 rounded-xl border border-gray-800 p-4">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <Sparkles size={14} className="text-purple-400" />
-              <h3 className="text-white text-sm font-medium">AI Deal Read</h3>
-            </div>
-            <button onClick={() => calcAction.mutate()} className="text-xs text-gray-500 hover:text-gray-300 flex items-center gap-1 transition">
-              <RefreshCw size={10} /> Refresh
-            </button>
+      <div className="bg-gray-900 rounded-xl border border-gray-800 p-4">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <Sparkles size={14} className="text-purple-400" />
+            <h3 className="text-white text-sm font-medium">AI Deal Read</h3>
           </div>
-          <p className="text-gray-300 text-sm leading-relaxed mb-3">{deal.aiDealReadSummary || deal.description}</p>
-          {missing.length > 0 && (
-            <div className="bg-gray-800/60 rounded-lg p-3 mb-3">
-              <p className="text-amber-400 text-xs font-medium mb-1">Next Best Action</p>
-              <p className="text-gray-300 text-sm">
-                {!hasPhotos ? 'Add photos before blasting — deals without photos convert poorly with buyers.' :
-                 (deal.matchedBuyerCount || 0) === 0 ? 'Run buyer match to find qualified buyers in this market.' :
-                 missing[0] ? `Fill in ${missing[0]} to improve blast readiness.` : 'Review deal and prepare blast.'}
-              </p>
+          <button onClick={() => calcAction.mutate()} className="text-xs text-gray-500 hover:text-gray-300 flex items-center gap-1 transition">
+            <RefreshCw size={10} /> Refresh
+          </button>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="space-y-2">
+            <div className="bg-gray-800/50 rounded-lg p-3">
+              <p className="text-gray-500 text-[10px] font-bold uppercase tracking-wide mb-1">Verdict</p>
+              <p className="text-white text-sm font-medium">{sellLabel}</p>
             </div>
-          )}
+            <div className="bg-gray-800/50 rounded-lg p-3">
+              <p className="text-gray-500 text-[10px] font-bold uppercase tracking-wide mb-1">Best Buyer Type</p>
+              <p className="text-gray-300 text-sm">{bestBuyerProfile}</p>
+            </div>
+            <div className="bg-gray-800/50 rounded-lg p-3">
+              <p className="text-gray-500 text-[10px] font-bold uppercase tracking-wide mb-1">Next Step</p>
+              <p className="text-gray-300 text-sm">{b > 0 && hasPhotos && hasPermission ? 'Ready — send blast to top matched buyers.' : b > 0 && !hasPhotos ? `${isOwn ? 'Upload' : 'Request'} buyer-safe photos, then generate blast.` : b > 0 ? 'Fix remaining blockers, then send blast.' : 'Run buyer match to identify qualified buyers.'}</p>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <div className="bg-gray-800/50 rounded-lg p-3">
+              <p className="text-gray-500 text-[10px] font-bold uppercase tracking-wide mb-1.5">Why it works</p>
+              {sellReasons.length > 0 ? <ul className="space-y-1">{sellReasons.map((r,i)=><li key={i} className="text-xs text-gray-300 flex items-center gap-1.5"><CheckCircle size={10} className="text-green-400 shrink-0"/>{r}</li>)}</ul> : <p className="text-gray-600 text-xs">No strong signals yet</p>}
+            </div>
+            {sellBlockers.length > 0 && (
+              <div className="bg-gray-800/50 rounded-lg p-3">
+                <p className="text-gray-500 text-[10px] font-bold uppercase tracking-wide mb-1.5">Risks / blockers</p>
+                <ul className="space-y-1">{sellBlockers.map((bl,i)=><li key={i} className="text-xs text-amber-300 flex items-center gap-1.5"><AlertCircle size={10} className="text-amber-400 shrink-0"/>{bl.split('—')[0].trim()}</li>)}</ul>
+              </div>
+            )}
+          </div>
+        </div>
+        {(deal.aiDealReadSummary || deal.description) && (
+          <p className="text-gray-500 text-xs mt-3 pt-3 border-t border-gray-800 leading-relaxed">{deal.aiDealReadSummary || deal.description}</p>
+        )}
+        <div className="flex gap-2 mt-3">
           <button onClick={() => followUpAction.mutate()} disabled={followUpAction.isPending}
             className="flex items-center gap-2 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs rounded-lg transition border border-gray-700">
-            <Send size={11} /> Generate Follow-Up Message
+            <Send size={11} /> Generate Follow-Up
           </button>
-          {generatedOutput.followUp && (
-            <GeneratedOutput content={generatedOutput.followUp} onClose={() => setGeneratedOutput(prev => ({ ...prev, followUp: '' }))} />
-          )}
         </div>
-      )}
+        {generatedOutput.followUp && (
+          <GeneratedOutput content={generatedOutput.followUp} onClose={() => setGeneratedOutput(prev => ({ ...prev, followUp: '' }))} />
+        )}
+      </div>
 
       {/* Tabs */}
       <div className="flex gap-1 bg-gray-900/80 p-1 rounded-xl border border-gray-800 w-fit">
