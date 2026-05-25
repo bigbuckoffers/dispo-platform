@@ -1,5 +1,5 @@
 'use client';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -113,9 +113,36 @@ function PhotoGallery({ deal, onUpdate }: { deal: any; onUpdate: (data: any) => 
   const [driveInput, setDriveInput] = useState('');
   const [urlInput, setUrlInput] = useState('');
   const [dragging, setDragging] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const photos: string[] = deal.photos?.filter(Boolean) || [];
   const hasDrive = !!deal.googleDriveUrl;
   const hasPhotos = photos.length > 0;
+
+  const uploadToCloudinary = async (file: File): Promise<string> => {
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('upload_preset', 'dispoai_photos');
+    const r = await fetch('https://api.cloudinary.com/v1_1/dhueussrm/image/upload', { method: 'POST', body: fd });
+    const d = await r.json();
+    if (!d.secure_url) throw new Error('Upload failed');
+    return d.secure_url;
+  };
+
+  const handleFiles = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setUploading(true);
+    try {
+      const urls: string[] = [];
+      for (const file of Array.from(files)) {
+        if (!file.type.startsWith('image/')) continue;
+        const url = await uploadToCloudinary(file);
+        urls.push(url);
+      }
+      if (urls.length > 0) onUpdate({ photos: [...photos, ...urls] });
+    } catch(e) { alert('Upload failed. Check your Cloudinary settings.'); }
+    finally { setUploading(false); }
+  };
 
   const saveDriveLink = () => {
     if (!driveInput.trim()) return;
@@ -135,15 +162,23 @@ function PhotoGallery({ deal, onUpdate }: { deal: any; onUpdate: (data: any) => 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setDragging(false);
+    if (e.dataTransfer.files?.length > 0) {
+      handleFiles(e.dataTransfer.files);
+      return;
+    }
     const text = e.dataTransfer.getData('text');
-    if (text && (text.startsWith('http') || text.startsWith('https'))) {
-      const updated = [...photos, text.trim()];
-      onUpdate({ photos: updated });
+    if (text && text.startsWith('http')) {
+      onUpdate({ photos: [...photos, text.trim()] });
     }
   };
 
   const ActionButtons = () => (
     <div className="flex gap-2 flex-wrap">
+      <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={e => handleFiles(e.target.files)} />
+      <button onClick={() => fileInputRef.current?.click()} disabled={uploading}
+        className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-900/40 hover:bg-blue-900/60 text-blue-300 text-xs rounded-lg transition border border-blue-700/40 disabled:opacity-50">
+        <Upload size={11} /> {uploading ? 'Uploading...' : 'Upload Photos'}
+      </button>
       <button onClick={() => { setShowUrlInput(!showUrlInput); setShowDriveInput(false); }}
         className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs rounded-lg transition border border-gray-700">
         <Link size={11} /> Add Photo URL
@@ -199,9 +234,9 @@ function PhotoGallery({ deal, onUpdate }: { deal: any; onUpdate: (data: any) => 
           onDragLeave={() => setDragging(false)}
           onDrop={handleDrop}
           className={`flex-1 flex flex-col items-center justify-center p-6 text-center transition ${dragging ? 'bg-blue-900/20 border-2 border-dashed border-blue-500' : ''}`}>
-          <Camera size={36} className="text-gray-700 mb-3" />
-          <p className="text-gray-400 font-medium text-sm mb-1">Photos Missing</p>
-          <p className="text-gray-600 text-xs">Drag & drop a photo URL, or add links below.</p>
+          <Camera size={36} className={`mb-3 ${uploading ? 'text-blue-500 animate-pulse' : 'text-gray-700'}`} />
+          <p className="text-gray-400 font-medium text-sm mb-1">{uploading ? 'Uploading...' : 'Photos Missing'}</p>
+          <p className="text-gray-600 text-xs">{uploading ? 'Please wait' : 'Drag & drop photos or click Upload Photos below.'}</p>
         </div>
         <div className="p-3 border-t border-gray-800 space-y-2">
           <ActionButtons />
