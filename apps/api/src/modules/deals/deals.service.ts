@@ -193,4 +193,81 @@ export class DealsService {
     }
     return { error: 'Could not parse ARV response', raw: text.substring(0, 500) };
   }
+
+  async fetchZestimate(id: string) {
+    const deal = await this.prisma.deal.findUnique({ where: { id } });
+    if (!deal) throw new Error('Deal not found');
+    if (!deal.address || !deal.city || !deal.state) throw new Error('Deal missing address');
+
+    // Build Zillow search URL
+    const addressSlug = [deal.address, deal.city, deal.state, deal.zipCode]
+      .filter(Boolean).join(' ').replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-]/g, '');
+    const zillowUrl = `https://www.zillow.com/homes/${encodeURIComponent(`${deal.address}, ${deal.city}, ${deal.state} ${deal.zipCode || ''}`)}`;
+    const searchUrl = `https://www.zillow.com/search/GetSearchPageState.htm?searchQueryState={"pagination":{},"isMapVisible":false,"filterState":{"sort":{"value":"globalrelevanceex"}},"mapBounds":{}}&wants={"cat1":["listResults","mapResults"]}&requestId=1&address=${encodeURIComponent(`${deal.address}, ${deal.city}, ${deal.state}`)}`;
+
+    const scraperKey = process.env.SCRAPER_API_KEY || '2937e26b28b93482446a9d030142aa50';
+
+    try {
+      // Use ScraperAPI to fetch Zillow property page
+      const targetUrl = `https://www.zillow.com/homes/${encodeURIComponent(`${deal.address},-${deal.city},-${deal.state}_rb/`)}`;
+      const scraperUrl = `http://api.scraperapi.com?api_key=${scraperKey}&url=${encodeURIComponent(zillowUrl)}&render=true`;
+
+      const response = await fetch(scraperUrl, { signal: AbortSignal.timeout(30000) });
+      const html = await response.text();
+
+      // Extract Zestimate from HTML
+      let zestimate: number | null = null;
+      let zillowLink = zillowUrl;
+
+      // Try to find Zestimate in the page HTML
+      const patterns = [
+        /"zestimate":(\d+)/,
+        /"zestimate":\s*(\d+)/,
+        /Zestimate<\/div><div[^>]*>\$([0-9,]+)/,
+        /zestimate[^>]*>\$([0-9,]+)/i,
+        /"price":(\d+).*?"zestimate"/,
+      ];
+
+      for (const pattern of patterns) {
+        const match = html.match(pattern);
+        if (match) {
+          const val = parseInt(match[1].replace(/,/g, ''));
+          if (val > 10000 && val < 50000000) {
+            zestimate = val;
+            break;
+          }
+        }
+      }
+
+      // Also try JSON data embedded in page
+      const jsonMatch = html.match(/<!--({"queryState".*?)-->/s) ||
+                        html.match(/window\.__PRELOADED_STATE__\s*=\s*({.*?});/s) ||
+                        html.match(/"hdpData":\s*({.*?"zestimate".*?})/s);
+
+      if (!zestimate && jsonMatch) {
+        try {
+          const data = JSON.parse(jsonMatch[1]);
+          const z = data?.hdpData?.homeInfo?.zestimate ||
+                    data?.props?.pageProps?.gdpClientCache?.['Gdp:*']?.property?.zestimate ||
+                    data?.zestimate;
+          if (z && z > 10000) zestimate = z;
+        } catch {}
+      }
+
+      if (zestimate) {
+        await this.prisma.deal.update({
+          where: { id },
+          data: { zillowEstimate: zestimate, zillowUrl: zillowLink }
+        });
+        return { success: true, zestimate, zillowUrl: zillowLink, source: 'scraperapi' };
+      }
+
+      // If no Zestimate found, still save the URL
+      await this.prisma.deal.update({ where: { id }, data: { zillowUrl: zillowLink } });
+      return { success: false, message: 'Zestimate not found on page — Zillow URL saved. Try adding manually.', zillowUrl: zillowLink };
+
+    } catch (err: any) {
+      return { success: false, message: err.message || 'Scrape failed', zillowUrl };
+    }
+  }
 }

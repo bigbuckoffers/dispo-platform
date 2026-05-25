@@ -178,4 +178,9 @@ export class DealsController {
   async arvAnalysis(@Param('id') id: string) {
     return this.dealsService.runArvAnalysis(id);
   }
+
+  @Post(':id/fetch-zestimate')
+  async fetchZestimate(@Param('id') id: string) {
+    return this.dealsService.fetchZestimate(id);
+  }
 }
