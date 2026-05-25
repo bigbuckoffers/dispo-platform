@@ -452,19 +452,11 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
 
   const runArvAnalysis = async () => {
     setArvLoading(true); setArvAnalysis(null);
-    const prompt = `You are a Master Appraiser. Estimate the ARV for: ${deal.address}, ${deal.city}, ${deal.state} ${deal.zipCode}. Property: ${deal.beds||'?'}bd/${deal.baths||'?'}ba, ${deal.sqft||'?'} sqft, built ${deal.yearBuilt||'?'}, ${deal.propertyType||'SFR'}, ${deal.overallCondition||'unknown condition'}. Search for 3-6 closed comps in the same subdivision within 12 months. Be conservative. Return ONLY valid JSON: {"arvLow":0,"arvMedian":0,"arvHigh":0,"confidence":3,"confidenceReason":"...","comps":[{"address":"...","saleDate":"...","salePrice":0,"sqft":0,"pricePerSqft":0,"notes":"..."}],"recommendation":"...","dataWarnings":"..."}`;
     try {
-      const r = await fetch('https://api.anthropic.com/v1/messages', {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ model:'claude-sonnet-4-20250514', max_tokens:2000,
-          tools:[{type:'web_search_20250305',name:'web_search'}],
-          messages:[{role:'user',content:prompt}] })
-      });
-      const data = await r.json();
-      const text = (data.content||[]).filter((b:any)=>b.type==='text').map((b:any)=>b.text).join('');
-      const m = text.match(/\{[\s\S]*\}/);
-      if (m) { const p = JSON.parse(m[0]); setArvAnalysis(p); if(p.arvMedian) updateDeal.mutate({arv:p.arvMedian}); }
-      else setArvAnalysis({error: text||'No JSON returned'});
+      const r = await api.post(`/deals/${id}/arv-analysis`);
+      const p = r.data;
+      setArvAnalysis(p);
+      if(p.arvMedian) qc.invalidateQueries({ queryKey: ['deal', id] });
     } catch(e:any) { setArvAnalysis({error:e.message}); }
     finally { setArvLoading(false); }
   };
