@@ -415,6 +415,8 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
   const [generatedOutput, setGeneratedOutput] = useState<Record<string, string>>({});
   const [arvAnalysis, setArvAnalysis] = useState<any>(null);
   const [arvLoading, setArvLoading] = useState(false);
+  const [zestimateFetching, setZestimateFetching] = useState(false);
+  const [zestimateResult, setZestimateResult] = useState<any>(null);
 
   const { data: deal, isLoading } = useQuery({
     queryKey: ['deal', id],
@@ -458,6 +460,22 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
     onError: () => toast.error('Failed to save'),
   });
 
+  const fetchZestimate = async () => {
+    setZestimateFetching(true);
+    setZestimateResult(null);
+    try {
+      const r = await api.post(`/deals/${id}/fetch-zestimate`);
+      setZestimateResult(r.data);
+      if (r.data.success) {
+        qc.invalidateQueries({ queryKey: ['deal', id] });
+        toast.success('Zestimate fetched: ' + formatCurrency(r.data.zestimate));
+      } else {
+        toast.error(r.data.message || 'Could not find Zestimate');
+      }
+    } catch(e: any) { toast.error('Fetch failed: ' + e.message); }
+    finally { setZestimateFetching(false); }
+  };
+
   const runArvAnalysis = async () => {
     setArvLoading(true); setArvAnalysis(null);
     try {
@@ -474,9 +492,9 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
 
   const potentialMargin = (deal.arv || 0) - (deal.askingPrice || 0) - (deal.repairEstimate || 0);
   const priority = getPriorityBadge(deal.dealPriorityScore || 0);
+  const hasPhotos = !!(deal.photosUrl || deal.googleDriveUrl || (deal.photos && deal.photos.length > 0));
   const rawMissing = deal.missingInfo || [];
   const missing = hasPhotos ? rawMissing.filter((m: string) => !m.toLowerCase().includes('photo')) : rawMissing;
-  const hasPhotos = !!(deal.photosUrl || deal.googleDriveUrl || (deal.photos && deal.photos.length > 0));
   const hasSource = !!(deal.sourceName || deal.sourcePhone);
   const isJvOrFacebook = ['JV', 'FACEBOOK', 'BIRD_DOG'].includes(deal.sourceType);
   const mapsUrl = deal.googleMapsUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${deal.address}, ${deal.city}, ${deal.state} ${deal.zipCode}`)}`;
@@ -820,9 +838,10 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
             </div>
 
             <Card title="Public Value Estimates" icon={TrendingUp} warning={!deal.zillowEstimate && !deal.realtorEstimate && !deal.redfinEstimate ? 'Not added yet' : undefined}>
-              <div className="flex gap-2 mb-3 flex-wrap">
-                {[
-                  { name: 'Zillow', url: deal.zillowUrl || `https://www.zillow.com/homes/${encodeURIComponent(`${deal.address}, ${deal.city}, ${deal.state}`)}` },
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex gap-2 flex-wrap">
+                  {[
+                    { name: 'Zillow', url: deal.zillowUrl || `https://www.zillow.com/homes/${encodeURIComponent(`${deal.address}, ${deal.city}, ${deal.state}`)}` },
                   { name: 'Realtor', url: deal.realtorUrl || `https://www.realtor.com/realestateandhomes-search/${(deal.city||'').replace(' ','-')}_${deal.state}` },
                   { name: 'Redfin', url: deal.redfinUrl || `https://www.redfin.com/city/${(deal.city||'').replace(' ','-')}/${deal.state}` },
                 ].map(s => (
@@ -831,7 +850,24 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
                     <ExternalLink size={9} /> {s.name}
                   </a>
                 ))}
+                </div>
+                <button onClick={fetchZestimate} disabled={zestimateFetching}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-900/40 hover:bg-blue-900/60 border border-blue-700/40 text-blue-300 text-xs rounded-lg transition disabled:opacity-50 shrink-0">
+                  {zestimateFetching ? <><RefreshCw size={10} className="animate-spin"/> Fetching...</> : <><Sparkles size={10}/> Fetch Zestimate</>}
+                </button>
               </div>
+              {deal.zillowEstimate && (
+                <div className="mb-3 p-2.5 bg-blue-900/20 border border-blue-800/30 rounded-lg flex items-center justify-between">
+                  <div>
+                    <p className="text-blue-300 text-xs font-semibold">Zillow Zestimate</p>
+                    <p className="text-white text-lg font-bold">{formatCurrency(deal.zillowEstimate)}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-gray-500 text-xs">70% of Zestimate</p>
+                    <p className="text-yellow-400 text-sm font-semibold">{formatCurrency(deal.zillowEstimate * 0.70)}</p>
+                  </div>
+                </div>
+              )}
               {(deal.zillowEstimate || deal.realtorEstimate || deal.redfinEstimate) ? (
                 <>
                   {[
