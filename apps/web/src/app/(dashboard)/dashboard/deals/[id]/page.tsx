@@ -474,7 +474,8 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
 
   const potentialMargin = (deal.arv || 0) - (deal.askingPrice || 0) - (deal.repairEstimate || 0);
   const priority = getPriorityBadge(deal.dealPriorityScore || 0);
-  const missing = deal.missingInfo || [];
+  const rawMissing = deal.missingInfo || [];
+  const missing = hasPhotos ? rawMissing.filter((m: string) => !m.toLowerCase().includes('photo')) : rawMissing;
   const hasPhotos = !!(deal.photosUrl || deal.googleDriveUrl || (deal.photos && deal.photos.length > 0));
   const hasSource = !!(deal.sourceName || deal.sourcePhone);
   const isJvOrFacebook = ['JV', 'FACEBOOK', 'BIRD_DOG'].includes(deal.sourceType);
