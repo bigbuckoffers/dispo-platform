@@ -351,6 +351,28 @@ function EditableTextarea({ value, onSave, placeholder }: { value: string; onSav
   );
 }
 
+
+function HeaderField({ value, placeholder, onSave, suffix='', width='w-20' }: {
+  value: string; placeholder: string; onSave: (v:string)=>void; suffix?: string; width?: string;
+}) {
+  const [editing, setEditing] = React.useState(false);
+  const [val, setVal] = React.useState(value);
+  React.useEffect(() => { setVal(value); }, [value]);
+  if (editing) return (
+    <input autoFocus value={val}
+      onChange={e=>setVal(e.target.value)}
+      onBlur={()=>{ setEditing(false); if(val!==value) onSave(val); }}
+      onKeyDown={e=>{ if(e.key==='Enter'){ setEditing(false); if(val!==value) onSave(val); } if(e.key==='Escape') setEditing(false); }}
+      className={`${width} bg-gray-800 border border-blue-500 rounded px-1 text-xs text-white outline-none`} />
+  );
+  return (
+    <button onClick={()=>setEditing(true)}
+      className="text-xs text-gray-400 hover:text-white hover:bg-gray-800 rounded px-1 py-0.5 transition">
+      {value ? `${value}${suffix ? ' '+suffix : ''}` : <span className="text-gray-600 italic">{placeholder}</span>}
+    </button>
+  );
+}
+
 export default function DealDetailPage({ params }: { params: { id: string } }) {
   const { id } = params;
   const qc = useQueryClient();
@@ -511,28 +533,40 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
 
       {/* ── Sticky Deal Header ─────────────────────────────────────── */}
       <div className="sticky top-0 z-40 bg-gray-900/95 backdrop-blur border-b border-gray-800">
-        <div className="max-w-7xl mx-auto px-4 h-12 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3 min-w-0">
-            <a href="/dashboard/deals" className="text-gray-500 hover:text-gray-300 transition shrink-0">
-              <ArrowLeft size={15} />
-            </a>
-            <div className="min-w-0">
-              <div className="flex items-center gap-2">
+        <div className="max-w-7xl mx-auto px-4 py-1.5">
+          {/* Row 1: back + address + tags + score */}
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3 min-w-0">
+              <a href="/dashboard/deals" className="text-gray-500 hover:text-gray-300 transition shrink-0">
+                <ArrowLeft size={15} />
+              </a>
+              <div className="flex items-center gap-2 min-w-0">
                 <span className="text-white font-semibold text-sm truncate">{deal.address}</span>
-                <span className="text-gray-600 text-sm hidden md:block">{deal.city}, {deal.state} {deal.zipCode}</span>
                 <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium shrink-0 ${STATUS_COLORS[deal.status] || 'bg-gray-800 text-gray-400'}`}>{(deal.status||'DRAFT').replace(/_/g,' ')}</span>
                 {deal.dealType && <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-900/60 text-indigo-300 border border-indigo-700/40 shrink-0">{deal.dealType}</span>}
               </div>
             </div>
-          </div>
-          <div className="flex items-center gap-3 shrink-0">
-            <div className="hidden md:flex items-center gap-2 text-xs text-gray-500">
+            <div className="hidden md:flex items-center gap-2 text-xs text-gray-500 shrink-0">
               <span className={`font-bold ${scoreColor}`}>{sellScore}</span>
               <span>{scoreLabel}</span>
               {b > 0 && <span className="text-purple-400">· {b} buyers</span>}
               {sellBlockers.length > 0 && <span className="text-amber-400">· {sellBlockers.length} blocker{sellBlockers.length>1?'s':''}</span>}
             </div>
-            
+          </div>
+          {/* Row 2: city/state/zip + editable property fields */}
+          <div className="flex items-center gap-1 mt-0.5 ml-6 flex-wrap">
+            <HeaderField value={deal.city} placeholder="City" onSave={v=>updateDeal.mutate({city:v})} />
+            <span className="text-gray-700 text-xs">,</span>
+            <HeaderField value={deal.state} placeholder="ST" onSave={v=>updateDeal.mutate({state:v})} width="w-8" />
+            <HeaderField value={deal.zipCode} placeholder="ZIP" onSave={v=>updateDeal.mutate({zipCode:v})} width="w-14" />
+            <span className="text-gray-700 text-xs mx-1">·</span>
+            <HeaderField value={deal.beds?`${deal.beds}`:''} placeholder="Beds" onSave={v=>updateDeal.mutate({beds:parseInt(v)||null})} suffix="bd" width="w-6" />
+            <span className="text-gray-700 text-xs mx-0.5">·</span>
+            <HeaderField value={deal.baths?`${deal.baths}`:''} placeholder="Baths" onSave={v=>updateDeal.mutate({baths:parseFloat(v)||null})} suffix="ba" width="w-6" />
+            <span className="text-gray-700 text-xs mx-0.5">·</span>
+            <HeaderField value={deal.sqft?`${deal.sqft.toLocaleString()}`:''} placeholder="Sqft" onSave={v=>updateDeal.mutate({sqft:parseInt(v.replace(/,/g,''))||null})} suffix="sqft" width="w-16" />
+            <span className="text-gray-700 text-xs mx-0.5">·</span>
+            <HeaderField value={deal.yearBuilt?`${deal.yearBuilt}`:''} placeholder="Year" onSave={v=>updateDeal.mutate({yearBuilt:parseInt(v)||null})} suffix="" width="w-12" />
           </div>
         </div>
       </div>
