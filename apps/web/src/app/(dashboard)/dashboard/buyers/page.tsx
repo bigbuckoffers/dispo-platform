@@ -23,13 +23,13 @@ export default function BuyersPage() {
   }
   const tb: any = {
     TIER_1:'bg-yellow-500/20 text-yellow-300 border border-yellow-500/40',
-    TIER_2:'bg-blue-500/20 text-blue-600 border border-blue-500/40',
-    TIER_3:'bg-gray-500/20 text-gray-400 border border-gray-500/40',
+    TIER_2:'bg-blue-500/20 text-blue-300 border border-blue-500/40',
+    TIER_3:'bg-gray-500/20 text-gray-300 border border-gray-500/40',
   };
   const tl: any = { TIER_1:'🔥 Tier 1', TIER_2:'Tier 2', TIER_3:'Tier 3' };
-  const sc = (n:number) => n>=80?'text-green-600':n>=60?'text-yellow-400':'text-red-500';
+  const sc = (n:number) => n>=80?'text-green-400':n>=60?'text-yellow-400':'text-red-400';
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 p-6">
+    <div className="min-h-screen bg-gray-950 text-white p-6">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold">Buyer CRM</h1>
@@ -38,38 +38,38 @@ export default function BuyersPage() {
       </div>
       <div className="flex gap-3 mb-6">
         <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search buyers..."
-          className="bg-gray-100 border border-gray-200 text-gray-900 placeholder-gray-500 rounded-lg px-4 py-2 text-sm w-72 focus:outline-none focus:border-blue-500" />
+          className="bg-gray-800 border border-gray-700 text-white placeholder-gray-500 rounded-lg px-4 py-2 text-sm w-72 focus:outline-none focus:border-blue-500" />
         <select value={tier} onChange={e => setTier(e.target.value)}
-          className="bg-gray-100 border border-gray-200 text-gray-900 rounded-lg px-4 py-2 text-sm focus:outline-none">
+          className="bg-gray-800 border border-gray-700 text-white rounded-lg px-4 py-2 text-sm focus:outline-none">
           <option value="">All Tiers</option>
           <option value="TIER_1">Tier 1</option>
           <option value="TIER_2">Tier 2</option>
           <option value="TIER_3">Tier 3</option>
         </select>
-        <button onClick={load} className="bg-gray-100 hover:bg-gray-200 border border-gray-200 text-gray-400 px-4 py-2 rounded-lg text-sm">Refresh</button>
+        <button onClick={load} className="bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-300 px-4 py-2 rounded-lg text-sm">Refresh</button>
       </div>
-      {error && <div className="bg-red-900/30 border border-red-500/30 text-red-600 rounded-lg p-4 mb-6 text-sm">Error: {error}</div>}
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+      {error && <div className="bg-red-900/30 border border-red-500/30 text-red-300 rounded-lg p-4 mb-6 text-sm">Error: {error}</div>}
+      <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
         <table className="w-full text-sm">
-          <thead><tr className="border-b border-gray-200">
+          <thead><tr className="border-b border-gray-800">
             {['Buyer','Tier','Reliability','Liquidity','Activity','Score','Markets'].map(h => (
               <th key={h} className="text-left text-gray-400 font-medium px-4 py-3">{h}</th>
             ))}
           </tr></thead>
           <tbody>
             {loading ? [...Array(5)].map((_,i) => (
-              <tr key={i} className="border-b border-gray-100">
+              <tr key={i} className="border-b border-gray-800/50">
                 {[...Array(7)].map((_,j) => (
-                  <td key={j} className="px-4 py-3"><div className="h-4 bg-gray-100 rounded animate-pulse" /></td>
+                  <td key={j} className="px-4 py-3"><div className="h-4 bg-gray-800 rounded animate-pulse" /></td>
                 ))}
               </tr>
             )) : buyers.length === 0 ? (
-              <tr><td colSpan={7} className="px-4 py-12 text-center text-gray-400">No buyers found.</td></tr>
+              <tr><td colSpan={7} className="px-4 py-12 text-center text-gray-500">No buyers found.</td></tr>
             ) : buyers.map((b:any) => (
-              <tr key={b.id} className="border-b border-gray-100 hover:bg-gray-100/30 cursor-pointer transition-colors"
+              <tr key={b.id} className="border-b border-gray-800/50 hover:bg-gray-800/30 cursor-pointer transition-colors"
                 onClick={() => window.location.href = `/dashboard/buyers/${b.id}`}>
                 <td className="px-4 py-3">
-                  <div className="font-medium text-gray-900">{b.firstName} {b.lastName}</div>
+                  <div className="font-medium text-white">{b.firstName} {b.lastName}</div>
                   <div className="text-gray-400 text-xs">{b.email}</div>
                 </td>
                 <td className="px-4 py-3">

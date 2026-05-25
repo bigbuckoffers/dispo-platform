@@ -56,8 +56,8 @@ export default function DashboardPage() {
     <div className="p-6 space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-xl font-semibold text-gray-900">Overview</h1>
-        <p className="text-sm text-gray-400 mt-0.5">Last 30 days performance</p>
+        <h1 className="text-xl font-semibold text-white">Overview</h1>
+        <p className="text-sm text-gray-500 mt-0.5">Last 30 days performance</p>
       </div>
 
       {/* Metric cards */}
@@ -68,13 +68,13 @@ export default function DashboardPage() {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.08 }}
-            className="bg-white border border-gray-200 rounded-xl p-4"
+            className="bg-gray-900 border border-gray-800 rounded-xl p-4"
           >
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-xs text-gray-400 mb-1">{m.label}</p>
-                <p className="text-2xl font-semibold text-gray-900">{isLoading ? '—' : m.value}</p>
-                <p className="text-xs text-gray-400 mt-1">{m.sub}</p>
+                <p className="text-xs text-gray-500 mb-1">{m.label}</p>
+                <p className="text-2xl font-semibold text-white">{isLoading ? '—' : m.value}</p>
+                <p className="text-xs text-gray-500 mt-1">{m.sub}</p>
               </div>
               <div className={`p-2 rounded-lg bg-${m.color}-500/10`}>
                 <m.icon size={18} className={`text-${m.color}-400`} />
@@ -82,10 +82,10 @@ export default function DashboardPage() {
             </div>
             <div className="mt-3 flex items-center gap-1">
               {m.trend >= 0
-                ? <ArrowUpRight size={12} className="text-emerald-600" />
-                : <ArrowDownRight size={12} className="text-red-500" />
+                ? <ArrowUpRight size={12} className="text-emerald-400" />
+                : <ArrowDownRight size={12} className="text-red-400" />
               }
-              <span className={`text-xs ${m.trend >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+              <span className={`text-xs ${m.trend >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
                 {Math.abs(m.trend)}% vs last month
               </span>
             </div>
@@ -95,29 +95,29 @@ export default function DashboardPage() {
 
       {/* Charts row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2 bg-white border border-gray-200 rounded-xl p-5">
-          <h3 className="text-sm font-medium text-gray-900 mb-4">Buyer activity — 30 days</h3>
+        <div className="lg:col-span-2 bg-gray-900 border border-gray-800 rounded-xl p-5">
+          <h3 className="text-sm font-medium text-white mb-4">Buyer activity — 30 days</h3>
           <BuyerActivityChart />
         </div>
-        <div className="bg-white border border-gray-200 rounded-xl p-5">
-          <h3 className="text-sm font-medium text-gray-900 mb-4">Top zip codes</h3>
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
+          <h3 className="text-sm font-medium text-white mb-4">Top zip codes</h3>
           <TopZipCodes zips={overview?.topZipCodes ?? []} />
         </div>
       </div>
 
       {/* Tables row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="bg-white border border-gray-200 rounded-xl p-5">
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-medium text-gray-900">Top buyers</h3>
-            <a href="/dashboard/buyers" className="text-xs text-blue-600 hover:text-blue-600">View all →</a>
+            <h3 className="text-sm font-medium text-white">Top buyers</h3>
+            <a href="/dashboard/buyers" className="text-xs text-blue-400 hover:text-blue-300">View all →</a>
           </div>
           <TopBuyersTable buyers={overview?.topBuyers ?? []} />
         </div>
-        <div className="bg-white border border-gray-200 rounded-xl p-5">
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-medium text-gray-900">Recent deals</h3>
-            <a href="/dashboard/deals" className="text-xs text-blue-600 hover:text-blue-600">View all →</a>
+            <h3 className="text-sm font-medium text-white">Recent deals</h3>
+            <a href="/dashboard/deals" className="text-xs text-blue-400 hover:text-blue-300">View all →</a>
           </div>
           <RecentDeals />
         </div>
@@ -127,7 +127,7 @@ export default function DashboardPage() {
 }
 
 function TopZipCodes({ zips }: { zips: any[] }) {
-  if (!zips.length) return <p className="text-sm text-gray-400">No data yet</p>;
+  if (!zips.length) return <p className="text-sm text-gray-500">No data yet</p>;
   const max = zips[0]?.count ?? 1;
 
   return (
@@ -135,10 +135,10 @@ function TopZipCodes({ zips }: { zips: any[] }) {
       {zips.slice(0, 6).map((z) => (
         <div key={z.zip}>
           <div className="flex items-center justify-between mb-1">
-            <span className="text-xs text-gray-400">{z.zip} — {z.city}, {z.state}</span>
-            <span className="text-xs text-gray-400">{z.count} deals</span>
+            <span className="text-xs text-gray-300">{z.zip} — {z.city}, {z.state}</span>
+            <span className="text-xs text-gray-500">{z.count} deals</span>
           </div>
-          <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+          <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden">
             <div
               className="h-full bg-blue-500 rounded-full"
               style={{ width: `${(z.count / max) * 100}%` }}

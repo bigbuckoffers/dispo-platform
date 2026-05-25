@@ -17,38 +17,38 @@ import toast from 'react-hot-toast';
 type Tab = 'property' | 'dealmath' | 'buyers' | 'dispo';
 
 const STATUS_COLORS: Record<string, string> = {
-  DRAFT: 'bg-gray-200/80 text-gray-400',
-  NEEDS_INFO: 'bg-amber-900/60 text-amber-700 border border-amber-700/40',
-  READY_TO_MATCH: 'bg-blue-100 text-blue-600 border border-blue-200',
-  MATCHED: 'bg-purple-50 text-purple-600 border border-purple-200',
-  READY_TO_BLAST: 'bg-green-900/60 text-green-700 border border-green-700/40',
-  CAMPAIGN_ACTIVE: 'bg-emerald-50 text-emerald-600 border border-emerald-700/40',
-  OFFER_RECEIVED: 'bg-orange-50 text-orange-600 border border-orange-700/40',
-  ASSIGNED: 'bg-teal-50 text-teal-600 border border-teal-700/40',
+  DRAFT: 'bg-gray-700/80 text-gray-300',
+  NEEDS_INFO: 'bg-amber-900/60 text-amber-300 border border-amber-700/40',
+  READY_TO_MATCH: 'bg-blue-900/60 text-blue-300 border border-blue-700/40',
+  MATCHED: 'bg-purple-900/60 text-purple-300 border border-purple-700/40',
+  READY_TO_BLAST: 'bg-green-900/60 text-green-300 border border-green-700/40',
+  CAMPAIGN_ACTIVE: 'bg-emerald-900/60 text-emerald-400 border border-emerald-700/40',
+  OFFER_RECEIVED: 'bg-orange-900/60 text-orange-300 border border-orange-700/40',
+  ASSIGNED: 'bg-teal-900/60 text-teal-300 border border-teal-700/40',
   CLOSED: 'bg-green-800/60 text-green-200',
-  DEAD: 'bg-red-900/60 text-red-500',
-  ACTIVE: 'bg-blue-100 text-blue-600',
+  DEAD: 'bg-red-900/60 text-red-400',
+  ACTIVE: 'bg-blue-900/60 text-blue-300',
 };
 
 function getPriorityBadge(score: number) {
-  if (score >= 90) return { label: '🔥 Hot', bg: 'bg-red-900/70 text-red-600 border border-red-700' };
-  if (score >= 75) return { label: 'Strong', bg: 'bg-orange-900/70 text-orange-600 border border-orange-700' };
+  if (score >= 90) return { label: '🔥 Hot', bg: 'bg-red-900/70 text-red-300 border border-red-700' };
+  if (score >= 75) return { label: 'Strong', bg: 'bg-orange-900/70 text-orange-300 border border-orange-700' };
   if (score >= 60) return { label: 'Workable', bg: 'bg-yellow-900/70 text-yellow-300 border border-yellow-700' };
-  if (score >= 40) return { label: 'Needs Info', bg: 'bg-blue-900/70 text-blue-600 border border-blue-700' };
-  return { label: 'Weak', bg: 'bg-gray-100 text-gray-400 border border-gray-200' };
+  if (score >= 40) return { label: 'Needs Info', bg: 'bg-blue-900/70 text-blue-300 border border-blue-700' };
+  return { label: 'Weak', bg: 'bg-gray-800 text-gray-500 border border-gray-700' };
 }
 
 function InfoRow({ label, value, mono = false, href }: { label: string; value: any; mono?: boolean; href?: string }) {
   if (!value && value !== 0) return null;
   return (
-    <div className="flex justify-between items-start py-2 border-b border-gray-100 last:border-0">
-      <span className="text-gray-400 text-sm shrink-0 mr-4">{label}</span>
+    <div className="flex justify-between items-start py-2 border-b border-gray-800/50 last:border-0">
+      <span className="text-gray-500 text-sm shrink-0 mr-4">{label}</span>
       {href ? (
-        <a href={href} target="_blank" rel="noopener noreferrer" className="text-blue-600 text-sm hover:underline flex items-center gap-1">
+        <a href={href} target="_blank" rel="noopener noreferrer" className="text-blue-400 text-sm hover:underline flex items-center gap-1">
           {value} <ExternalLink size={11} />
         </a>
       ) : (
-        <span className={`text-gray-900 text-sm text-right ${mono ? 'font-mono' : ''}`}>{value}</span>
+        <span className={`text-white text-sm text-right ${mono ? 'font-mono' : ''}`}>{value}</span>
       )}
     </div>
   );
@@ -56,14 +56,14 @@ function InfoRow({ label, value, mono = false, href }: { label: string; value: a
 
 function Card({ title, icon: Icon, children, className = '', warning, badge }: any) {
   return (
-    <div className={`bg-white rounded-xl border border-gray-200 overflow-hidden ${className}`}>
-      <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
+    <div className={`bg-gray-900 rounded-xl border border-gray-800 overflow-hidden ${className}`}>
+      <div className="px-4 py-3 border-b border-gray-800 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Icon size={14} className="text-gray-400" />
-          <h3 className="text-gray-900 text-sm font-medium">{title}</h3>
-          {badge && <span className="text-xs px-2 py-0.5 rounded-full bg-blue-900/50 text-blue-600">{badge}</span>}
+          <h3 className="text-white text-sm font-medium">{title}</h3>
+          {badge && <span className="text-xs px-2 py-0.5 rounded-full bg-blue-900/50 text-blue-300">{badge}</span>}
         </div>
-        {warning && <span className="text-amber-600 text-xs flex items-center gap-1"><AlertCircle size={11} />{warning}</span>}
+        {warning && <span className="text-amber-400 text-xs flex items-center gap-1"><AlertCircle size={11} />{warning}</span>}
       </div>
       <div className="p-4">{children}</div>
     </div>
@@ -74,8 +74,8 @@ function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
   return (
     <button onClick={() => { navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
-      className="flex items-center gap-1 px-2 py-1 bg-gray-100 hover:bg-gray-200 text-gray-400 text-xs rounded transition">
-      {copied ? <CheckCircle size={11} className="text-green-600" /> : <Copy size={11} />}
+      className="flex items-center gap-1 px-2 py-1 bg-gray-800 hover:bg-gray-700 text-gray-400 text-xs rounded transition">
+      {copied ? <CheckCircle size={11} className="text-green-400" /> : <Copy size={11} />}
       {copied ? 'Copied' : 'Copy'}
     </button>
   );
@@ -86,21 +86,21 @@ function GeneratedOutput({ content, onClose }: { content: string; onClose: () =>
   const [text, setText] = useState(content);
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-      className="mt-3 bg-gray-100 rounded-xl border border-gray-200 overflow-hidden">
-      <div className="flex items-center justify-between px-3 py-2 border-b border-gray-200">
+      className="mt-3 bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
+      <div className="flex items-center justify-between px-3 py-2 border-b border-gray-700">
         <span className="text-gray-400 text-xs font-medium">Generated Output</span>
         <div className="flex items-center gap-2">
           <CopyButton text={text} />
-          <button onClick={() => setEditing(!editing)} className="flex items-center gap-1 px-2 py-1 bg-gray-200 hover:bg-gray-600 text-gray-400 text-xs rounded transition">
+          <button onClick={() => setEditing(!editing)} className="flex items-center gap-1 px-2 py-1 bg-gray-700 hover:bg-gray-600 text-gray-400 text-xs rounded transition">
             <Edit3 size={11} /> {editing ? 'Done' : 'Edit'}
           </button>
-          <button onClick={onClose} className="p-1 hover:bg-gray-200 rounded text-gray-400 transition"><X size={13} /></button>
+          <button onClick={onClose} className="p-1 hover:bg-gray-700 rounded text-gray-500 transition"><X size={13} /></button>
         </div>
       </div>
       {editing ? (
-        <textarea value={text} onChange={e => setText(e.target.value)} rows={6} className="w-full bg-transparent text-gray-400 text-sm p-3 focus:outline-none resize-none" />
+        <textarea value={text} onChange={e => setText(e.target.value)} rows={6} className="w-full bg-transparent text-gray-300 text-sm p-3 focus:outline-none resize-none" />
       ) : (
-        <p className="text-gray-400 text-sm p-3 leading-relaxed whitespace-pre-wrap">{text}</p>
+        <p className="text-gray-300 text-sm p-3 leading-relaxed whitespace-pre-wrap">{text}</p>
       )}
     </motion.div>
   );
@@ -176,20 +176,20 @@ function PhotoGallery({ deal, onUpdate }: { deal: any; onUpdate: (data: any) => 
     <div className="flex gap-2 flex-wrap">
       <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={e => handleFiles(e.target.files)} />
       <button onClick={() => fileInputRef.current?.click()} disabled={uploading}
-        className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 text-xs rounded-lg transition border border-blue-200 disabled:opacity-50">
+        className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-900/40 hover:bg-blue-900/60 text-blue-300 text-xs rounded-lg transition border border-blue-700/40 disabled:opacity-50">
         <Upload size={11} /> {uploading ? 'Uploading...' : 'Upload Photos'}
       </button>
       <button onClick={() => { setShowUrlInput(!showUrlInput); setShowDriveInput(false); }}
-        className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-400 text-xs rounded-lg transition border border-gray-200">
+        className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs rounded-lg transition border border-gray-700">
         <Link size={11} /> Add Photo URL
       </button>
       <button onClick={() => { setShowDriveInput(!showDriveInput); setShowUrlInput(false); }}
-        className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-400 text-xs rounded-lg transition border border-gray-200">
+        className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs rounded-lg transition border border-gray-700">
         <FolderOpen size={11} /> {hasDrive ? 'Update Drive Link' : 'Add Drive Link'}
       </button>
       {hasDrive && (
         <a href={deal.googleDriveUrl} target="_blank" rel="noopener noreferrer"
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 text-xs rounded-lg transition border border-blue-200">
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-900/40 hover:bg-blue-900/60 text-blue-300 text-xs rounded-lg transition border border-blue-700/40">
           <FolderOpen size={11} /> Open Drive
         </a>
       )}
@@ -203,9 +203,9 @@ function PhotoGallery({ deal, onUpdate }: { deal: any; onUpdate: (data: any) => 
           <input value={urlInput} onChange={e => setUrlInput(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && savePhotoUrl()}
             placeholder="Paste image URL (https://...)"
-            className="flex-1 bg-gray-100 border border-gray-200 text-gray-400 text-xs rounded-lg px-3 py-1.5 focus:outline-none focus:border-blue-500" />
-          <button onClick={savePhotoUrl} className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-gray-900 text-xs rounded-lg transition">Add</button>
-          <button onClick={() => setShowUrlInput(false)} className="px-2 py-1.5 bg-gray-200 text-gray-400 text-xs rounded-lg transition"><X size={11}/></button>
+            className="flex-1 bg-gray-800 border border-gray-700 text-gray-300 text-xs rounded-lg px-3 py-1.5 focus:outline-none focus:border-blue-500" />
+          <button onClick={savePhotoUrl} className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs rounded-lg transition">Add</button>
+          <button onClick={() => setShowUrlInput(false)} className="px-2 py-1.5 bg-gray-700 text-gray-400 text-xs rounded-lg transition"><X size={11}/></button>
         </div>
       )}
       {showDriveInput && (
@@ -213,9 +213,9 @@ function PhotoGallery({ deal, onUpdate }: { deal: any; onUpdate: (data: any) => 
           <input value={driveInput} onChange={e => setDriveInput(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && saveDriveLink()}
             placeholder="Paste Google Drive folder URL"
-            className="flex-1 bg-gray-100 border border-gray-200 text-gray-400 text-xs rounded-lg px-3 py-1.5 focus:outline-none focus:border-blue-500" />
-          <button onClick={saveDriveLink} className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-gray-900 text-xs rounded-lg transition">Save</button>
-          <button onClick={() => setShowDriveInput(false)} className="px-2 py-1.5 bg-gray-200 text-gray-400 text-xs rounded-lg transition"><X size={11}/></button>
+            className="flex-1 bg-gray-800 border border-gray-700 text-gray-300 text-xs rounded-lg px-3 py-1.5 focus:outline-none focus:border-blue-500" />
+          <button onClick={saveDriveLink} className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs rounded-lg transition">Save</button>
+          <button onClick={() => setShowDriveInput(false)} className="px-2 py-1.5 bg-gray-700 text-gray-400 text-xs rounded-lg transition"><X size={11}/></button>
         </div>
       )}
     </>
@@ -223,22 +223,22 @@ function PhotoGallery({ deal, onUpdate }: { deal: any; onUpdate: (data: any) => 
 
   if (!hasPhotos) {
     return (
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden flex flex-col" style={{minHeight:280}}>
-        <div className="px-4 py-3 border-b border-gray-200 flex items-center gap-2">
+      <div className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden flex flex-col" style={{minHeight:280}}>
+        <div className="px-4 py-3 border-b border-gray-800 flex items-center gap-2">
           <Camera size={14} className="text-gray-400" />
-          <span className="text-gray-900 text-sm font-medium">Photos</span>
-          <span className="text-amber-600 text-xs flex items-center gap-1 ml-auto"><AlertCircle size={11}/>Missing</span>
+          <span className="text-white text-sm font-medium">Photos</span>
+          <span className="text-amber-400 text-xs flex items-center gap-1 ml-auto"><AlertCircle size={11}/>Missing</span>
         </div>
         <div
           onDragOver={e => { e.preventDefault(); setDragging(true); }}
           onDragLeave={() => setDragging(false)}
           onDrop={handleDrop}
-          className={`flex-1 flex flex-col items-center justify-center p-6 text-center transition ${dragging ? 'bg-blue-50 border-2 border-dashed border-blue-500' : ''}`}>
-          <Camera size={36} className={`mb-3 ${uploading ? 'text-blue-500 animate-pulse' : 'text-gray-300'}`} />
+          className={`flex-1 flex flex-col items-center justify-center p-6 text-center transition ${dragging ? 'bg-blue-900/20 border-2 border-dashed border-blue-500' : ''}`}>
+          <Camera size={36} className={`mb-3 ${uploading ? 'text-blue-500 animate-pulse' : 'text-gray-700'}`} />
           <p className="text-gray-400 font-medium text-sm mb-1">{uploading ? 'Uploading...' : 'Photos Missing'}</p>
-          <p className="text-gray-400 text-xs">{uploading ? 'Please wait' : 'Drag & drop photos or click Upload Photos below.'}</p>
+          <p className="text-gray-600 text-xs">{uploading ? 'Please wait' : 'Drag & drop photos or click Upload Photos below.'}</p>
         </div>
-        <div className="p-3 border-t border-gray-200 space-y-2">
+        <div className="p-3 border-t border-gray-800 space-y-2">
           <ActionButtons />
           <Inputs />
         </div>
@@ -247,26 +247,26 @@ function PhotoGallery({ deal, onUpdate }: { deal: any; onUpdate: (data: any) => 
   }
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-      <div className="px-4 py-3 border-b border-gray-200 flex items-center gap-2">
+    <div className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+      <div className="px-4 py-3 border-b border-gray-800 flex items-center gap-2">
         <Camera size={14} className="text-gray-400" />
-        <span className="text-gray-900 text-sm font-medium">Photos</span>
-        <span className="text-gray-400 text-xs ml-auto">{photos.length} photo{photos.length !== 1 ? 's' : ''}</span>
+        <span className="text-white text-sm font-medium">Photos</span>
+        <span className="text-gray-500 text-xs ml-auto">{photos.length} photo{photos.length !== 1 ? 's' : ''}</span>
       </div>
-      <div className="relative bg-gray-100" style={{aspectRatio:'16/9'}}>
+      <div className="relative bg-gray-800" style={{aspectRatio:'16/9'}}>
         <img src={photos[activeIdx]} alt="Property" className="w-full h-full object-cover"
           onError={e => { (e.target as any).style.display='none'; }} />
         {photos.length > 1 && (
           <>
             <button onClick={() => setActiveIdx(i => (i - 1 + photos.length) % photos.length)}
-              className="absolute left-2 top-1/2 -translate-y-1/2 p-1.5 bg-black/60 hover:bg-black/80 rounded-full text-gray-900 transition">
+              className="absolute left-2 top-1/2 -translate-y-1/2 p-1.5 bg-black/60 hover:bg-black/80 rounded-full text-white transition">
               <ChevronLeft size={14} />
             </button>
             <button onClick={() => setActiveIdx(i => (i + 1) % photos.length)}
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 bg-black/60 hover:bg-black/80 rounded-full text-gray-900 transition">
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 bg-black/60 hover:bg-black/80 rounded-full text-white transition">
               <ChevronRight size={14} />
             </button>
-            <span className="absolute bottom-2 right-2 text-xs bg-black/60 text-gray-900 px-2 py-0.5 rounded-full">{activeIdx + 1}/{photos.length}</span>
+            <span className="absolute bottom-2 right-2 text-xs bg-black/60 text-white px-2 py-0.5 rounded-full">{activeIdx + 1}/{photos.length}</span>
           </>
         )}
       </div>
@@ -279,14 +279,14 @@ function PhotoGallery({ deal, onUpdate }: { deal: any; onUpdate: (data: any) => 
                 <img src={p} alt="" className="w-full h-full object-cover" />
               </button>
               <button onClick={() => { const updated = photos.filter((_,j) => j!==i); onUpdate({photos:updated}); if(activeIdx>=updated.length) setActiveIdx(Math.max(0,updated.length-1)); }}
-                className="absolute -top-1 -right-1 w-4 h-4 bg-red-600 hover:bg-red-500 text-gray-900 rounded-full text-[9px] items-center justify-center hidden group-hover/thumb:flex transition">
+                className="absolute -top-1 -right-1 w-4 h-4 bg-red-600 hover:bg-red-500 text-white rounded-full text-[9px] items-center justify-center hidden group-hover/thumb:flex transition">
                 ✕
               </button>
             </div>
           ))}
         </div>
       )}
-      <div className="p-3 border-t border-gray-200 space-y-2">
+      <div className="p-3 border-t border-gray-800 space-y-2">
         <ActionButtons />
         <Inputs />
       </div>
@@ -305,21 +305,21 @@ function LocationPanel({ deal, mapsUrl, streetViewUrl }: any) {
   const streetViewHref = `https://www.google.com/maps/@?api=1&map_action=pano&query=${addr}`;
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden flex flex-col">
-      <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
+    <div className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden flex flex-col">
+      <div className="px-4 py-3 border-b border-gray-800 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <MapPin size={14} className="text-gray-400" />
-          <span className="text-gray-900 text-sm font-medium">Location</span>
+          <span className="text-white text-sm font-medium">Location</span>
         </div>
         <div className="flex gap-1">
           {(['map','satellite'] as const).map(v => (
             <button key={v} onClick={() => setView(v)}
-              className={`text-[10px] px-2.5 py-1 rounded-full font-medium transition capitalize ${view===v ? 'bg-blue-600 text-gray-900' : 'bg-gray-100 text-gray-400 hover:text-gray-700'}`}>
+              className={`text-[10px] px-2.5 py-1 rounded-full font-medium transition capitalize ${view===v ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-gray-200'}`}>
               {v}
             </button>
           ))}
           <a href={streetViewHref} target="_blank" rel="noopener noreferrer"
-            className="text-[10px] px-2.5 py-1 rounded-full font-medium transition bg-gray-100 text-gray-400 hover:text-gray-700">
+            className="text-[10px] px-2.5 py-1 rounded-full font-medium transition bg-gray-800 text-gray-400 hover:text-gray-200">
             Street ↗
           </a>
         </div>
@@ -336,17 +336,17 @@ function LocationPanel({ deal, mapsUrl, streetViewUrl }: any) {
           className="w-full h-full"
         />
       </div>
-      <div className="px-3 py-2 border-t border-gray-200 flex gap-2 flex-wrap">
+      <div className="px-3 py-2 border-t border-gray-800 flex gap-2 flex-wrap">
         <a href={mapsUrl} target="_blank" rel="noopener noreferrer"
-          className="flex items-center gap-1.5 text-[10px] px-2 py-1 bg-gray-100 hover:bg-gray-200 text-gray-400 rounded-lg transition">
+          className="flex items-center gap-1.5 text-[10px] px-2 py-1 bg-gray-800 hover:bg-gray-700 text-gray-400 rounded-lg transition">
           <Globe size={9} /> Open Map
         </a>
         <a href={streetViewHref} target="_blank" rel="noopener noreferrer"
-          className="flex items-center gap-1.5 text-[10px] px-2 py-1 bg-gray-100 hover:bg-gray-200 text-gray-400 rounded-lg transition">
+          className="flex items-center gap-1.5 text-[10px] px-2 py-1 bg-gray-800 hover:bg-gray-700 text-gray-400 rounded-lg transition">
           <Eye size={9} /> Street View
         </a>
         <button onClick={() => navigator.clipboard.writeText(deal.address+', '+deal.city+', '+deal.state+' '+deal.zipCode)}
-          className="flex items-center gap-1.5 text-[10px] px-2 py-1 bg-gray-100 hover:bg-gray-200 text-gray-400 rounded-lg transition">
+          className="flex items-center gap-1.5 text-[10px] px-2 py-1 bg-gray-800 hover:bg-gray-700 text-gray-400 rounded-lg transition">
           <Copy size={9} /> Copy Address
         </button>
       </div>
@@ -384,21 +384,21 @@ function BlastReadiness({ deal }: { deal: any }) {
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
-        <span className={`text-sm font-bold ${blastReady ? 'text-green-600' : 'text-amber-600'}`}>
+        <span className={`text-sm font-bold ${blastReady ? 'text-green-400' : 'text-amber-400'}`}>
           {blastReady ? '✓ Blast Ready' : `Not blast ready — ${pct}% complete`}
         </span>
-        <span className="text-gray-400 text-xs">{passed}/{checks.length}</span>
+        <span className="text-gray-500 text-xs">{passed}/{checks.length}</span>
       </div>
-      <div className="h-1.5 bg-gray-100 rounded-full mb-3">
+      <div className="h-1.5 bg-gray-800 rounded-full mb-3">
         <div className={`h-full rounded-full transition-all ${blastReady ? 'bg-green-500' : pct >= 60 ? 'bg-amber-500' : 'bg-red-500'}`} style={{width:`${pct}%`}} />
       </div>
       <div className="space-y-1.5">
         {checks.map((c, i) => (
           <div key={i} className="flex items-center gap-2">
-            <div className={`w-4 h-4 rounded-full flex items-center justify-center shrink-0 ${c.ok ? 'bg-green-900/60' : c.critical ? 'bg-red-900/60' : 'bg-gray-100'}`}>
-              {c.ok ? <CheckCircle size={10} className="text-green-600" /> : <X size={8} className={c.critical ? 'text-red-500' : 'text-gray-400'} />}
+            <div className={`w-4 h-4 rounded-full flex items-center justify-center shrink-0 ${c.ok ? 'bg-green-900/60' : c.critical ? 'bg-red-900/60' : 'bg-gray-800'}`}>
+              {c.ok ? <CheckCircle size={10} className="text-green-400" /> : <X size={8} className={c.critical ? 'text-red-400' : 'text-gray-600'} />}
             </div>
-            <span className={`text-xs ${c.ok ? 'text-gray-400' : c.critical ? 'text-red-600' : 'text-gray-400'}`}>{c.label}</span>
+            <span className={`text-xs ${c.ok ? 'text-gray-400' : c.critical ? 'text-red-300' : 'text-gray-500'}`}>{c.label}</span>
             {!c.ok && c.critical && <span className="text-[9px] text-red-500 uppercase font-bold ml-auto">required</span>}
           </div>
         ))}
@@ -491,8 +491,8 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
     finally { setArvLoading(false); }
   };
 
-  if (isLoading) return <div className="p-6 text-gray-400 text-sm">Loading deal...</div>;
-  if (!deal) return <div className="p-6 text-red-500 text-sm">Deal not found. <a href="/dashboard/deals" className="underline">Go back</a></div>;
+  if (isLoading) return <div className="p-6 text-gray-500 text-sm">Loading deal...</div>;
+  if (!deal) return <div className="p-6 text-red-400 text-sm">Deal not found. <a href="/dashboard/deals" className="underline">Go back</a></div>;
 
   const potentialMargin = (deal.arv || 0) - (deal.askingPrice || 0) - (deal.repairEstimate || 0);
   const priority = getPriorityBadge(deal.dealPriorityScore || 0);
@@ -551,15 +551,15 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
     : pricePosition === 'OVER_70' ? 'Over 70%'
     : pricePosition === 'OVERPRICED' ? 'Overpriced'
     : null;
-  const pricePositionColor = pricePosition === 'UNDER_70' ? 'text-green-600'
-    : pricePosition === 'NEAR_UNDER' ? 'text-blue-600'
+  const pricePositionColor = pricePosition === 'UNDER_70' ? 'text-green-400'
+    : pricePosition === 'NEAR_UNDER' ? 'text-blue-400'
     : pricePosition === 'NEAR_OVER' ? 'text-yellow-400'
-    : 'text-red-500';
+    : 'text-red-400';
   const priceGapLabel = gap > 0
     ? formatCurrency(Math.abs(gap)) + ' below investor threshold'
     : formatCurrency(Math.abs(gap)) + ' above investor threshold';
   const valueConfidence = pubEstimates.length >= 3 ? 'High' : pubEstimates.length === 2 ? 'Medium-High' : pubEstimates.length === 1 ? 'Medium' : 'Low — no public estimates';
-  const valueConfidenceColor = pubEstimates.length >= 2 ? 'text-green-600' : pubEstimates.length === 1 ? 'text-yellow-400' : 'text-red-500';
+  const valueConfidenceColor = pubEstimates.length >= 2 ? 'text-green-400' : pubEstimates.length === 1 ? 'text-yellow-400' : 'text-red-400';
 
   const sellReasons: string[] = [];
   const sellBlockers: string[] = [];
@@ -592,8 +592,8 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
     : sellScore >= 60 ? ('Workable — ' + sellBlockers.length + ' blocker' + (sellBlockers.length>1?'s':'') + ' to fix')
     : sellScore >= 40 ? 'Needs Info — Not Ready to Blast'
     : 'Weak — Not Ready to Sell';
-  const sellColor = sellScore >= 75 ? 'text-green-600' : sellScore >= 60 ? 'text-blue-600' : sellScore >= 40 ? 'text-yellow-400' : 'text-red-500';
-  const sellBorderBg = sellScore >= 75 ? 'border-green-200 bg-green-50' : sellScore >= 60 ? 'border-blue-200 bg-blue-900/5' : sellScore >= 40 ? 'border-yellow-800/30 bg-yellow-900/5' : 'border-red-800/30 bg-red-900/5';
+  const sellColor = sellScore >= 75 ? 'text-green-400' : sellScore >= 60 ? 'text-blue-400' : sellScore >= 40 ? 'text-yellow-400' : 'text-red-400';
+  const sellBorderBg = sellScore >= 75 ? 'border-green-800/30 bg-green-900/5' : sellScore >= 60 ? 'border-blue-800/30 bg-blue-900/5' : sellScore >= 40 ? 'border-yellow-800/30 bg-yellow-900/5' : 'border-red-800/30 bg-red-900/5';
   const sellBar = sellScore >= 75 ? 'bg-green-500' : sellScore >= 60 ? 'bg-blue-500' : sellScore >= 40 ? 'bg-yellow-500' : 'bg-red-500';
   const _buyerType = deal.dealType === 'SUBTO' ? 'creative finance / Subto buyers' : (deal.overallCondition||'').includes('HEAVY') ? 'cash buyers comfortable with heavy rehab' : 'cash buyers and flippers';
   const bestBuyerProfile = b > 0 ? ((deal.city || 'Local') + ' ' + _buyerType) : ('Seeking ' + (deal.city || 'local') + ' investors for ' + (deal.propertyType||'single family').toLowerCase().replace(/_/g,' ') + ' deals');
@@ -606,27 +606,27 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
         <div className="flex items-start justify-between gap-4 mb-3">
           <div className="flex-1">
             <div className="flex items-center gap-2 flex-wrap mb-1.5">
-              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[deal.status] || 'bg-gray-100 text-gray-400'}`}>{(deal.status || 'DRAFT').replace(/_/g, ' ')}</span>
-              {deal.sourceType && deal.sourceType !== 'MANUAL' && <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-400 border border-gray-200">{deal.sourceType}</span>}
-              {deal.propertyType && <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-400 border border-gray-200">{deal.propertyType.replace(/_/g, ' ')}</span>}
-              {deal.occupancy && deal.occupancy !== 'UNKNOWN' && <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-400 border border-gray-200">{deal.occupancy.replace(/_/g, ' ')}</span>}
-              {deal.dealType && <span className="text-xs px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-200">{deal.dealType}</span>}
+              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[deal.status] || 'bg-gray-800 text-gray-400'}`}>{(deal.status || 'DRAFT').replace(/_/g, ' ')}</span>
+              {deal.sourceType && deal.sourceType !== 'MANUAL' && <span className="text-xs px-2 py-0.5 rounded-full bg-gray-800 text-gray-400 border border-gray-700">{deal.sourceType}</span>}
+              {deal.propertyType && <span className="text-xs px-2 py-0.5 rounded-full bg-gray-800 text-gray-400 border border-gray-700">{deal.propertyType.replace(/_/g, ' ')}</span>}
+              {deal.occupancy && deal.occupancy !== 'UNKNOWN' && <span className="text-xs px-2 py-0.5 rounded-full bg-gray-800 text-gray-400 border border-gray-700">{deal.occupancy.replace(/_/g, ' ')}</span>}
+              {deal.dealType && <span className="text-xs px-2 py-0.5 rounded-full bg-indigo-900/60 text-indigo-300 border border-indigo-700/40">{deal.dealType}</span>}
             </div>
-            <h1 className="text-2xl font-bold text-gray-900 leading-tight">{deal.address || 'No Address'}</h1>
+            <h1 className="text-2xl font-bold text-white leading-tight">{deal.address || 'No Address'}</h1>
             <p className="text-gray-400 text-sm mt-0.5 flex items-center gap-1">
               <MapPin size={12} />
               {[deal.city, deal.state, deal.zipCode, deal.county].filter(Boolean).join(' · ')}
-              <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className="ml-2 text-blue-500 hover:text-blue-600 text-xs flex items-center gap-0.5"><ExternalLink size={10} /> Map</a>
+              <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className="ml-2 text-blue-500 hover:text-blue-400 text-xs flex items-center gap-0.5"><ExternalLink size={10} /> Map</a>
             </p>
             {/* Verdict line */}
             <p className={`text-sm font-semibold mt-2 ${sellColor}`}>
               {sellLabel}
-              {b > 0 && <span className="text-gray-400 font-normal"> &middot; {b} buyer{b>1?'s':''}{t1>0?' · '+t1+' Tier 1':''}{hasPhotos && hasPermission?' · ready to blast':primaryBlocker?' · fix: '+(primaryBlocker.split('—')[0].trim().toLowerCase()):''}</span>}
+              {b > 0 && <span className="text-gray-500 font-normal"> &middot; {b} buyer{b>1?'s':''}{t1>0?' · '+t1+' Tier 1':''}{hasPhotos && hasPermission?' · ready to blast':primaryBlocker?' · fix: '+(primaryBlocker.split('—')[0].trim().toLowerCase()):''}</span>}
             </p>
           </div>
           {!(b > 0 && hasPhotos && hasPermission && deal.status !== 'OFFER_RECEIVED' && deal.status !== 'CAMPAIGN_ACTIVE') && (
           <button onClick={mainAction.fn} disabled={isActionLoading}
-            className={`flex items-center gap-2 px-5 py-2.5 ${mainAction.color} disabled:opacity-50 text-gray-900 text-sm rounded-xl font-medium transition shrink-0`}>
+            className={`flex items-center gap-2 px-5 py-2.5 ${mainAction.color} disabled:opacity-50 text-white text-sm rounded-xl font-medium transition shrink-0`}>
             <mainAction.icon size={15} />
             {isActionLoading ? 'Working...' : mainAction.label}
           </button>
@@ -636,89 +636,89 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
         {/* Metric Cards */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-3">
           {/* Asking */}
-          <div className="bg-white rounded-xl p-3 border border-gray-200 text-center">
-            <p className="text-lg font-bold text-gray-900">{deal.askingPrice ? formatCurrency(deal.askingPrice) : '—'}</p>
-            <p className="text-gray-400 text-xs mt-0.5">Asking</p>
+          <div className="bg-gray-900 rounded-xl p-3 border border-gray-800 text-center">
+            <p className="text-lg font-bold text-white">{deal.askingPrice ? formatCurrency(deal.askingPrice) : '—'}</p>
+            <p className="text-gray-500 text-xs mt-0.5">Asking</p>
             {pricePositionLabel && <p className={`text-[10px] mt-0.5 font-semibold ${pricePositionColor}`}>{pricePositionLabel}</p>}
           </div>
           {/* Public Value + 70% */}
-          <div className="bg-white rounded-xl p-3 border border-gray-200 text-center">
+          <div className="bg-gray-900 rounded-xl p-3 border border-gray-800 text-center">
             {avgPublicEstimate > 0 ? (
               <>
-                <p className="text-lg font-bold text-gray-900">{formatCurrency(avgPublicEstimate)}</p>
-                <p className="text-gray-400 text-xs mt-0.5">{pubEstimates.length > 1 ? 'Avg Public Value' : 'Zestimate'}</p>
+                <p className="text-lg font-bold text-white">{formatCurrency(avgPublicEstimate)}</p>
+                <p className="text-gray-500 text-xs mt-0.5">{pubEstimates.length > 1 ? 'Avg Public Value' : 'Zestimate'}</p>
                 <p className="text-yellow-400 text-[10px] mt-0.5 font-medium">70%: {formatCurrency(threshold70)}</p>
               </>
             ) : (
               <>
-                <p className="text-lg font-bold text-gray-400">—</p>
-                <p className="text-gray-400 text-xs mt-0.5">Public Value</p>
-                <p className="text-gray-300 text-[10px] mt-0.5">Fetch Zestimate</p>
+                <p className="text-lg font-bold text-gray-600">—</p>
+                <p className="text-gray-500 text-xs mt-0.5">Public Value</p>
+                <p className="text-gray-700 text-[10px] mt-0.5">Fetch Zestimate</p>
               </>
             )}
           </div>
           {/* ARV - editable */}
-          <div className="bg-white rounded-xl p-3 border border-gray-200 text-center cursor-pointer group" onClick={() => { if(!editingArv){ setArvInput(deal.arv ? String(deal.arv) : ''); setEditingArv(true); } }}>
+          <div className="bg-gray-900 rounded-xl p-3 border border-gray-800 text-center cursor-pointer group" onClick={() => { if(!editingArv){ setArvInput(deal.arv ? String(deal.arv) : ''); setEditingArv(true); } }}>
             {editingArv ? (
               <div onClick={e=>e.stopPropagation()}>
                 <input autoFocus type="number" value={arvInput} onChange={e=>setArvInput(e.target.value)}
                   onKeyDown={e=>{ if(e.key==='Enter'){ updateDeal.mutate({arv:parseFloat(arvInput)||null}); setEditingArv(false); } if(e.key==='Escape') setEditingArv(false); }}
-                  className="w-full bg-gray-100 text-gray-900 text-center text-sm font-bold rounded px-2 py-1 focus:outline-none border border-blue-500" placeholder="Enter ARV" />
+                  className="w-full bg-gray-800 text-white text-center text-sm font-bold rounded px-2 py-1 focus:outline-none border border-blue-500" placeholder="Enter ARV" />
                 <div className="flex gap-1 mt-1 justify-center">
-                  <button onClick={()=>{ updateDeal.mutate({arv:parseFloat(arvInput)||null}); setEditingArv(false); }} className="text-[10px] px-2 py-0.5 bg-blue-600 text-gray-900 rounded">Save</button>
-                  <button onClick={()=>setEditingArv(false)} className="text-[10px] px-2 py-0.5 bg-gray-200 text-gray-400 rounded">Cancel</button>
+                  <button onClick={()=>{ updateDeal.mutate({arv:parseFloat(arvInput)||null}); setEditingArv(false); }} className="text-[10px] px-2 py-0.5 bg-blue-600 text-white rounded">Save</button>
+                  <button onClick={()=>setEditingArv(false)} className="text-[10px] px-2 py-0.5 bg-gray-700 text-gray-400 rounded">Cancel</button>
                 </div>
               </div>
             ) : (
               <>
-                <p className="text-lg font-bold text-gray-900 group-hover:text-blue-600 transition">{deal.arv ? formatCurrency(deal.arv) : '—'}</p>
-                <p className="text-gray-400 text-xs mt-0.5">ARV <span className="text-gray-300 text-[9px]">✎</span></p>
-                {!deal.arv && <p className="text-gray-300 text-[10px] mt-0.5">Click to enter</p>}
+                <p className="text-lg font-bold text-white group-hover:text-blue-300 transition">{deal.arv ? formatCurrency(deal.arv) : '—'}</p>
+                <p className="text-gray-500 text-xs mt-0.5">ARV <span className="text-gray-700 text-[9px]">✎</span></p>
+                {!deal.arv && <p className="text-gray-700 text-[10px] mt-0.5">Click to enter</p>}
               </>
             )}
           </div>
           {/* Repairs - editable */}
-          <div className="bg-white rounded-xl p-3 border border-gray-200 text-center cursor-pointer group" onClick={() => { if(!editingRepairs){ setRepairsInput(deal.repairEstimate ? String(deal.repairEstimate) : ''); setEditingRepairs(true); } }}>
+          <div className="bg-gray-900 rounded-xl p-3 border border-gray-800 text-center cursor-pointer group" onClick={() => { if(!editingRepairs){ setRepairsInput(deal.repairEstimate ? String(deal.repairEstimate) : ''); setEditingRepairs(true); } }}>
             {editingRepairs ? (
               <div onClick={e=>e.stopPropagation()}>
                 <input autoFocus type="number" value={repairsInput} onChange={e=>setRepairsInput(e.target.value)}
                   onKeyDown={e=>{ if(e.key==='Enter'){ updateDeal.mutate({repairEstimate:parseFloat(repairsInput)||null}); setEditingRepairs(false); } if(e.key==='Escape') setEditingRepairs(false); }}
-                  className="w-full bg-gray-100 text-gray-900 text-center text-sm font-bold rounded px-2 py-1 focus:outline-none border border-blue-500" placeholder="Enter repairs" />
+                  className="w-full bg-gray-800 text-white text-center text-sm font-bold rounded px-2 py-1 focus:outline-none border border-blue-500" placeholder="Enter repairs" />
                 <div className="flex gap-1 mt-1 justify-center">
-                  <button onClick={()=>{ updateDeal.mutate({repairEstimate:parseFloat(repairsInput)||null}); setEditingRepairs(false); }} className="text-[10px] px-2 py-0.5 bg-blue-600 text-gray-900 rounded">Save</button>
-                  <button onClick={()=>setEditingRepairs(false)} className="text-[10px] px-2 py-0.5 bg-gray-200 text-gray-400 rounded">Cancel</button>
+                  <button onClick={()=>{ updateDeal.mutate({repairEstimate:parseFloat(repairsInput)||null}); setEditingRepairs(false); }} className="text-[10px] px-2 py-0.5 bg-blue-600 text-white rounded">Save</button>
+                  <button onClick={()=>setEditingRepairs(false)} className="text-[10px] px-2 py-0.5 bg-gray-700 text-gray-400 rounded">Cancel</button>
                 </div>
               </div>
             ) : (
               <>
-                <p className="text-lg font-bold text-gray-900 group-hover:text-blue-600 transition">{deal.repairEstimate ? formatCurrency(deal.repairEstimate) : '—'}</p>
-                <p className="text-gray-400 text-xs mt-0.5">Repairs <span className="text-gray-300 text-[9px]">✎</span></p>
-                {!deal.repairEstimate && <p className="text-gray-300 text-[10px] mt-0.5">Click to enter</p>}
+                <p className="text-lg font-bold text-white group-hover:text-blue-300 transition">{deal.repairEstimate ? formatCurrency(deal.repairEstimate) : '—'}</p>
+                <p className="text-gray-500 text-xs mt-0.5">Repairs <span className="text-gray-700 text-[9px]">✎</span></p>
+                {!deal.repairEstimate && <p className="text-gray-700 text-[10px] mt-0.5">Click to enter</p>}
               </>
             )}
           </div>
           {/* Buyers */}
-          <div className="bg-white rounded-xl p-3 border border-gray-200 text-center">
-            <p className={`text-lg font-bold ${(deal.matchedBuyerCount||0) > 0 ? 'text-purple-600' : 'text-gray-400'}`}>{deal.matchedBuyerCount || 0}</p>
-            <p className="text-gray-400 text-xs mt-0.5">Buyer Matches</p>
+          <div className="bg-gray-900 rounded-xl p-3 border border-gray-800 text-center">
+            <p className={`text-lg font-bold ${(deal.matchedBuyerCount||0) > 0 ? 'text-purple-400' : 'text-gray-600'}`}>{deal.matchedBuyerCount || 0}</p>
+            <p className="text-gray-500 text-xs mt-0.5">Buyer Matches</p>
           </div>
         </div>
         {/* Dispo Score — separate row */}
         <div className="flex items-center gap-2 mb-3">
-          <span className="text-gray-400 text-xs">Dispo Score:</span>
+          <span className="text-gray-500 text-xs">Dispo Score:</span>
           <span className="text-yellow-400 text-sm font-bold">{deal.dealPriorityScore || '—'}</span>
           {deal.dealPriorityScore > 0 && <span className={`text-xs px-2 py-0.5 rounded ${priority.bg}`}>{priority.label}</span>}
         </div>
 
         {sellBlockers.length > 0 && (
-          <div className="flex items-center justify-between p-3 bg-amber-50 border border-amber-200 rounded-xl mb-3">
+          <div className="flex items-center justify-between p-3 bg-amber-900/20 border border-amber-800/40 rounded-xl mb-3">
             <div className="flex items-center gap-2 min-w-0">
-              <AlertCircle size={14} className="text-amber-600 shrink-0" />
-              <span className="text-amber-700 text-sm font-medium shrink-0">{sellBlockers.length} blocker{sellBlockers.length>1?'s':''}: </span>
+              <AlertCircle size={14} className="text-amber-400 shrink-0" />
+              <span className="text-amber-300 text-sm font-medium shrink-0">{sellBlockers.length} blocker{sellBlockers.length>1?'s':''}: </span>
               <span className="text-gray-400 text-sm truncate">{sellBlockers.slice(0,2).map(b=>b.split('—')[0].trim()).join(' · ')}{sellBlockers.length>2?` +${sellBlockers.length-2} more`:''}</span>
             </div>
             <button onClick={() => followUpAction.mutate()} disabled={followUpAction.isPending}
-              className="text-xs px-3 py-1.5 bg-amber-700/50 hover:bg-amber-700 text-amber-700 rounded-lg transition shrink-0 ml-2">
+              className="text-xs px-3 py-1.5 bg-amber-700/50 hover:bg-amber-700 text-amber-300 rounded-lg transition shrink-0 ml-2">
               Request Info
             </button>
           </div>
@@ -734,85 +734,85 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
               <div className="flex items-center gap-3 mb-1.5">
                 <span className={`text-4xl font-black leading-none ${sellColor}`}>{sellScore}</span>
                 <div>
-                  <p className="text-gray-900 font-bold text-base leading-tight">Deal Sellability</p>
+                  <p className="text-white font-bold text-base leading-tight">Deal Sellability</p>
                   <p className={`text-sm font-medium ${sellColor}`}>{sellLabel}</p>
-                {primaryBlocker && <p className="text-gray-400 text-xs mt-0.5">Fix: {primaryBlocker.split('—')[0].trim()}</p>}
+                {primaryBlocker && <p className="text-gray-500 text-xs mt-0.5">Fix: {primaryBlocker.split('—')[0].trim()}</p>}
                 </div>
               </div>
               <div className="flex items-center gap-2 mt-1">
-                <div className="w-40 h-2 bg-gray-100 rounded-full">
+                <div className="w-40 h-2 bg-gray-800 rounded-full">
                   <div className={`h-full rounded-full ${sellBar}`} style={{width:`${sellScore}%`}}/>
                 </div>
-                <span className="text-gray-400 text-xs">{sellScore}/100</span>
+                <span className="text-gray-600 text-xs">{sellScore}/100</span>
               </div>
             </div>
             <div className="flex gap-2 flex-wrap justify-end shrink-0">
               {b > 0 && hasPhotos && hasPermission ? (
                 <button onClick={() => { setTab('dispo'); generateContent.mutate('sms'); }}
-                  className="flex items-center gap-2 px-4 py-2 bg-green-700 hover:bg-green-600 text-gray-900 text-sm rounded-xl font-semibold transition">
+                  className="flex items-center gap-2 px-4 py-2 bg-green-700 hover:bg-green-600 text-white text-sm rounded-xl font-semibold transition">
                   <Zap size={14}/> Generate Buyer Blast
                 </button>
               ) : b > 0 ? (
                 <button onClick={() => followUpAction.mutate()} disabled={followUpAction.isPending}
-                  className="flex items-center gap-2 px-4 py-2 bg-amber-700 hover:bg-amber-600 text-gray-900 text-sm rounded-xl font-semibold transition">
+                  className="flex items-center gap-2 px-4 py-2 bg-amber-700 hover:bg-amber-600 text-white text-sm rounded-xl font-semibold transition">
                   <Send size={14}/> Request Missing Info
                 </button>
               ) : (
                 <button onClick={() => matchAction.mutate()} disabled={matchAction.isPending}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-700 hover:bg-blue-600 text-gray-900 text-sm rounded-xl font-semibold transition">
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-700 hover:bg-blue-600 text-white text-sm rounded-xl font-semibold transition">
                   <Target size={14}/> {matchAction.isPending ? 'Matching...' : 'Run Buyer Match'}
                 </button>
               )}
               <button onClick={() => setTab('buyers')}
-                className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-400 text-sm rounded-xl font-semibold transition border border-gray-200">
-                <Users size={14}/> View Buyers {b > 0 && <span className="ml-1 text-xs bg-gray-200 text-gray-400 px-1.5 py-0.5 rounded-full">{b}</span>}
+                className="flex items-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm rounded-xl font-semibold transition border border-gray-700">
+                <Users size={14}/> View Buyers {b > 0 && <span className="ml-1 text-xs bg-gray-700 text-gray-300 px-1.5 py-0.5 rounded-full">{b}</span>}
               </button>
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5 pt-4 border-t border-white/5">
             <div>
-              <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest mb-2.5">Why it should sell</p>
+              <p className="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-2.5">Why it should sell</p>
               {sellReasons.length > 0 ? (
-                <ul className="space-y-1.5">{sellReasons.map((r,i) => <li key={i} className="flex items-start gap-2 text-sm text-gray-400"><CheckCircle size={12} className="text-green-600 shrink-0 mt-0.5"/>{r}</li>)}</ul>
-              ) : <p className="text-gray-400 text-sm">No strong selling points yet. Add buyer matches and photos.</p>}
+                <ul className="space-y-1.5">{sellReasons.map((r,i) => <li key={i} className="flex items-start gap-2 text-sm text-gray-300"><CheckCircle size={12} className="text-green-400 shrink-0 mt-0.5"/>{r}</li>)}</ul>
+              ) : <p className="text-gray-600 text-sm">No strong selling points yet. Add buyer matches and photos.</p>}
             </div>
             <div>
-              <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest mb-2.5">Main blockers</p>
+              <p className="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-2.5">Main blockers</p>
               {sellBlockers.length > 0 ? (
-                <ul className="space-y-1.5">{sellBlockers.slice(0,4).map((bl,i) => <li key={i} className="flex items-start gap-2 text-sm text-amber-700"><AlertCircle size={12} className="shrink-0 mt-0.5 text-amber-600"/>{bl}</li>)}</ul>
-              ) : <p className="text-green-600 text-sm flex items-center gap-1.5"><CheckCircle size={12}/> No major blockers</p>}
+                <ul className="space-y-1.5">{sellBlockers.slice(0,4).map((bl,i) => <li key={i} className="flex items-start gap-2 text-sm text-amber-300"><AlertCircle size={12} className="shrink-0 mt-0.5 text-amber-400"/>{bl}</li>)}</ul>
+              ) : <p className="text-green-400 text-sm flex items-center gap-1.5"><CheckCircle size={12}/> No major blockers</p>}
             </div>
             <div>
-              <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest mb-2.5">Best buyer profile</p>
+              <p className="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-2.5">Best buyer profile</p>
               <p className="text-gray-200 text-sm font-medium mb-1">{bestBuyerProfile}</p>
-              {b > 0 && <p className="text-gray-400 text-xs mb-3">Top {Math.min(b,12)} buyers{t1 > 0 ? `, incl. ${t1} Tier 1` : ''}</p>}
-              <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest mb-1">Next best action</p>
-              <p className="text-gray-400 text-sm">{b > 0 && hasPhotos && hasPermission ? 'Ready — send blast to top matched buyers.' : b > 0 && !hasPhotos ? `${isOwn ? 'Upload' : 'Request'} buyer-safe photos, then generate blast.` : b > 0 && !hasPermission ? 'Confirm JV permission, then generate blast.' : !hasPrice ? 'Set asking price to enable buyer matching.' : 'Run buyer match to find qualified buyers.'}</p>
+              {b > 0 && <p className="text-gray-500 text-xs mb-3">Top {Math.min(b,12)} buyers{t1 > 0 ? `, incl. ${t1} Tier 1` : ''}</p>}
+              <p className="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Next best action</p>
+              <p className="text-gray-300 text-sm">{b > 0 && hasPhotos && hasPermission ? 'Ready — send blast to top matched buyers.' : b > 0 && !hasPhotos ? `${isOwn ? 'Upload' : 'Request'} buyer-safe photos, then generate blast.` : b > 0 && !hasPermission ? 'Confirm JV permission, then generate blast.' : !hasPrice ? 'Set asking price to enable buyer matching.' : 'Run buyer match to find qualified buyers.'}</p>
             </div>
           </div>
           {/* Blast Recommendation */}
           <div className="mt-4 pt-4 border-t border-white/5">
             {b > 0 ? (
-              <div className={`rounded-xl p-4 flex items-center justify-between gap-4 ${hasPhotos && hasPermission ? 'bg-green-50 border border-green-200' : 'bg-gray-50 border border-gray-200'}`}>
+              <div className={`rounded-xl p-4 flex items-center justify-between gap-4 ${hasPhotos && hasPermission ? 'bg-green-900/20 border border-green-800/30' : 'bg-gray-800/40 border border-gray-700/40'}`}>
                 <div>
-                  <p className={`text-xs font-bold uppercase tracking-wide mb-1 ${hasPhotos && hasPermission ? 'text-green-600' : 'text-gray-400'}`}>Recommended Blast</p>
-                  <p className="text-gray-900 text-sm font-semibold">{b} matched buyer{b>1?'s':''}{t1>0?', '+t1+' Tier 1 first':''}</p>
+                  <p className={`text-xs font-bold uppercase tracking-wide mb-1 ${hasPhotos && hasPermission ? 'text-green-400' : 'text-gray-400'}`}>Recommended Blast</p>
+                  <p className="text-white text-sm font-semibold">{b} matched buyer{b>1?'s':''}{t1>0?', '+t1+' Tier 1 first':''}</p>
                   <p className="text-gray-400 text-xs mt-0.5">{bestBuyerProfile}</p>
                 </div>
                 <button onClick={() => { setTab('dispo'); generateContent.mutate('sms'); }}
                   disabled={!hasPhotos || !hasPermission}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-green-700 hover:bg-green-600 disabled:bg-gray-200 disabled:text-gray-400 text-gray-900 text-sm rounded-xl font-bold transition shrink-0 whitespace-nowrap shadow-lg">
+                  className="flex items-center gap-2 px-5 py-2.5 bg-green-700 hover:bg-green-600 disabled:bg-gray-700 disabled:text-gray-500 text-white text-sm rounded-xl font-bold transition shrink-0 whitespace-nowrap shadow-lg">
                   <Zap size={14}/> {!hasPhotos ? 'Add Photos First' : !hasPermission ? 'Confirm JV First' : 'Blast '+b+' Buyers'}
                 </button>
               </div>
             ) : (
-              <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 flex items-center justify-between gap-4">
+              <div className="bg-gray-800/40 border border-gray-700/40 rounded-xl p-4 flex items-center justify-between gap-4">
                 <div>
-                  <p className="text-gray-400 text-xs font-bold uppercase tracking-wide mb-1">No Buyer Matches Yet</p>
+                  <p className="text-gray-500 text-xs font-bold uppercase tracking-wide mb-1">No Buyer Matches Yet</p>
                   <p className="text-gray-400 text-sm">Run buyer match to find qualified buyers for this deal.</p>
                 </div>
                 <button onClick={() => matchAction.mutate()} disabled={matchAction.isPending}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-blue-700 hover:bg-blue-600 text-gray-900 text-sm rounded-xl font-bold transition shrink-0 whitespace-nowrap">
+                  className="flex items-center gap-2 px-5 py-2.5 bg-blue-700 hover:bg-blue-600 text-white text-sm rounded-xl font-bold transition shrink-0 whitespace-nowrap">
                   <Target size={14}/> {matchAction.isPending ? 'Matching...' : 'Run Buyer Match'}
                 </button>
               </div>
@@ -828,55 +828,55 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
       </div>
 
       {/* DISPO STRATEGY */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4">
+      <div className="bg-gray-900 rounded-xl border border-gray-800 p-4">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <Sparkles size={14} className="text-purple-600" />
-            <h3 className="text-gray-900 text-sm font-medium">Dispo Strategy</h3>
+            <Sparkles size={14} className="text-purple-400" />
+            <h3 className="text-white text-sm font-medium">Dispo Strategy</h3>
           </div>
           {!(b > 0 && hasPhotos && hasPermission) && (
           <button onClick={() => followUpAction.mutate()} disabled={followUpAction.isPending}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-400 text-xs rounded-lg transition border border-gray-200">
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs rounded-lg transition border border-gray-700">
             <Send size={11} /> Generate Follow-Up
           </button>
           )}
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div className="space-y-2">
-            <div className="bg-gray-50 rounded-lg p-3">
-              <p className="text-gray-400 text-[10px] font-bold uppercase tracking-wide mb-1">Dispo Angle</p>
-              <p className="text-gray-400 text-sm">{deal.dealType === 'SUBTO' ? 'Market as creative finance / Subto with assumable debt and cash flow.' : (deal.overallCondition||'').includes('HEAVY') ? 'Market as value-add heavy rehab for cash buyers and flippers.' : 'Market as off-market ' + (deal.propertyType||'SFR').replace(/_/g,' ').toLowerCase() + ' with active buyer demand in ' + (deal.city || 'this market') + '.'}</p>
+            <div className="bg-gray-800/50 rounded-lg p-3">
+              <p className="text-gray-500 text-[10px] font-bold uppercase tracking-wide mb-1">Dispo Angle</p>
+              <p className="text-gray-300 text-sm">{deal.dealType === 'SUBTO' ? 'Market as creative finance / Subto with assumable debt and cash flow.' : (deal.overallCondition||'').includes('HEAVY') ? 'Market as value-add heavy rehab for cash buyers and flippers.' : 'Market as off-market ' + (deal.propertyType||'SFR').replace(/_/g,' ').toLowerCase() + ' with active buyer demand in ' + (deal.city || 'this market') + '.'}</p>
             </div>
-            <div className="bg-gray-50 rounded-lg p-3">
-              <p className="text-gray-400 text-[10px] font-bold uppercase tracking-wide mb-1">Recommended Pitch</p>
-              <p className="text-gray-400 text-sm">{[deal.occupancy==='VACANT'?'Vacant':deal.occupancy==='OCCUPIED_TENANT'?'Tenant in place':null,deal.beds?(deal.beds+'bd/'+deal.baths+'ba'):null,deal.sqft?(deal.sqft.toLocaleString()+' sqft'):null,deal.askingPrice?('Ask '+formatCurrency(deal.askingPrice)):null,deal.arv?('ARV '+formatCurrency(deal.arv)):null,deal.overallCondition?(deal.overallCondition.replace(/_/g,' ').toLowerCase()+' condition'):null,deal.accessInfo?'lockbox access':null].filter(Boolean).join(', ') || 'Add property details to generate pitch.'}</p>
+            <div className="bg-gray-800/50 rounded-lg p-3">
+              <p className="text-gray-500 text-[10px] font-bold uppercase tracking-wide mb-1">Recommended Pitch</p>
+              <p className="text-gray-300 text-sm">{[deal.occupancy==='VACANT'?'Vacant':deal.occupancy==='OCCUPIED_TENANT'?'Tenant in place':null,deal.beds?(deal.beds+'bd/'+deal.baths+'ba'):null,deal.sqft?(deal.sqft.toLocaleString()+' sqft'):null,deal.askingPrice?('Ask '+formatCurrency(deal.askingPrice)):null,deal.arv?('ARV '+formatCurrency(deal.arv)):null,deal.overallCondition?(deal.overallCondition.replace(/_/g,' ').toLowerCase()+' condition'):null,deal.accessInfo?'lockbox access':null].filter(Boolean).join(', ') || 'Add property details to generate pitch.'}</p>
             </div>
           </div>
           <div className="space-y-2">
-            <div className="bg-gray-50 rounded-lg p-3">
-              <p className="text-gray-400 text-[10px] font-bold uppercase tracking-wide mb-1">Buyer Objections</p>
+            <div className="bg-gray-800/50 rounded-lg p-3">
+              <p className="text-gray-500 text-[10px] font-bold uppercase tracking-wide mb-1">Buyer Objections</p>
               <div className="space-y-1">
-                {!hasValue && <p className="text-xs text-gray-400">· Buyers may ask about public value support — add Zillow/Realtor/Redfin.</p>}
-                {!hasPhotos && <p className="text-xs text-gray-400">· Buyers will ask for photos — add before blasting.</p>}
-                {!deal.closingDate && <p className="text-xs text-gray-400">· Buyers will ask about the closing timeline.</p>}
-                {deal.dealType === 'SUBTO' && <p className="text-xs text-gray-400">· Buyers may ask about HomeTap or equity positions on title.</p>}
-                {hasValue && hasPhotos && deal.closingDate && deal.dealType !== 'SUBTO' && <p className="text-xs text-gray-400">No major objections anticipated.</p>}
+                {!hasValue && <p className="text-xs text-gray-300">· Buyers may ask about public value support — add Zillow/Realtor/Redfin.</p>}
+                {!hasPhotos && <p className="text-xs text-gray-300">· Buyers will ask for photos — add before blasting.</p>}
+                {!deal.closingDate && <p className="text-xs text-gray-300">· Buyers will ask about the closing timeline.</p>}
+                {deal.dealType === 'SUBTO' && <p className="text-xs text-gray-300">· Buyers may ask about HomeTap or equity positions on title.</p>}
+                {hasValue && hasPhotos && deal.closingDate && deal.dealType !== 'SUBTO' && <p className="text-xs text-gray-500">No major objections anticipated.</p>}
               </div>
             </div>
-            <div className="bg-gray-50 rounded-lg p-3">
-              <p className="text-gray-400 text-[10px] font-bold uppercase tracking-wide mb-1">Risk Notes</p>
-              <p className="text-gray-400 text-sm">{sellBlockers.length > 0 ? sellBlockers.slice(0,2).map((bl:string) => bl.split('—')[0].trim()).join('. ')+'.' : 'No major risk flags. Deal is in good shape to blast.'}</p>
+            <div className="bg-gray-800/50 rounded-lg p-3">
+              <p className="text-gray-500 text-[10px] font-bold uppercase tracking-wide mb-1">Risk Notes</p>
+              <p className="text-gray-300 text-sm">{sellBlockers.length > 0 ? sellBlockers.slice(0,2).map((bl:string) => bl.split('—')[0].trim()).join('. ')+'.' : 'No major risk flags. Deal is in good shape to blast.'}</p>
             </div>
           </div>
         </div>
-        {deal.description && <p className="text-gray-400 text-xs mt-3 pt-3 border-t border-gray-200 italic">"{deal.description}"</p>}
+        {deal.description && <p className="text-gray-600 text-xs mt-3 pt-3 border-t border-gray-800 italic">"{deal.description}"</p>}
         {generatedOutput.followUp && <GeneratedOutput content={generatedOutput.followUp} onClose={() => setGeneratedOutput(prev => ({...prev, followUp: ''}))} />}
       </div>
 
 
       {/* Tabs */}
-      <div className="sticky top-0 z-30 -mx-4 px-4 py-2 bg-gray-50/95 backdrop-blur border-b border-gray-100">
-      <div className="flex gap-1 bg-white/80 p-1 rounded-xl border border-gray-200 w-fit">
+      <div className="sticky top-0 z-30 -mx-4 px-4 py-2 bg-gray-950/95 backdrop-blur border-b border-gray-800/50">
+      <div className="flex gap-1 bg-gray-900/80 p-1 rounded-xl border border-gray-800 w-fit">
         {([
           { id: 'property', label: 'Property Intelligence', icon: Building2 },
           { id: 'dealmath', label: 'Deal Math', icon: DollarSign },
@@ -884,7 +884,7 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
           { id: 'dispo', label: 'Dispo Execution', icon: Zap },
         ] as const).map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition ${tab === t.id ? 'bg-gray-100 text-gray-900 shadow' : 'text-gray-400 hover:text-gray-400'}`}>
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition ${tab === t.id ? 'bg-gray-800 text-white shadow' : 'text-gray-500 hover:text-gray-300'}`}>
             <t.icon size={14} />
             <span className="hidden md:inline">{t.label}</span>
           </button>
@@ -922,10 +922,10 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
                 <InfoRow label="Electrical" value={deal.electricalCondition} />
                 <InfoRow label="Kitchen" value={deal.kitchenCondition} />
                 <InfoRow label="Bathrooms" value={deal.bathroomCondition} />
-                {deal.moldOrWaterDamage && <p className="text-red-500 text-xs mt-2">⚠ Mold / Water Damage reported</p>}
-                {deal.fireDamage && <p className="text-red-500 text-xs">⚠ Fire Damage reported</p>}
-                {deal.codeIssues && <p className="text-red-500 text-xs">⚠ Code Issues reported</p>}
-                {deal.conditionNotes && <p className="text-gray-400 text-xs mt-2 pt-2 border-t border-gray-200">{deal.conditionNotes}</p>}
+                {deal.moldOrWaterDamage && <p className="text-red-400 text-xs mt-2">⚠ Mold / Water Damage reported</p>}
+                {deal.fireDamage && <p className="text-red-400 text-xs">⚠ Fire Damage reported</p>}
+                {deal.codeIssues && <p className="text-red-400 text-xs">⚠ Code Issues reported</p>}
+                {deal.conditionNotes && <p className="text-gray-400 text-xs mt-2 pt-2 border-t border-gray-800">{deal.conditionNotes}</p>}
               </Card>
             </div>
 
@@ -938,33 +938,33 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
                   { name: 'Redfin', url: deal.redfinUrl || `https://www.redfin.com/city/${(deal.city||'').replace(' ','-')}/${deal.state}` },
                 ].map(s => (
                   <a key={s.name} href={s.url} target="_blank" rel="noopener noreferrer"
-                    className="flex items-center gap-1 text-[10px] px-2 py-1 bg-gray-100 hover:bg-gray-200 text-gray-400 rounded-lg border border-gray-200 transition">
+                    className="flex items-center gap-1 text-[10px] px-2 py-1 bg-gray-800 hover:bg-gray-700 text-gray-400 rounded-lg border border-gray-700 transition">
                     <ExternalLink size={9} /> {s.name}
                   </a>
                 ))}
                 </div>
                 <button onClick={fetchZestimate} disabled={zestimateFetching}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-600 text-xs rounded-lg transition disabled:opacity-50 shrink-0">
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-900/40 hover:bg-blue-900/60 border border-blue-700/40 text-blue-300 text-xs rounded-lg transition disabled:opacity-50 shrink-0">
                   {zestimateFetching ? <><RefreshCw size={10} className="animate-spin"/> Fetching...</> : <><Sparkles size={10}/> Fetch Zestimate</>}
                 </button>
               </div>
               {(deal.zillowEstimate || deal.zillowUrl) && (
-                <div className="mb-3 p-2.5 bg-blue-50 border border-blue-200 rounded-lg flex items-center justify-between">
+                <div className="mb-3 p-2.5 bg-blue-900/20 border border-blue-800/30 rounded-lg flex items-center justify-between">
                   <div>
                     <div className="flex items-center gap-2 mb-0.5">
-                      <p className="text-blue-600 text-xs font-semibold">Zillow Zestimate</p>
+                      <p className="text-blue-300 text-xs font-semibold">Zillow Zestimate</p>
                       {deal.zillowUrl && (
                         <a href={deal.zillowUrl} target="_blank" rel="noopener noreferrer"
-                          className="text-[10px] px-1.5 py-0.5 bg-blue-800/50 hover:bg-blue-700/50 text-blue-600 rounded flex items-center gap-0.5 transition">
+                          className="text-[10px] px-1.5 py-0.5 bg-blue-800/50 hover:bg-blue-700/50 text-blue-300 rounded flex items-center gap-0.5 transition">
                           <ExternalLink size={8}/> Zillow
                         </a>
                       )}
                     </div>
-                    <p className="text-gray-900 text-lg font-bold">{deal.zillowEstimate ? formatCurrency(deal.zillowEstimate) : '—'}</p>
+                    <p className="text-white text-lg font-bold">{deal.zillowEstimate ? formatCurrency(deal.zillowEstimate) : '—'}</p>
                   </div>
                   {deal.zillowEstimate && (
                     <div className="text-right">
-                      <p className="text-gray-400 text-xs">70% of Zestimate</p>
+                      <p className="text-gray-500 text-xs">70% of Zestimate</p>
                       <p className="text-yellow-400 text-sm font-semibold">{formatCurrency(deal.zillowEstimate * 0.70)}</p>
                     </div>
                   )}
@@ -977,32 +977,32 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
                     { name: 'Realtor.com', estimate: deal.realtorEstimate, url: deal.realtorUrl },
                     { name: 'Redfin', estimate: deal.redfinEstimate, url: deal.redfinUrl },
                   ].map(s => (s.estimate || s.url) && (
-                    <div key={s.name} className="grid grid-cols-3 items-center py-2 border-b border-gray-100 last:border-0">
-                      <span className="text-gray-400 text-sm">{s.name}</span>
-                      <span className="text-gray-900 text-sm text-center">{s.estimate ? formatCurrency(s.estimate) : '—'}</span>
-                      {s.url ? <a href={s.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 text-xs flex items-center gap-0.5 justify-end hover:underline">Open <ExternalLink size={10} /></a>
-                        : <span className="text-gray-300 text-xs text-right">No link</span>}
+                    <div key={s.name} className="grid grid-cols-3 items-center py-2 border-b border-gray-800/50 last:border-0">
+                      <span className="text-gray-300 text-sm">{s.name}</span>
+                      <span className="text-white text-sm text-center">{s.estimate ? formatCurrency(s.estimate) : '—'}</span>
+                      {s.url ? <a href={s.url} target="_blank" rel="noopener noreferrer" className="text-blue-400 text-xs flex items-center gap-0.5 justify-end hover:underline">Open <ExternalLink size={10} /></a>
+                        : <span className="text-gray-700 text-xs text-right">No link</span>}
                     </div>
                   ))}
                   {avgPublicEstimate > 0 && (
-                    <div className="bg-gray-50 rounded-lg p-3 mt-3 space-y-1.5">
-                      <div className="flex justify-between text-sm"><span className="text-gray-400">Avg Public Estimate</span><span className="text-gray-900 font-medium">{formatCurrency(avgPublicEstimate)}</span></div>
+                    <div className="bg-gray-800/60 rounded-lg p-3 mt-3 space-y-1.5">
+                      <div className="flex justify-between text-sm"><span className="text-gray-400">Avg Public Estimate</span><span className="text-white font-medium">{formatCurrency(avgPublicEstimate)}</span></div>
                       <div className="flex justify-between text-sm"><span className="text-gray-400">70% of Average</span><span className="text-yellow-400">{formatCurrency(seventyPctAvg)}</span></div>
-                      <div className="flex justify-between text-sm"><span className="text-gray-400">70% Avg − Repairs</span><span className="text-green-600">{formatCurrency(seventyPctMinusRepairs)}</span></div>
+                      <div className="flex justify-between text-sm"><span className="text-gray-400">70% Avg − Repairs</span><span className="text-green-400">{formatCurrency(seventyPctMinusRepairs)}</span></div>
                     </div>
                   )}
                 </>
               ) : (
                 <div className="text-center py-4">
-                  <p className="text-gray-400 text-sm mb-3">Public estimates not added yet</p>
-                  <button onClick={() => setTab('dispo')} className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-400 text-xs rounded-lg transition">Add Estimate Links</button>
+                  <p className="text-gray-500 text-sm mb-3">Public estimates not added yet</p>
+                  <button onClick={() => setTab('dispo')} className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-400 text-xs rounded-lg transition">Add Estimate Links</button>
                 </div>
               )}
             </Card>
 
             {deal.description && (
               <Card title="Description" icon={FileText}>
-                <p className="text-gray-400 text-sm leading-relaxed">{deal.description}</p>
+                <p className="text-gray-300 text-sm leading-relaxed">{deal.description}</p>
               </Card>
             )}
           </div>
@@ -1022,23 +1022,23 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
 
             <Card title="Deal Analysis" icon={TrendingUp}>
               <div className="space-y-2">
-                <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                  <span className="text-gray-400 text-sm">Potential Margin</span>
-                  <span className={`text-xl font-bold ${potentialMargin > 0 ? 'text-green-600' : 'text-red-500'}`}>
+                <div className="flex justify-between items-center py-2 border-b border-gray-800">
+                  <span className="text-gray-500 text-sm">Potential Margin</span>
+                  <span className={`text-xl font-bold ${potentialMargin > 0 ? 'text-green-400' : 'text-red-400'}`}>
                     {potentialMargin > 0 ? formatCurrency(potentialMargin) : `(${formatCurrency(Math.abs(potentialMargin))})`}
                   </span>
                 </div>
-                <p className="text-gray-400 text-xs italic">Based on buyer-facing price, ARV, and repairs. Not JV contract spread.</p>
+                <p className="text-gray-600 text-xs italic">Based on buyer-facing price, ARV, and repairs. Not JV contract spread.</p>
                 {deal.seventyPercentRuleMax > 0 && (
                   <>
-                    <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                      <span className="text-gray-400 text-sm">70% Rule Max</span>
-                      <span className="text-gray-900 font-medium">{formatCurrency(deal.seventyPercentRuleMax)}</span>
+                    <div className="flex justify-between items-center py-2 border-b border-gray-800">
+                      <span className="text-gray-500 text-sm">70% Rule Max</span>
+                      <span className="text-white font-medium">{formatCurrency(deal.seventyPercentRuleMax)}</span>
                     </div>
                     {deal.askingPrice && (
-                      <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                        <span className="text-gray-400 text-sm">Asking vs 70% Rule</span>
-                        <span className={deal.askingPrice <= deal.seventyPercentRuleMax ? 'text-green-600 text-sm' : 'text-amber-600 text-sm'}>
+                      <div className="flex justify-between items-center py-2 border-b border-gray-800">
+                        <span className="text-gray-500 text-sm">Asking vs 70% Rule</span>
+                        <span className={deal.askingPrice <= deal.seventyPercentRuleMax ? 'text-green-400 text-sm' : 'text-amber-400 text-sm'}>
                           {deal.askingPrice <= deal.seventyPercentRuleMax ? `✓ ${formatCurrency(deal.seventyPercentRuleMax - deal.askingPrice)} under` : `${formatCurrency(deal.askingPrice - deal.seventyPercentRuleMax)} over`}
                         </span>
                       </div>
@@ -1062,69 +1062,69 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
               {deal.taxesAnnual && <InfoRow label="Annual Taxes" value={formatCurrency(deal.taxesAnnual)} />}
               {deal.insuranceEstimate && <InfoRow label="Insurance Est." value={`${formatCurrency(deal.insuranceEstimate)}/mo`} />}
               {deal.hoaMonthly && <InfoRow label="HOA Monthly" value={formatCurrency(deal.hoaMonthly)} />}
-              {!deal.rentEstimate && !deal.currentRent && <p className="text-gray-400 text-sm">No rental data available</p>}
+              {!deal.rentEstimate && !deal.currentRent && <p className="text-gray-600 text-sm">No rental data available</p>}
             </Card>
 
             {/* AI ARV Analysis */}
-            <div className="col-span-full bg-white rounded-xl border border-gray-200 overflow-hidden">
-              <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
+            <div className="col-span-full bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+              <div className="px-4 py-3 border-b border-gray-800 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Sparkles size={14} className="text-purple-600" />
-                  <h3 className="text-gray-900 text-sm font-medium">AI ARV Analysis</h3>
-                  <span className="text-gray-400 text-xs">web search + comp analysis</span>
+                  <Sparkles size={14} className="text-purple-400" />
+                  <h3 className="text-white text-sm font-medium">AI ARV Analysis</h3>
+                  <span className="text-gray-600 text-xs">web search + comp analysis</span>
                 </div>
                 <button onClick={runArvAnalysis} disabled={arvLoading}
-                  className="flex items-center gap-2 px-4 py-1.5 bg-purple-700 hover:bg-purple-600 disabled:opacity-50 text-gray-900 text-xs rounded-lg font-medium transition">
+                  className="flex items-center gap-2 px-4 py-1.5 bg-purple-700 hover:bg-purple-600 disabled:opacity-50 text-white text-xs rounded-lg font-medium transition">
                   {arvLoading ? <><RefreshCw size={11} className="animate-spin mr-1"/>Analyzing...</> : <><Sparkles size={11}/>Run ARV Analysis</>}
                 </button>
               </div>
               <div className="p-4">
                 {!arvAnalysis && !arvLoading && (
                   <div className="text-center py-6">
-                    <Sparkles size={28} className="text-gray-300 mx-auto mb-2"/>
+                    <Sparkles size={28} className="text-gray-700 mx-auto mb-2"/>
                     <p className="text-gray-400 text-sm font-medium">AI-Powered ARV Estimation</p>
-                    <p className="text-gray-400 text-xs mt-1 max-w-sm mx-auto">Searches Zillow, Redfin & Realtor for recent comps in the same subdivision. Returns Low / Median / High ARV. Auto-saves median to deal.</p>
+                    <p className="text-gray-600 text-xs mt-1 max-w-sm mx-auto">Searches Zillow, Redfin & Realtor for recent comps in the same subdivision. Returns Low / Median / High ARV. Auto-saves median to deal.</p>
                   </div>
                 )}
                 {arvLoading && (
                   <div className="text-center py-8">
-                    <RefreshCw size={24} className="text-purple-600 mx-auto mb-3 animate-spin"/>
+                    <RefreshCw size={24} className="text-purple-400 mx-auto mb-3 animate-spin"/>
                     <p className="text-gray-400 text-sm">Searching for comps...</p>
-                    <p className="text-gray-400 text-xs mt-1">Takes 20–40 seconds</p>
+                    <p className="text-gray-600 text-xs mt-1">Takes 20–40 seconds</p>
                   </div>
                 )}
                 {arvAnalysis && !arvAnalysis.error && (
                   <div className="space-y-4">
                     <div className="grid grid-cols-3 gap-3">
-                      {[{label:'Conservative',value:arvAnalysis.arvLow,c:'text-amber-600'},{label:'Best Estimate',value:arvAnalysis.arvMedian,c:'text-green-600'},{label:'High',value:arvAnalysis.arvHigh,c:'text-blue-600'}].map(v=>(
-                        <div key={v.label} className="bg-gray-50 rounded-xl p-3 text-center">
+                      {[{label:'Conservative',value:arvAnalysis.arvLow,c:'text-amber-400'},{label:'Best Estimate',value:arvAnalysis.arvMedian,c:'text-green-400'},{label:'High',value:arvAnalysis.arvHigh,c:'text-blue-400'}].map(v=>(
+                        <div key={v.label} className="bg-gray-800/60 rounded-xl p-3 text-center">
                           <p className={`text-xl font-bold ${v.c}`}>{v.value?formatCurrency(v.value):'—'}</p>
-                          <p className="text-gray-400 text-xs mt-0.5">{v.label} ARV</p>
+                          <p className="text-gray-500 text-xs mt-0.5">{v.label} ARV</p>
                         </div>
                       ))}
                     </div>
-                    <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                      <div className="flex gap-1">{[1,2,3,4,5].map(i=><div key={i} className={`w-3 h-3 rounded-full ${i<=(arvAnalysis.confidence||0)?'bg-purple-500':'bg-gray-200'}`}/>)}</div>
-                      <span className="text-gray-400 text-xs">{arvAnalysis.confidenceReason}</span>
+                    <div className="flex items-center gap-3 p-3 bg-gray-800/40 rounded-lg">
+                      <div className="flex gap-1">{[1,2,3,4,5].map(i=><div key={i} className={`w-3 h-3 rounded-full ${i<=(arvAnalysis.confidence||0)?'bg-purple-500':'bg-gray-700'}`}/>)}</div>
+                      <span className="text-gray-300 text-xs">{arvAnalysis.confidenceReason}</span>
                     </div>
-                    {arvAnalysis.recommendation&&<div className="p-3 bg-blue-50 border border-blue-200 rounded-lg"><p className="text-blue-600 text-xs font-medium mb-0.5">Recommendation</p><p className="text-gray-400 text-sm">{arvAnalysis.recommendation}</p></div>}
-                    {arvAnalysis.comps?.length>0&&<div><p className="text-gray-400 text-xs font-medium mb-2">Comparable Sales</p><div className="space-y-1.5">{arvAnalysis.comps.map((comp:any,i:number)=>(
-                      <div key={i} className="flex items-start justify-between py-2 border-b border-gray-100 last:border-0">
-                        <div><p className="text-gray-400 text-xs font-medium">{comp.address}</p><p className="text-gray-400 text-[10px]">{comp.saleDate} · {comp.sqft?.toLocaleString()} sqft · {comp.notes}</p></div>
-                        <div className="text-right ml-4 shrink-0"><p className="text-gray-900 text-xs font-bold">{comp.salePrice?formatCurrency(comp.salePrice):'—'}</p><p className="text-gray-400 text-[10px]">${comp.pricePerSqft}/sqft</p></div>
+                    {arvAnalysis.recommendation&&<div className="p-3 bg-blue-900/20 border border-blue-800/40 rounded-lg"><p className="text-blue-300 text-xs font-medium mb-0.5">Recommendation</p><p className="text-gray-300 text-sm">{arvAnalysis.recommendation}</p></div>}
+                    {arvAnalysis.comps?.length>0&&<div><p className="text-gray-500 text-xs font-medium mb-2">Comparable Sales</p><div className="space-y-1.5">{arvAnalysis.comps.map((comp:any,i:number)=>(
+                      <div key={i} className="flex items-start justify-between py-2 border-b border-gray-800/50 last:border-0">
+                        <div><p className="text-gray-300 text-xs font-medium">{comp.address}</p><p className="text-gray-500 text-[10px]">{comp.saleDate} · {comp.sqft?.toLocaleString()} sqft · {comp.notes}</p></div>
+                        <div className="text-right ml-4 shrink-0"><p className="text-white text-xs font-bold">{comp.salePrice?formatCurrency(comp.salePrice):'—'}</p><p className="text-gray-500 text-[10px]">${comp.pricePerSqft}/sqft</p></div>
                       </div>))}</div></div>}
-                    {arvAnalysis.dataWarnings&&<p className="text-amber-600/70 text-xs italic">{arvAnalysis.dataWarnings}</p>}
-                    <p className="text-gray-400 text-xs">Median ARV auto-saved. Re-run anytime for fresh comps.</p>
+                    {arvAnalysis.dataWarnings&&<p className="text-amber-400/70 text-xs italic">{arvAnalysis.dataWarnings}</p>}
+                    <p className="text-gray-600 text-xs">Median ARV auto-saved. Re-run anytime for fresh comps.</p>
                   </div>
                 )}
-                {arvAnalysis?.error&&<div className="p-3 bg-red-50 border border-red-200 rounded-lg"><p className="text-red-500 text-xs font-medium mb-1">Analysis failed</p><p className="text-gray-400 text-xs">{arvAnalysis.error}</p></div>}
+                {arvAnalysis?.error&&<div className="p-3 bg-red-900/20 border border-red-800/40 rounded-lg"><p className="text-red-400 text-xs font-medium mb-1">Analysis failed</p><p className="text-gray-400 text-xs">{arvAnalysis.error}</p></div>}
               </div>
             </div>
 
             {deal.aiDealMathSummary && (
               <Card title="AI Deal Math Takeaway" icon={Sparkles}>
-                <p className="text-gray-400 text-sm leading-relaxed">{deal.aiDealMathSummary}</p>
-                <button onClick={() => calcAction.mutate()} className="mt-3 text-xs text-blue-600 hover:underline flex items-center gap-1"><RefreshCw size={10} /> Recalculate</button>
+                <p className="text-gray-300 text-sm leading-relaxed">{deal.aiDealMathSummary}</p>
+                <button onClick={() => calcAction.mutate()} className="mt-3 text-xs text-blue-400 hover:underline flex items-center gap-1"><RefreshCw size={10} /> Recalculate</button>
               </Card>
             )}
           </div>
@@ -1134,136 +1134,136 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
         {tab === 'buyers' && (
           <div className="space-y-4">
             {/* Recommended Blast List */}
-            <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <div className="bg-gray-900 rounded-xl border border-gray-800 p-4">
               <div className="flex items-start justify-between mb-4">
                 <div>
-                  <h3 className="text-gray-900 font-semibold text-sm mb-1">Recommended Blast List</h3>
-                  <p className="text-gray-400 text-xs">{bestBuyerProfile}</p>
+                  <h3 className="text-white font-semibold text-sm mb-1">Recommended Blast List</h3>
+                  <p className="text-gray-500 text-xs">{bestBuyerProfile}</p>
                 </div>
                 <button onClick={() => { generateContent.mutate('sms'); }}
                   disabled={b===0}
-                  className="flex items-center gap-2 px-4 py-2 bg-green-700 hover:bg-green-600 disabled:bg-gray-100 disabled:text-gray-400 text-gray-900 text-xs rounded-xl font-semibold transition">
+                  className="flex items-center gap-2 px-4 py-2 bg-green-700 hover:bg-green-600 disabled:bg-gray-800 disabled:text-gray-600 text-white text-xs rounded-xl font-semibold transition">
                   <Zap size={12}/> Generate Buyer Blast
                 </button>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
                 {[
-                  { label: 'Total Matched', value: b, color: b>0?'text-gray-900':'text-gray-400' },
-                  { label: 'Tier 1 Buyers', value: t1, color: t1>0?'text-orange-400':'text-gray-400' },
-                  { label: 'Recommended', value: b>0?Math.max(1,Math.round(b*0.75)):0, color: 'text-green-600' },
-                  { label: 'Excluded', value: b>0?Math.round(b*0.25):0, color: 'text-gray-400' },
+                  { label: 'Total Matched', value: b, color: b>0?'text-white':'text-gray-600' },
+                  { label: 'Tier 1 Buyers', value: t1, color: t1>0?'text-orange-400':'text-gray-600' },
+                  { label: 'Recommended', value: b>0?Math.max(1,Math.round(b*0.75)):0, color: 'text-green-400' },
+                  { label: 'Excluded', value: b>0?Math.round(b*0.25):0, color: 'text-gray-500' },
                 ].map(s => (
-                  <div key={s.label} className="bg-gray-50 rounded-lg p-3 text-center">
+                  <div key={s.label} className="bg-gray-800/60 rounded-lg p-3 text-center">
                     <p className={`text-xl font-bold ${s.color}`}>{s.value}</p>
-                    <p className="text-gray-400 text-xs mt-0.5">{s.label}</p>
+                    <p className="text-gray-500 text-xs mt-0.5">{s.label}</p>
                   </div>
                 ))}
               </div>
               <div className="flex gap-2 flex-wrap">
                 <button onClick={() => generateContent.mutate('sms')} disabled={b===0}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-green-900/40 hover:bg-green-900/60 border border-green-700/40 text-green-700 text-xs rounded-lg transition disabled:opacity-40">
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-green-900/40 hover:bg-green-900/60 border border-green-700/40 text-green-300 text-xs rounded-lg transition disabled:opacity-40">
                   <MessageSquare size={11}/> Preview SMS
                 </button>
                 <button onClick={() => generateContent.mutate('email')} disabled={b===0}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-600 text-xs rounded-lg transition disabled:opacity-40">
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-900/40 hover:bg-blue-900/60 border border-blue-700/40 text-blue-300 text-xs rounded-lg transition disabled:opacity-40">
                   <Mail size={11}/> Preview Email
                 </button>
                 <button onClick={() => generateContent.mutate('facebook')} disabled={b===0}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-900/40 hover:bg-indigo-50 border border-indigo-200 text-indigo-600 text-xs rounded-lg transition disabled:opacity-40">
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-900/40 hover:bg-indigo-900/60 border border-indigo-700/40 text-indigo-300 text-xs rounded-lg transition disabled:opacity-40">
                   <Facebook size={11}/> Preview FB Post
                 </button>
               </div>
               {(generatedOutput.sms || generatedOutput.email || generatedOutput.facebook) && (
                 <div className="mt-3 space-y-2">
-                  {generatedOutput.sms && <div><p className="text-gray-400 text-xs mb-1">📱 SMS Preview</p><GeneratedOutput content={generatedOutput.sms} onClose={() => setGeneratedOutput(prev => ({ ...prev, sms: '' }))} /></div>}
-                  {generatedOutput.email && <div><p className="text-gray-400 text-xs mb-1">📧 Email Preview</p><GeneratedOutput content={generatedOutput.email} onClose={() => setGeneratedOutput(prev => ({ ...prev, email: '' }))} /></div>}
-                  {generatedOutput.facebook && <div><p className="text-gray-400 text-xs mb-1">📘 FB Post Preview</p><GeneratedOutput content={generatedOutput.facebook} onClose={() => setGeneratedOutput(prev => ({ ...prev, facebook: '' }))} /></div>}
+                  {generatedOutput.sms && <div><p className="text-gray-500 text-xs mb-1">📱 SMS Preview</p><GeneratedOutput content={generatedOutput.sms} onClose={() => setGeneratedOutput(prev => ({ ...prev, sms: '' }))} /></div>}
+                  {generatedOutput.email && <div><p className="text-gray-500 text-xs mb-1">📧 Email Preview</p><GeneratedOutput content={generatedOutput.email} onClose={() => setGeneratedOutput(prev => ({ ...prev, email: '' }))} /></div>}
+                  {generatedOutput.facebook && <div><p className="text-gray-500 text-xs mb-1">📘 FB Post Preview</p><GeneratedOutput content={generatedOutput.facebook} onClose={() => setGeneratedOutput(prev => ({ ...prev, facebook: '' }))} /></div>}
                 </div>
               )}
             </div>
 
             {deal.buyerCoverageStatus && (
-              <div className={`p-4 rounded-xl border ${deal.buyerCoverageStatus === 'Strong Coverage' ? 'bg-green-50 border-green-200' : deal.buyerCoverageStatus === 'Moderate Coverage' ? 'bg-yellow-900/20 border-yellow-800/40' : 'bg-red-50 border-red-200'}`}>
-                <p className={`font-medium text-sm ${deal.buyerCoverageStatus === 'Strong Coverage' ? 'text-green-600' : deal.buyerCoverageStatus === 'Moderate Coverage' ? 'text-yellow-400' : 'text-red-500'}`}>{deal.buyerCoverageStatus}</p>
+              <div className={`p-4 rounded-xl border ${deal.buyerCoverageStatus === 'Strong Coverage' ? 'bg-green-900/20 border-green-800/40' : deal.buyerCoverageStatus === 'Moderate Coverage' ? 'bg-yellow-900/20 border-yellow-800/40' : 'bg-red-900/20 border-red-800/40'}`}>
+                <p className={`font-medium text-sm ${deal.buyerCoverageStatus === 'Strong Coverage' ? 'text-green-400' : deal.buyerCoverageStatus === 'Moderate Coverage' ? 'text-yellow-400' : 'text-red-400'}`}>{deal.buyerCoverageStatus}</p>
                 {deal.marketBuyerNeedRecommendation && <p className="text-gray-400 text-sm mt-1">{deal.marketBuyerNeedRecommendation}</p>}
               </div>
             )}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {[
-                { label: 'Total Matches', value: deal.matchedBuyerCount || 0, color: (deal.matchedBuyerCount || 0) > 0 ? 'text-gray-900' : 'text-gray-400' },
-                { label: 'Tier 1 Buyers', value: deal.tier1MatchCount || 0, color: (deal.tier1MatchCount || 0) > 0 ? 'text-orange-400' : 'text-gray-400' },
-                { label: 'Buyer Demand', value: deal.buyerDemandScore > 0 ? `${deal.buyerDemandScore}/100` : '—', color: deal.buyerDemandScore > 0 ? 'text-blue-600' : 'text-gray-400' },
-                { label: 'Market Score', value: deal.marketDemandScore > 0 ? `${deal.marketDemandScore}/100` : '—', color: deal.marketDemandScore > 0 ? 'text-purple-600' : 'text-gray-400' },
+                { label: 'Total Matches', value: deal.matchedBuyerCount || 0, color: (deal.matchedBuyerCount || 0) > 0 ? 'text-white' : 'text-gray-600' },
+                { label: 'Tier 1 Buyers', value: deal.tier1MatchCount || 0, color: (deal.tier1MatchCount || 0) > 0 ? 'text-orange-400' : 'text-gray-600' },
+                { label: 'Buyer Demand', value: deal.buyerDemandScore > 0 ? `${deal.buyerDemandScore}/100` : '—', color: deal.buyerDemandScore > 0 ? 'text-blue-400' : 'text-gray-600' },
+                { label: 'Market Score', value: deal.marketDemandScore > 0 ? `${deal.marketDemandScore}/100` : '—', color: deal.marketDemandScore > 0 ? 'text-purple-400' : 'text-gray-600' },
               ].map(s => (
-                <div key={s.label} className="bg-white rounded-xl p-4 border border-gray-200 text-center">
+                <div key={s.label} className="bg-gray-900 rounded-xl p-4 border border-gray-800 text-center">
                   <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
-                  <p className="text-gray-400 text-xs mt-1">{s.label}</p>
+                  <p className="text-gray-500 text-xs mt-1">{s.label}</p>
                 </div>
               ))}
             </div>
             <div className="flex gap-3">
               <button onClick={() => matchAction.mutate()} disabled={matchAction.isPending}
-                className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-gray-900 text-sm rounded-xl font-medium transition">
+                className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm rounded-xl font-medium transition">
                 <Target size={15} /> {matchAction.isPending ? 'Matching...' : 'Run Buyer Match'}
               </button>
               {(deal.matchedBuyerCount || 0) > 0 && (
                 <button onClick={() => generateContent.mutate('sms')}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-green-700 hover:bg-green-600 text-gray-900 text-sm rounded-xl font-medium transition">
+                  className="flex items-center gap-2 px-5 py-2.5 bg-green-700 hover:bg-green-600 text-white text-sm rounded-xl font-medium transition">
                   <Zap size={15} /> Generate Buyer Blast
                 </button>
               )}
             </div>
             {(deal.matchedBuyerCount || 0) > 0 ? (
               <div className="space-y-3">
-                <p className="text-gray-400 text-sm">{deal.matchedBuyerCount} buyers matched — showing top results</p>
+                <p className="text-gray-500 text-sm">{deal.matchedBuyerCount} buyers matched — showing top results</p>
                 {[
                   { name: 'Top Cash Buyer', tier: 'TIER_1', match: 94, markets: [deal.city, deal.state].filter(Boolean).join(', '), strategy: deal.dealType || 'FLIP', price: deal.askingPrice ? formatCurrency(deal.askingPrice) : 'TBD', rehab: deal.overallCondition || 'MEDIUM_REHAB', reason: `Matches because this buyer actively purchases ${deal.propertyType?.replace(/_/g,' ') || 'SFR'} properties in ${deal.city || 'this market'} and has responded to similar deals.`, concern: null },
                   { name: 'Active Investor', tier: 'TIER_1', match: 87, markets: [deal.state].filter(Boolean).join(', '), strategy: 'BUY_AND_HOLD', price: deal.askingPrice ? formatCurrency(deal.askingPrice) : 'TBD', rehab: 'MEDIUM_REHAB', reason: `Buy-and-hold investor in ${deal.state || 'the region'} with DSCR financing.`, concern: 'Has not responded in 30+ days.' },
                   { name: 'Regional Flipper', tier: 'TIER_2', match: 72, markets: deal.state || 'Regional', strategy: 'FLIP', price: deal.askingPrice ? formatCurrency(deal.askingPrice) : 'TBD', rehab: 'HEAVY_REHAB', reason: `Fix-and-flip buyer comfortable with rehab. ARV and spread meet their minimum criteria.`, concern: null },
                 ].slice(0, Math.min(3, deal.matchedBuyerCount)).map((buyer, i) => (
-                  <div key={i} className="bg-white rounded-xl border border-gray-200 p-4">
+                  <div key={i} className="bg-gray-900 rounded-xl border border-gray-800 p-4">
                     <div className="flex items-start justify-between mb-3">
                       <div>
                         <div className="flex items-center gap-2">
-                          <p className="text-gray-900 font-medium">{buyer.name}</p>
-                          <span className={`text-xs px-2 py-0.5 rounded-full ${buyer.tier === 'TIER_1' ? 'bg-orange-50 text-orange-600' : 'bg-blue-100 text-blue-600'}`}>{buyer.tier === 'TIER_1' ? '🔥 Tier 1' : 'Tier 2'}</span>
+                          <p className="text-white font-medium">{buyer.name}</p>
+                          <span className={`text-xs px-2 py-0.5 rounded-full ${buyer.tier === 'TIER_1' ? 'bg-orange-900/60 text-orange-300' : 'bg-blue-900/60 text-blue-300'}`}>{buyer.tier === 'TIER_1' ? '🔥 Tier 1' : 'Tier 2'}</span>
                         </div>
-                        <p className="text-gray-400 text-xs mt-0.5">{buyer.markets}</p>
+                        <p className="text-gray-500 text-xs mt-0.5">{buyer.markets}</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-green-600 text-xl font-bold">{buyer.match}%</p>
-                        <p className="text-gray-400 text-xs">match</p>
+                        <p className="text-green-400 text-xl font-bold">{buyer.match}%</p>
+                        <p className="text-gray-600 text-xs">match</p>
                       </div>
                     </div>
                     <div className="grid grid-cols-3 gap-3 mb-3 text-xs">
-                      <div><span className="text-gray-400">Strategy</span><p className="text-gray-900 mt-0.5">{buyer.strategy.replace(/_/g,' ')}</p></div>
-                      <div><span className="text-gray-400">Price Range</span><p className="text-gray-900 mt-0.5">Up to {buyer.price}</p></div>
-                      <div><span className="text-gray-400">Rehab</span><p className="text-gray-900 mt-0.5">{buyer.rehab.replace(/_/g,' ')}</p></div>
+                      <div><span className="text-gray-500">Strategy</span><p className="text-white mt-0.5">{buyer.strategy.replace(/_/g,' ')}</p></div>
+                      <div><span className="text-gray-500">Price Range</span><p className="text-white mt-0.5">Up to {buyer.price}</p></div>
+                      <div><span className="text-gray-500">Rehab</span><p className="text-white mt-0.5">{buyer.rehab.replace(/_/g,' ')}</p></div>
                     </div>
-                    <div className="bg-gray-50 rounded-lg p-2.5 space-y-1.5">
+                    <div className="bg-gray-800/60 rounded-lg p-2.5 space-y-1.5">
                       <div>
-                        <p className="text-green-600 text-xs font-medium mb-0.5">Why they match</p>
+                        <p className="text-green-400 text-xs font-medium mb-0.5">Why they match</p>
                         <p className="text-gray-400 text-xs">{buyer.reason}</p>
                       </div>
                       {buyer.concern && (
-                        <div className="pt-1.5 border-t border-gray-200">
-                          <p className="text-amber-600 text-xs font-medium mb-0.5">Possible concern</p>
+                        <div className="pt-1.5 border-t border-gray-700">
+                          <p className="text-amber-400 text-xs font-medium mb-0.5">Possible concern</p>
                           <p className="text-gray-400 text-xs">{buyer.concern}</p>
                         </div>
                       )}
                     </div>
                     <div className="flex gap-2 mt-3">
-                      <button className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-600 text-xs rounded-lg transition"><Phone size={11} /> Contact</button>
-                      <button className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 border border-gray-200 text-gray-400 text-xs rounded-lg transition"><Plus size={11} /> Add to Blast</button>
+                      <button className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-900/40 hover:bg-blue-900/60 border border-blue-700/40 text-blue-300 text-xs rounded-lg transition"><Phone size={11} /> Contact</button>
+                      <button className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-400 text-xs rounded-lg transition"><Plus size={11} /> Add to Blast</button>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
-                <Users size={32} className="text-gray-300 mx-auto mb-3" />
+              <div className="bg-gray-900 rounded-xl border border-gray-800 p-8 text-center">
+                <Users size={32} className="text-gray-700 mx-auto mb-3" />
                 <p className="text-gray-400 font-medium">No buyer matches yet</p>
-                <p className="text-gray-400 text-sm mt-1">Run buyer match to see ranked matches with compatibility scores</p>
+                <p className="text-gray-600 text-sm mt-1">Run buyer match to see ranked matches with compatibility scores</p>
               </div>
             )}
           </div>
@@ -1272,46 +1272,46 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
         {/* DISPO EXECUTION */}
         {tab === 'dispo' && (
           <div className="space-y-4">
-            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-              <div className="px-4 py-3 border-b border-gray-200 flex items-center gap-2">
-                <span className="w-5 h-5 rounded-full bg-blue-600 text-gray-900 text-[10px] font-bold flex items-center justify-center shrink-0">1</span>
-                <h3 className="text-gray-900 text-sm font-medium">Confirm Blast Requirements</h3>
+            <div className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+              <div className="px-4 py-3 border-b border-gray-800 flex items-center gap-2">
+                <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center shrink-0">1</span>
+                <h3 className="text-white text-sm font-medium">Confirm Blast Requirements</h3>
               </div>
               <div className="p-4"><BlastReadiness deal={deal} /></div>
             </div>
-            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-              <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
-                <div className="flex items-center gap-2"><span className="w-5 h-5 rounded-full bg-blue-600 text-gray-900 text-[10px] font-bold flex items-center justify-center shrink-0">2</span><h3 className="text-gray-900 text-sm font-medium">Select Buyers</h3></div>
-                <button onClick={() => matchAction.mutate()} disabled={matchAction.isPending} className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-700 hover:bg-blue-600 text-gray-900 text-xs rounded-lg transition"><Target size={11}/> {matchAction.isPending ? 'Matching...' : 'Re-run Match'}</button>
+            <div className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+              <div className="px-4 py-3 border-b border-gray-800 flex items-center justify-between">
+                <div className="flex items-center gap-2"><span className="w-5 h-5 rounded-full bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center shrink-0">2</span><h3 className="text-white text-sm font-medium">Select Buyers</h3></div>
+                <button onClick={() => matchAction.mutate()} disabled={matchAction.isPending} className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-700 hover:bg-blue-600 text-white text-xs rounded-lg transition"><Target size={11}/> {matchAction.isPending ? 'Matching...' : 'Re-run Match'}</button>
               </div>
               <div className="p-4">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
-                  {[{label:'Total',value:b,c:b>0?'text-gray-900':'text-gray-400'},{label:'Tier 1',value:t1,c:t1>0?'text-orange-400':'text-gray-400'},{label:'Recommended',value:b>0?Math.max(1,Math.round(b*0.75)):0,c:'text-green-600'},{label:'Excluded',value:b>0?Math.round(b*0.25):0,c:'text-gray-400'}].map(s=>(<div key={s.label} className="bg-gray-50 rounded-lg p-3 text-center"><p className={'text-xl font-bold '+s.c}>{s.value}</p><p className="text-gray-400 text-xs mt-0.5">{s.label}</p></div>))}
+                  {[{label:'Total',value:b,c:b>0?'text-white':'text-gray-600'},{label:'Tier 1',value:t1,c:t1>0?'text-orange-400':'text-gray-600'},{label:'Recommended',value:b>0?Math.max(1,Math.round(b*0.75)):0,c:'text-green-400'},{label:'Excluded',value:b>0?Math.round(b*0.25):0,c:'text-gray-500'}].map(s=>(<div key={s.label} className="bg-gray-800/50 rounded-lg p-3 text-center"><p className={'text-xl font-bold '+s.c}>{s.value}</p><p className="text-gray-500 text-xs mt-0.5">{s.label}</p></div>))}
                 </div>
-                {b>0 ? <p className="text-gray-400 text-xs">Prioritize Tier 1 and active {deal.city||'local'} cash buyers.</p> : <p className="text-gray-400 text-sm">No buyers matched. Run match to build blast list.</p>}
+                {b>0 ? <p className="text-gray-400 text-xs">Prioritize Tier 1 and active {deal.city||'local'} cash buyers.</p> : <p className="text-gray-600 text-sm">No buyers matched. Run match to build blast list.</p>}
               </div>
             </div>
-            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-              <div className="px-4 py-3 border-b border-gray-200 flex items-center gap-2"><span className="w-5 h-5 rounded-full bg-blue-600 text-gray-900 text-[10px] font-bold flex items-center justify-center shrink-0">3</span><h3 className="text-gray-900 text-sm font-medium">Generate Campaign</h3></div>
+            <div className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+              <div className="px-4 py-3 border-b border-gray-800 flex items-center gap-2"><span className="w-5 h-5 rounded-full bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center shrink-0">3</span><h3 className="text-white text-sm font-medium">Generate Campaign</h3></div>
               <div className="p-4">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">{[{key:'sms',label:'SMS Blast',cl:'bg-green-900/40 hover:bg-green-900/60 border-green-700/40 text-green-700',icon:MessageSquare},{key:'email',label:'Email Blast',cl:'bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-600',icon:Mail},{key:'facebook',label:'FB Post',cl:'bg-indigo-900/40 hover:bg-indigo-50 border-indigo-200 text-indigo-600',icon:Facebook},{key:'followUp',label:'Follow-Up',cl:'bg-amber-900/40 hover:bg-amber-900/60 border-amber-700/40 text-amber-700',icon:Send}].map(btn=>(<button key={btn.key} onClick={()=>btn.key==='followUp'?followUpAction.mutate():generateContent.mutate(btn.key)} disabled={generateContent.isPending} className={'flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm border transition '+btn.cl}><btn.icon size={14}/> {btn.label}</button>))}</div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">{[{key:'sms',label:'SMS Blast',cl:'bg-green-900/40 hover:bg-green-900/60 border-green-700/40 text-green-300',icon:MessageSquare},{key:'email',label:'Email Blast',cl:'bg-blue-900/40 hover:bg-blue-900/60 border-blue-700/40 text-blue-300',icon:Mail},{key:'facebook',label:'FB Post',cl:'bg-indigo-900/40 hover:bg-indigo-900/60 border-indigo-700/40 text-indigo-300',icon:Facebook},{key:'followUp',label:'Follow-Up',cl:'bg-amber-900/40 hover:bg-amber-900/60 border-amber-700/40 text-amber-300',icon:Send}].map(btn=>(<button key={btn.key} onClick={()=>btn.key==='followUp'?followUpAction.mutate():generateContent.mutate(btn.key)} disabled={generateContent.isPending} className={'flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm border transition '+btn.cl}><btn.icon size={14}/> {btn.label}</button>))}</div>
                 <AnimatePresence>
                   {generatedOutput.sms && <div className="mb-3">
-                    <div className="flex items-center justify-between mb-1"><p className="text-gray-400 text-xs">📱 SMS Blast Preview</p><span className="text-gray-400 text-xs">{b} buyers selected</span></div>
+                    <div className="flex items-center justify-between mb-1"><p className="text-gray-500 text-xs">📱 SMS Blast Preview</p><span className="text-gray-600 text-xs">{b} buyers selected</span></div>
                     <GeneratedOutput content={generatedOutput.sms} onClose={()=>setGeneratedOutput(p=>({...p,sms:''}))} />
-                    <button onClick={()=>{ toast.success('Campaign started! (Twilio not yet configured)'); }} className="mt-2 flex items-center gap-2 px-4 py-2 bg-green-700 hover:bg-green-600 text-gray-900 text-xs rounded-lg transition font-semibold"><Zap size={11}/> Send to {b} Buyers</button>
+                    <button onClick={()=>{ toast.success('Campaign started! (Twilio not yet configured)'); }} className="mt-2 flex items-center gap-2 px-4 py-2 bg-green-700 hover:bg-green-600 text-white text-xs rounded-lg transition font-semibold"><Zap size={11}/> Send to {b} Buyers</button>
                   </div>}
                   {generatedOutput.email && <div className="mb-3">
-                    <div className="flex items-center justify-between mb-1"><p className="text-gray-400 text-xs">📧 Email Blast Preview</p><span className="text-gray-400 text-xs">{b} buyers selected</span></div>
+                    <div className="flex items-center justify-between mb-1"><p className="text-gray-500 text-xs">📧 Email Blast Preview</p><span className="text-gray-600 text-xs">{b} buyers selected</span></div>
                     <GeneratedOutput content={generatedOutput.email} onClose={()=>setGeneratedOutput(p=>({...p,email:''}))} />
-                    <button onClick={()=>{ toast.success('Email campaign started! (SendGrid not yet configured)'); }} className="mt-2 flex items-center gap-2 px-4 py-2 bg-blue-700 hover:bg-blue-600 text-gray-900 text-xs rounded-lg transition font-semibold"><Mail size={11}/> Send to {b} Buyers</button>
+                    <button onClick={()=>{ toast.success('Email campaign started! (SendGrid not yet configured)'); }} className="mt-2 flex items-center gap-2 px-4 py-2 bg-blue-700 hover:bg-blue-600 text-white text-xs rounded-lg transition font-semibold"><Mail size={11}/> Send to {b} Buyers</button>
                   </div>}
                   {generatedOutput.facebook && <div className="mb-3">
-                    <p className="text-gray-400 text-xs mb-1">📘 Facebook Post</p>
+                    <p className="text-gray-500 text-xs mb-1">📘 Facebook Post</p>
                     <GeneratedOutput content={generatedOutput.facebook} onClose={()=>setGeneratedOutput(p=>({...p,facebook:''}))} />
                   </div>}
                   {generatedOutput.followUp && <div className="mb-3">
-                    <p className="text-gray-400 text-xs mb-1">💬 Follow-Up Message</p>
+                    <p className="text-gray-500 text-xs mb-1">💬 Follow-Up Message</p>
                     <GeneratedOutput content={generatedOutput.followUp} onClose={()=>setGeneratedOutput(p=>({...p,followUp:''}))} />
                   </div>}
                 </AnimatePresence>
@@ -1322,45 +1322,45 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
               <InfoRow label="Source Type" value={deal.sourceType} />
               <InfoRow label="Name" value={deal.sourceName} />
               {deal.sourcePhone && (
-                <div className="flex justify-between py-2 border-b border-gray-100">
-                  <span className="text-gray-400 text-sm">Phone</span>
-                  <a href={`tel:${deal.sourcePhone}`} className="text-blue-600 text-sm flex items-center gap-1 hover:underline"><Phone size={11} /> {deal.sourcePhone}</a>
+                <div className="flex justify-between py-2 border-b border-gray-800/50">
+                  <span className="text-gray-500 text-sm">Phone</span>
+                  <a href={`tel:${deal.sourcePhone}`} className="text-blue-400 text-sm flex items-center gap-1 hover:underline"><Phone size={11} /> {deal.sourcePhone}</a>
                 </div>
               )}
               {deal.sourceEmail && (
-                <div className="flex justify-between py-2 border-b border-gray-100">
-                  <span className="text-gray-400 text-sm">Email</span>
-                  <a href={`mailto:${deal.sourceEmail}`} className="text-blue-600 text-sm flex items-center gap-1 hover:underline"><Mail size={11} /> {deal.sourceEmail}</a>
+                <div className="flex justify-between py-2 border-b border-gray-800/50">
+                  <span className="text-gray-500 text-sm">Email</span>
+                  <a href={`mailto:${deal.sourceEmail}`} className="text-blue-400 text-sm flex items-center gap-1 hover:underline"><Mail size={11} /> {deal.sourceEmail}</a>
                 </div>
               )}
               <InfoRow label="Permission to Market" value={deal.permissionToMarket} />
               <InfoRow label="JV Agreement" value={deal.jvAgreementStatus} />
               {deal.facebookPostUrl && <InfoRow label="FB Post" value="View Post" href={deal.facebookPostUrl} />}
-              {deal.facebookGroupName && <p className="text-gray-400 text-xs mt-2">Group: {deal.facebookGroupName}</p>}
+              {deal.facebookGroupName && <p className="text-gray-500 text-xs mt-2">Group: {deal.facebookGroupName}</p>}
               {deal.originalPostText && (
-                <div className="mt-3 pt-3 border-t border-gray-200">
-                  <button onClick={() => setShowOriginalPost(!showOriginalPost)} className="flex items-center gap-1 text-gray-400 text-xs hover:text-gray-400 transition">
+                <div className="mt-3 pt-3 border-t border-gray-800">
+                  <button onClick={() => setShowOriginalPost(!showOriginalPost)} className="flex items-center gap-1 text-gray-500 text-xs hover:text-gray-300 transition">
                     {showOriginalPost ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
                     {showOriginalPost ? 'Hide' : 'Show'} Original Post
                   </button>
-                  {showOriginalPost && <p className="text-gray-400 text-xs mt-2 bg-gray-50 rounded-lg p-3 leading-relaxed whitespace-pre-wrap">{deal.originalPostText}</p>}
+                  {showOriginalPost && <p className="text-gray-400 text-xs mt-2 bg-gray-800/60 rounded-lg p-3 leading-relaxed whitespace-pre-wrap">{deal.originalPostText}</p>}
                 </div>
               )}
-              {!deal.sourceName && !deal.sourcePhone && <p className="text-gray-400 text-sm">No source info added</p>}
+              {!deal.sourceName && !deal.sourcePhone && <p className="text-gray-600 text-sm">No source info added</p>}
             </Card>
 
             {missing.length > 0 && (
-              <div className="col-span-full bg-amber-50 border border-amber-200 rounded-xl p-4">
+              <div className="col-span-full bg-amber-900/20 border border-amber-800/40 rounded-xl p-4">
                 <div className="flex items-start justify-between mb-3">
-                  <p className="text-amber-600 font-medium text-sm flex items-center gap-1.5"><AlertCircle size={14} /> {missing.length} Missing Fields</p>
+                  <p className="text-amber-400 font-medium text-sm flex items-center gap-1.5"><AlertCircle size={14} /> {missing.length} Missing Fields</p>
                   <button onClick={() => followUpAction.mutate()} disabled={followUpAction.isPending}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-700/50 hover:bg-amber-700 text-amber-700 text-xs rounded-lg transition">
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-700/50 hover:bg-amber-700 text-amber-300 text-xs rounded-lg transition">
                     <Send size={12} /> Generate Follow-Up
                   </button>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {missing.map((m: string) => (
-                    <span key={m} className={`text-xs px-2 py-1 rounded-lg ${m === 'Photos' || m === 'ARV' || m === 'Asking price' ? 'bg-red-900/40 text-red-600 border border-red-200' : 'bg-gray-100 text-gray-400'}`}>
+                    <span key={m} className={`text-xs px-2 py-1 rounded-lg ${m === 'Photos' || m === 'ARV' || m === 'Asking price' ? 'bg-red-900/40 text-red-300 border border-red-800/40' : 'bg-gray-800 text-gray-400'}`}>
                       {m === 'Photos' || m === 'ARV' || m === 'Asking price' ? '🔴' : '⚪'} {m}
                     </span>
                   ))}
@@ -1380,33 +1380,33 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
               <InfoRow label="Title Company" value={deal.titleCompany} />
               <InfoRow label="Assignment Allowed" value={deal.assignmentAllowed !== 'UNKNOWN' ? deal.assignmentAllowed : null} />
               <InfoRow label="Vacant at Close" value={deal.vacantAtClose !== 'UNKNOWN' ? deal.vacantAtClose : null} />
-              {!deal.closingDate && !deal.contractDate && <p className="text-gray-400 text-sm">No timeline data added yet</p>}
+              {!deal.closingDate && !deal.contractDate && <p className="text-gray-600 text-sm">No timeline data added yet</p>}
             </Card>
 
             </div>
-            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-              <div className="px-4 py-3 border-b border-gray-200 flex items-center gap-2"><span className="w-5 h-5 rounded-full bg-gray-200 text-gray-400 text-[10px] font-bold flex items-center justify-center shrink-0">5</span><h3 className="text-gray-900 text-sm font-medium">Track Responses</h3></div>
-              <div className="p-4"><p className="text-gray-400 text-xs mb-3">Response tracking coming soon.</p><div className="flex gap-2 flex-wrap">{['OFFER_RECEIVED','ASSIGNED','CLOSED','DEAD'].map(s=>(<button key={s} onClick={()=>updateStatus.mutate(s)} className="px-3 py-1.5 text-xs bg-gray-100 hover:bg-gray-200 text-gray-400 rounded-lg transition border border-gray-200">Mark {s.replace(/_/g,' ')}</button>))}</div></div>
+            <div className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+              <div className="px-4 py-3 border-b border-gray-800 flex items-center gap-2"><span className="w-5 h-5 rounded-full bg-gray-700 text-gray-400 text-[10px] font-bold flex items-center justify-center shrink-0">5</span><h3 className="text-white text-sm font-medium">Track Responses</h3></div>
+              <div className="p-4"><p className="text-gray-600 text-xs mb-3">Response tracking coming soon.</p><div className="flex gap-2 flex-wrap">{['OFFER_RECEIVED','ASSIGNED','CLOSED','DEAD'].map(s=>(<button key={s} onClick={()=>updateStatus.mutate(s)} className="px-3 py-1.5 text-xs bg-gray-800 hover:bg-gray-700 text-gray-400 rounded-lg transition border border-gray-700">Mark {s.replace(/_/g,' ')}</button>))}</div></div>
             </div>
                         <Card title="Activity Log" icon={FileText}>
               <div className="space-y-2">
                 <div className="flex items-start gap-2">
                   <div className="w-1.5 h-1.5 rounded-full bg-blue-400 mt-1.5 shrink-0" />
                   <div>
-                    <p className="text-gray-400 text-xs">Deal created</p>
-                    <p className="text-gray-400 text-xs">{new Date(deal.createdAt).toLocaleString()}</p>
+                    <p className="text-gray-300 text-xs">Deal created</p>
+                    <p className="text-gray-600 text-xs">{new Date(deal.createdAt).toLocaleString()}</p>
                   </div>
                 </div>
                 {deal.status !== 'DRAFT' && (
                   <div className="flex items-start gap-2">
                     <div className="w-1.5 h-1.5 rounded-full bg-green-400 mt-1.5 shrink-0" />
                     <div>
-                      <p className="text-gray-400 text-xs">Status: {deal.status?.replace(/_/g, ' ')}</p>
-                      <p className="text-gray-400 text-xs">{new Date(deal.updatedAt).toLocaleString()}</p>
+                      <p className="text-gray-300 text-xs">Status: {deal.status?.replace(/_/g, ' ')}</p>
+                      <p className="text-gray-600 text-xs">{new Date(deal.updatedAt).toLocaleString()}</p>
                     </div>
                   </div>
                 )}
-                <p className="text-gray-300 text-xs mt-2 pt-2 border-t border-gray-200">Full activity log coming soon</p>
+                <p className="text-gray-700 text-xs mt-2 pt-2 border-t border-gray-800">Full activity log coming soon</p>
               </div>
             </Card>
           </div>
