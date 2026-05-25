@@ -405,6 +405,8 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
   const [tab, setTab] = useState<Tab>('property');
   const [showOriginalPost, setShowOriginalPost] = useState(false);
   const [generatedOutput, setGeneratedOutput] = useState<Record<string, string>>({});
+  const [arvAnalysis, setArvAnalysis] = useState<any>(null);
+  const [arvLoading, setArvLoading] = useState(false);
 
   const { data: deal, isLoading } = useQuery({
     queryKey: ['deal', id],
@@ -447,6 +449,25 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['deal', id] }); toast.success('Saved!'); },
     onError: () => toast.error('Failed to save'),
   });
+
+  const runArvAnalysis = async () => {
+    setArvLoading(true); setArvAnalysis(null);
+    const prompt = `You are a Master Appraiser. Estimate the ARV for: ${deal.address}, ${deal.city}, ${deal.state} ${deal.zipCode}. Property: ${deal.beds||'?'}bd/${deal.baths||'?'}ba, ${deal.sqft||'?'} sqft, built ${deal.yearBuilt||'?'}, ${deal.propertyType||'SFR'}, ${deal.overallCondition||'unknown condition'}. Search for 3-6 closed comps in the same subdivision within 12 months. Be conservative. Return ONLY valid JSON: {"arvLow":0,"arvMedian":0,"arvHigh":0,"confidence":3,"confidenceReason":"...","comps":[{"address":"...","saleDate":"...","salePrice":0,"sqft":0,"pricePerSqft":0,"notes":"..."}],"recommendation":"...","dataWarnings":"..."}`;
+    try {
+      const r = await fetch('https://api.anthropic.com/v1/messages', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ model:'claude-sonnet-4-20250514', max_tokens:2000,
+          tools:[{type:'web_search_20250305',name:'web_search'}],
+          messages:[{role:'user',content:prompt}] })
+      });
+      const data = await r.json();
+      const text = (data.content||[]).filter((b:any)=>b.type==='text').map((b:any)=>b.text).join('');
+      const m = text.match(/\{[\s\S]*\}/);
+      if (m) { const p = JSON.parse(m[0]); setArvAnalysis(p); if(p.arvMedian) updateDeal.mutate({arv:p.arvMedian}); }
+      else setArvAnalysis({error: text||'No JSON returned'});
+    } catch(e:any) { setArvAnalysis({error:e.message}); }
+    finally { setArvLoading(false); }
+  };
 
   if (isLoading) return <div className="p-6 text-gray-500 text-sm">Loading deal...</div>;
   if (!deal) return <div className="p-6 text-red-400 text-sm">Deal not found. <a href="/dashboard/deals" className="underline">Go back</a></div>;
@@ -735,6 +756,62 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
               {deal.hoaMonthly && <InfoRow label="HOA Monthly" value={formatCurrency(deal.hoaMonthly)} />}
               {!deal.rentEstimate && !deal.currentRent && <p className="text-gray-600 text-sm">No rental data available</p>}
             </Card>
+
+            {/* AI ARV Analysis */}
+            <div className="col-span-full bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+              <div className="px-4 py-3 border-b border-gray-800 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Sparkles size={14} className="text-purple-400" />
+                  <h3 className="text-white text-sm font-medium">AI ARV Analysis</h3>
+                  <span className="text-gray-600 text-xs">web search + comp analysis</span>
+                </div>
+                <button onClick={runArvAnalysis} disabled={arvLoading}
+                  className="flex items-center gap-2 px-4 py-1.5 bg-purple-700 hover:bg-purple-600 disabled:opacity-50 text-white text-xs rounded-lg font-medium transition">
+                  {arvLoading ? <><RefreshCw size={11} className="animate-spin mr-1"/>Analyzing...</> : <><Sparkles size={11}/>Run ARV Analysis</>}
+                </button>
+              </div>
+              <div className="p-4">
+                {!arvAnalysis && !arvLoading && (
+                  <div className="text-center py-6">
+                    <Sparkles size={28} className="text-gray-700 mx-auto mb-2"/>
+                    <p className="text-gray-400 text-sm font-medium">AI-Powered ARV Estimation</p>
+                    <p className="text-gray-600 text-xs mt-1 max-w-sm mx-auto">Searches Zillow, Redfin & Realtor for recent comps in the same subdivision. Returns Low / Median / High ARV. Auto-saves median to deal.</p>
+                  </div>
+                )}
+                {arvLoading && (
+                  <div className="text-center py-8">
+                    <RefreshCw size={24} className="text-purple-400 mx-auto mb-3 animate-spin"/>
+                    <p className="text-gray-400 text-sm">Searching for comps...</p>
+                    <p className="text-gray-600 text-xs mt-1">Takes 20–40 seconds</p>
+                  </div>
+                )}
+                {arvAnalysis && !arvAnalysis.error && (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-3 gap-3">
+                      {[{label:'Conservative',value:arvAnalysis.arvLow,c:'text-amber-400'},{label:'Best Estimate',value:arvAnalysis.arvMedian,c:'text-green-400'},{label:'High',value:arvAnalysis.arvHigh,c:'text-blue-400'}].map(v=>(
+                        <div key={v.label} className="bg-gray-800/60 rounded-xl p-3 text-center">
+                          <p className={`text-xl font-bold ${v.c}`}>{v.value?formatCurrency(v.value):'—'}</p>
+                          <p className="text-gray-500 text-xs mt-0.5">{v.label} ARV</p>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="flex items-center gap-3 p-3 bg-gray-800/40 rounded-lg">
+                      <div className="flex gap-1">{[1,2,3,4,5].map(i=><div key={i} className={`w-3 h-3 rounded-full ${i<=(arvAnalysis.confidence||0)?'bg-purple-500':'bg-gray-700'}`}/>)}</div>
+                      <span className="text-gray-300 text-xs">{arvAnalysis.confidenceReason}</span>
+                    </div>
+                    {arvAnalysis.recommendation&&<div className="p-3 bg-blue-900/20 border border-blue-800/40 rounded-lg"><p className="text-blue-300 text-xs font-medium mb-0.5">Recommendation</p><p className="text-gray-300 text-sm">{arvAnalysis.recommendation}</p></div>}
+                    {arvAnalysis.comps?.length>0&&<div><p className="text-gray-500 text-xs font-medium mb-2">Comparable Sales</p><div className="space-y-1.5">{arvAnalysis.comps.map((comp:any,i:number)=>(
+                      <div key={i} className="flex items-start justify-between py-2 border-b border-gray-800/50 last:border-0">
+                        <div><p className="text-gray-300 text-xs font-medium">{comp.address}</p><p className="text-gray-500 text-[10px]">{comp.saleDate} · {comp.sqft?.toLocaleString()} sqft · {comp.notes}</p></div>
+                        <div className="text-right ml-4 shrink-0"><p className="text-white text-xs font-bold">{comp.salePrice?formatCurrency(comp.salePrice):'—'}</p><p className="text-gray-500 text-[10px]">${comp.pricePerSqft}/sqft</p></div>
+                      </div>))}</div></div>}
+                    {arvAnalysis.dataWarnings&&<p className="text-amber-400/70 text-xs italic">{arvAnalysis.dataWarnings}</p>}
+                    <p className="text-gray-600 text-xs">Median ARV auto-saved. Re-run anytime for fresh comps.</p>
+                  </div>
+                )}
+                {arvAnalysis?.error&&<div className="p-3 bg-red-900/20 border border-red-800/40 rounded-lg"><p className="text-red-400 text-xs font-medium mb-1">Analysis failed</p><p className="text-gray-400 text-xs">{arvAnalysis.error}</p></div>}
+              </div>
+            </div>
 
             {deal.aiDealMathSummary && (
               <Card title="AI Deal Math Takeaway" icon={Sparkles}>
