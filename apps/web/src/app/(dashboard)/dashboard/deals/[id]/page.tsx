@@ -551,7 +551,7 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
           </div>
           {/* Row 2: property fields left, county+type right */}
           <div className="flex items-center justify-between mt-1 ml-5">
-            <div className="flex items-center gap-4 text-xs text-gray-200">
+            <div className="flex items-center gap-4 text-xs text-white">
               <span><span className="text-gray-500">Beds:</span> <HeaderField value={deal.beds?`${deal.beds}`:''} placeholder="—" onSave={v=>updateDeal.mutate({beds:parseInt(v)||null})} width="w-6" /></span>
               <span><span className="text-gray-500">Bathrooms:</span> <HeaderField value={deal.baths?`${deal.baths}`:''} placeholder="—" onSave={v=>updateDeal.mutate({baths:parseFloat(v)||null})} width="w-6" /></span>
               <span><span className="text-gray-500">Sqft:</span> <HeaderField value={deal.sqft?`${deal.sqft.toLocaleString()}`:''} placeholder="—" onSave={v=>updateDeal.mutate({sqft:parseInt(v.replace(/,/g,''))||null})} width="w-16" /></span>
