@@ -530,6 +530,33 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
   const underValue = avgPublicEstimate > 0 && deal.askingPrice && deal.askingPrice < avgPublicEstimate * 0.75;
   const underArv = deal.arv > 0 && deal.askingPrice && deal.askingPrice < deal.arv * 0.75;
 
+  // Price Position
+  const refValue = avgPublicEstimate || deal.arv || 0;
+  const refLabel = avgPublicEstimate ? (pubEstimates.length > 1 ? 'avg public value' : 'Zestimate') : deal.arv ? 'ARV' : '';
+  const threshold70 = refValue * 0.70;
+  const gap = deal.askingPrice && refValue ? threshold70 - deal.askingPrice : 0;
+  const pricePosition = !deal.askingPrice || !refValue ? null
+    : gap > 20000 ? 'UNDER_70'
+    : gap > 0 ? 'NEAR_UNDER'
+    : gap > -20000 ? 'NEAR_OVER'
+    : gap > -50000 ? 'OVER_70'
+    : 'OVERPRICED';
+  const pricePositionLabel = pricePosition === 'UNDER_70' ? 'Under 70%'
+    : pricePosition === 'NEAR_UNDER' ? 'Near 70%'
+    : pricePosition === 'NEAR_OVER' ? 'Near 70%'
+    : pricePosition === 'OVER_70' ? 'Over 70%'
+    : pricePosition === 'OVERPRICED' ? 'Overpriced'
+    : null;
+  const pricePositionColor = pricePosition === 'UNDER_70' ? 'text-green-400'
+    : pricePosition === 'NEAR_UNDER' ? 'text-blue-400'
+    : pricePosition === 'NEAR_OVER' ? 'text-yellow-400'
+    : 'text-red-400';
+  const priceGapLabel = gap > 0
+    ? formatCurrency(Math.abs(gap)) + ' below investor threshold'
+    : formatCurrency(Math.abs(gap)) + ' above investor threshold';
+  const valueConfidence = pubEstimates.length >= 3 ? 'High' : pubEstimates.length === 2 ? 'Medium-High' : pubEstimates.length === 1 ? 'Medium' : 'Low — no public estimates';
+  const valueConfidenceColor = pubEstimates.length >= 2 ? 'text-green-400' : pubEstimates.length === 1 ? 'text-yellow-400' : 'text-red-400';
+
   const sellReasons: string[] = [];
   const sellBlockers: string[] = [];
   let sellScore = 0;
@@ -539,7 +566,9 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
   if (hasPhotos)                 { sellScore += 15; sellReasons.push('Photos confirmed'); }
   if (hasPrice)                  { sellScore += 10; }
   if (hasValue)                  { sellScore += 10; sellReasons.push('Value/ARV data available'); }
-  if (underValue || underArv)    { sellScore += 10; sellReasons.push('Ask appears under market value'); }
+  if (pricePosition === 'UNDER_70')     { sellScore += 15; sellReasons.push('Ask is ' + formatCurrency(Math.abs(gap)) + ' under 70% of ' + refLabel); }
+  else if (pricePosition === 'NEAR_UNDER') { sellScore += 8; sellReasons.push('Ask is near the 70% investor threshold'); }
+  else if (pricePosition === 'OVER_70' || pricePosition === 'OVERPRICED') { sellScore -= 5; }
   if (hasDesc)                   { sellScore += 5; }
   if (hasPermission)             { sellScore += 5; }
   if (hasCOE)                    { sellScore += 5; sellReasons.push('Closing date confirmed'); }
@@ -603,8 +632,8 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
         {/* Metric Cards */}
         <div className="grid grid-cols-3 md:grid-cols-6 gap-2 mb-3">
           {[
-            { label: 'Asking', value: deal.askingPrice ? formatCurrency(deal.askingPrice) : '—', color: 'text-white' },
-            { label: 'ARV / Value', value: deal.arv ? formatCurrency(deal.arv) : '—', color: 'text-white' },
+            { label: 'Asking', value: deal.askingPrice ? formatCurrency(deal.askingPrice) : '—', color: 'text-white', sub: pricePositionLabel, subColor: pricePositionColor },
+            { label: deal.arv ? 'ARV' : avgPublicEstimate ? 'Public Value' : 'ARV / Value', value: (deal.arv || avgPublicEstimate) ? formatCurrency(deal.arv || avgPublicEstimate) : '—', color: 'text-white', sub: deal.arv ? null : avgPublicEstimate ? 'Zestimate' : null, subColor: 'text-gray-500' },
             { label: 'Repairs', value: deal.repairEstimate ? formatCurrency(deal.repairEstimate) : '—', color: 'text-white' },
             { label: 'Potential Margin', value: potentialMargin > 0 ? formatCurrency(potentialMargin) : '—', color: potentialMargin > 0 ? 'text-green-400' : 'text-gray-500' },
             { label: 'Buyer Matches', value: deal.matchedBuyerCount || 0, color: (deal.matchedBuyerCount || 0) > 0 ? 'text-purple-400' : 'text-gray-600' },
@@ -613,6 +642,7 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
             <div key={i} className="bg-gray-900 rounded-xl p-3 border border-gray-800 text-center">
               <p className={`text-lg font-bold ${m.color}`}>{m.value}</p>
               <p className="text-gray-500 text-xs mt-0.5">{m.label}</p>
+              {m.sub && <p className={`text-[10px] mt-0.5 font-medium ${m.subColor || 'text-gray-500'}`}>{m.sub}</p>}
               {m.badge && <span className={`text-xs px-1.5 py-0.5 rounded mt-1 inline-block ${m.badge.bg}`}>{m.badge.label}</span>}
             </div>
           ))}
