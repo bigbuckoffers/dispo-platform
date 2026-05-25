@@ -167,24 +167,29 @@ export class DealsService {
         'Content-Type': 'application/json',
         'x-api-key': process.env.ANTHROPIC_API_KEY || '',
         'anthropic-version': '2023-06-01',
-        'anthropic-beta': 'web-search-2025-03-05',
       },
       body: JSON.stringify({
         model: 'claude-haiku-4-5',
         max_tokens: 2000,
-        tools: [{ type: 'web_search_20250305', name: 'web_search' }],
         messages: [{ role: 'user', content: prompt }],
       }),
     });
     const data = await response.json() as any;
+    console.log('ARV API response stop_reason:', data.stop_reason, 'content blocks:', data.content?.length);
     const text = (data.content || []).filter((b: any) => b.type === 'text').map((b: any) => b.text).join('');
-    const m = text.match(/\{[\s\S]*\}/);
-    if (m) {
-      const result = JSON.parse(m[0]);
-      if (result.arvMedian) {
-        await this.prisma.deal.update({ where: { id }, data: { arv: result.arvMedian } });
+    console.log('ARV text response:', text.substring(0, 300));
+    // Try to find JSON in the response
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      try {
+        const result = JSON.parse(jsonMatch[0]);
+        if (result.arvMedian) {
+          await this.prisma.deal.update({ where: { id }, data: { arv: result.arvMedian } });
+        }
+        return result;
+      } catch(e) {
+        return { error: 'JSON parse failed', raw: text.substring(0, 500) };
       }
-      return result;
     }
     return { error: 'Could not parse ARV response', raw: text.substring(0, 500) };
   }
