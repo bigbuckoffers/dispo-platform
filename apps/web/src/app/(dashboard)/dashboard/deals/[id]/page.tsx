@@ -533,40 +533,36 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
 
       {/* ── Sticky Deal Header ─────────────────────────────────────── */}
       <div className="sticky top-0 z-40 bg-gray-900/95 backdrop-blur border-b border-gray-800">
-        <div className="max-w-7xl mx-auto px-4 py-1.5">
-          {/* Row 1: back + address + tags + score */}
+        <div className="max-w-7xl mx-auto px-4 py-2">
+          {/* Row 1: back + full address + tags */}
           <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3 min-w-0">
+            <div className="flex items-center gap-2 min-w-0">
               <a href="/dashboard/deals" className="text-gray-500 hover:text-gray-300 transition shrink-0">
                 <ArrowLeft size={15} />
               </a>
-              <div className="flex items-center gap-2 min-w-0">
-                <span className="text-white font-semibold text-sm truncate">{deal.address}</span>
-                <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium shrink-0 ${STATUS_COLORS[deal.status] || 'bg-gray-800 text-gray-400'}`}>{(deal.status||'DRAFT').replace(/_/g,' ')}</span>
-                {deal.dealType && <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-900/60 text-indigo-300 border border-indigo-700/40 shrink-0">{deal.dealType}</span>}
-              </div>
+              <span className="text-white font-bold text-sm truncate">
+                {[deal.address, deal.city, deal.state, deal.zipCode].filter(Boolean).join(', ')}
+              </span>
             </div>
-            <div className="hidden md:flex items-center gap-2 text-xs text-gray-500 shrink-0">
-              <span className={`font-bold ${scoreColor}`}>{sellScore}</span>
-              <span>{scoreLabel}</span>
-              {b > 0 && <span className="text-purple-400">· {b} buyers</span>}
-              {sellBlockers.length > 0 && <span className="text-amber-400">· {sellBlockers.length} blocker{sellBlockers.length>1?'s':''}</span>}
+            <div className="flex items-center gap-2 shrink-0">
+              <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[deal.status] || 'bg-gray-800 text-gray-400'}`}>{(deal.status||'DRAFT').replace(/_/g,' ')}</span>
+              {deal.dealType && <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-900/60 text-indigo-300 border border-indigo-700/40">{deal.dealType}</span>}
             </div>
           </div>
-          {/* Row 2: city/state/zip + editable property fields */}
-          <div className="flex items-center gap-1 mt-0.5 ml-6 flex-wrap">
-            <HeaderField value={deal.city} placeholder="City" onSave={v=>updateDeal.mutate({city:v})} />
-            <span className="text-gray-700 text-xs">,</span>
-            <HeaderField value={deal.state} placeholder="ST" onSave={v=>updateDeal.mutate({state:v})} width="w-8" />
-            <HeaderField value={deal.zipCode} placeholder="ZIP" onSave={v=>updateDeal.mutate({zipCode:v})} width="w-14" />
-            <span className="text-gray-700 text-xs mx-1">·</span>
-            <HeaderField value={deal.beds?`${deal.beds}`:''} placeholder="Beds" onSave={v=>updateDeal.mutate({beds:parseInt(v)||null})} suffix="bd" width="w-6" />
-            <span className="text-gray-700 text-xs mx-0.5">·</span>
-            <HeaderField value={deal.baths?`${deal.baths}`:''} placeholder="Baths" onSave={v=>updateDeal.mutate({baths:parseFloat(v)||null})} suffix="ba" width="w-6" />
-            <span className="text-gray-700 text-xs mx-0.5">·</span>
-            <HeaderField value={deal.sqft?`${deal.sqft.toLocaleString()}`:''} placeholder="Sqft" onSave={v=>updateDeal.mutate({sqft:parseInt(v.replace(/,/g,''))||null})} suffix="sqft" width="w-16" />
-            <span className="text-gray-700 text-xs mx-0.5">·</span>
-            <HeaderField value={deal.yearBuilt?`${deal.yearBuilt}`:''} placeholder="Year" onSave={v=>updateDeal.mutate({yearBuilt:parseInt(v)||null})} suffix="" width="w-12" />
+          {/* Row 2: property fields left, county+type right */}
+          <div className="flex items-center justify-between mt-1 ml-5">
+            <div className="flex items-center gap-4 text-xs text-gray-400">
+              <span><span className="text-gray-600">Beds:</span> <HeaderField value={deal.beds?`${deal.beds}`:''} placeholder="—" onSave={v=>updateDeal.mutate({beds:parseInt(v)||null})} width="w-6" /></span>
+              <span><span className="text-gray-600">Bathrooms:</span> <HeaderField value={deal.baths?`${deal.baths}`:''} placeholder="—" onSave={v=>updateDeal.mutate({baths:parseFloat(v)||null})} width="w-6" /></span>
+              <span><span className="text-gray-600">Sqft:</span> <HeaderField value={deal.sqft?`${deal.sqft.toLocaleString()}`:''} placeholder="—" onSave={v=>updateDeal.mutate({sqft:parseInt(v.replace(/,/g,''))||null})} width="w-16" /></span>
+              <span><span className="text-gray-600">Year Built:</span> <HeaderField value={deal.yearBuilt?`${deal.yearBuilt}`:''} placeholder="—" onSave={v=>updateDeal.mutate({yearBuilt:parseInt(v)||null})} width="w-12" /></span>
+              <span><span className="text-gray-600">Occupancy:</span> <HeaderField value={deal.occupancy?.replace(/_/g,' ')||''} placeholder="—" onSave={v=>updateDeal.mutate({occupancy:v.toUpperCase().replace(/ /g,'_')})} width="w-16" /></span>
+              <span><span className="text-gray-600">Access:</span> <HeaderField value={deal.accessInfo||''} placeholder="—" onSave={v=>updateDeal.mutate({accessInfo:v})} width="w-24" /></span>
+            </div>
+            <div className="flex items-center gap-4 text-xs shrink-0">
+              <span className="text-gray-600">County: <span className="text-gray-300">{deal.county||'—'}</span></span>
+              <span className="text-gray-600">Property Type: <span className="text-gray-300">{deal.propertyType?.replace(/_/g,' ')||'—'}</span></span>
+            </div>
           </div>
         </div>
       </div>
@@ -822,21 +818,7 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
           {/* OVERVIEW TAB */}
           {tab === 'overview' && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Card title="Property Details" icon={Building2}>
-                <EditableRow label="Address" value={deal.address} onSave={v=>updateDeal.mutate({address:v})} />
-                <EditableRow label="City" value={deal.city} onSave={v=>updateDeal.mutate({city:v})} />
-                <EditableRow label="State" value={deal.state} onSave={v=>updateDeal.mutate({state:v})} />
-                <EditableRow label="ZIP" value={deal.zipCode} onSave={v=>updateDeal.mutate({zipCode:v})} />
-                <EditableRow label="County" value={deal.county} onSave={v=>updateDeal.mutate({county:v})} />
-                <EditableRow label="Property Type" value={deal.propertyType} onSave={v=>updateDeal.mutate({propertyType:v.toUpperCase().replace(/ /g,'_')})} />
-                <EditableRow label="Beds" value={deal.beds?String(deal.beds):''} onSave={v=>updateDeal.mutate({beds:parseInt(v)||null})} type="number" />
-                <EditableRow label="Baths" value={deal.baths?String(deal.baths):''} onSave={v=>updateDeal.mutate({baths:parseInt(v)||null})} type="number" />
-                <EditableRow label="Square Feet" value={deal.sqft?String(deal.sqft):''} onSave={v=>updateDeal.mutate({sqft:parseInt(v)||null})} type="number" />
-                <EditableRow label="Year Built" value={deal.yearBuilt?String(deal.yearBuilt):''} onSave={v=>updateDeal.mutate({yearBuilt:parseInt(v)||null})} type="number" />
-                <EditableRow label="Occupancy" value={deal.occupancy} onSave={v=>updateDeal.mutate({occupancy:v.toUpperCase().replace(/ /g,'_')})} />
-                <EditableRow label="Access" value={deal.accessInfo} onSave={v=>updateDeal.mutate({accessInfo:v})} />
-                <InfoRow label="HOA" value={deal.hoaStatus!=='UNKNOWN'?deal.hoaStatus:null} />
-              </Card>
+              
 
               <div className="space-y-4">
                 <Card title="Condition" icon={Shield}>
