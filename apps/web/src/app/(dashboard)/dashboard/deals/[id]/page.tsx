@@ -528,8 +528,8 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
 
   const primaryBlocker = sellBlockers[0] || null;
   const sellLabel = sellScore >= 90 ? 'Highly Sellable — Ready to Blast'
-    : sellScore >= 75 ? `Strong Dispo Opportunity${primaryBlocker ? ' — 1 blocker' : ''}`
-    : sellScore >= 60 ? `Workable — ${sellBlockers.length} blocker${sellBlockers.length>1?'s':''} to fix`
+    : sellScore >= 75 ? (primaryBlocker ? 'Strong Dispo Opportunity — 1 blocker' : 'Strong Dispo Opportunity')
+    : sellScore >= 60 ? ('Workable — ' + sellBlockers.length + ' blocker' + (sellBlockers.length>1?'s':'') + ' to fix')
     : sellScore >= 40 ? 'Needs Info — Not Ready to Blast'
     : 'Weak — Not Ready to Sell';
   const sellColor = sellScore >= 75 ? 'text-green-400' : sellScore >= 60 ? 'text-blue-400' : sellScore >= 40 ? 'text-yellow-400' : 'text-red-400';
