@@ -835,15 +835,18 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
           {tab === 'overview' && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Card title="Property Details" icon={Building2}>
-                <InfoRow label="Address" value={deal.address} />
-                <InfoRow label="City / State / ZIP" value={[deal.city,deal.state,deal.zipCode].filter(Boolean).join(', ')} />
-                <InfoRow label="County" value={deal.county} />
-                <InfoRow label="Property Type" value={deal.propertyType?.replace(/_/g,' ')} />
-                <InfoRow label="Beds / Baths" value={deal.beds?`${deal.beds} bd / ${deal.baths} ba`:null} />
-                <InfoRow label="Square Feet" value={deal.sqft?`${deal.sqft.toLocaleString()} sqft`:null} />
-                <InfoRow label="Year Built" value={deal.yearBuilt} />
-                <InfoRow label="Occupancy" value={deal.occupancy?.replace(/_/g,' ')} />
-                <InfoRow label="Access" value={deal.accessInfo} />
+                <EditableRow label="Address" value={deal.address} onSave={v=>updateDeal.mutate({address:v})} />
+                <EditableRow label="City" value={deal.city} onSave={v=>updateDeal.mutate({city:v})} />
+                <EditableRow label="State" value={deal.state} onSave={v=>updateDeal.mutate({state:v})} />
+                <EditableRow label="ZIP" value={deal.zipCode} onSave={v=>updateDeal.mutate({zipCode:v})} />
+                <EditableRow label="County" value={deal.county} onSave={v=>updateDeal.mutate({county:v})} />
+                <EditableRow label="Property Type" value={deal.propertyType} onSave={v=>updateDeal.mutate({propertyType:v.toUpperCase().replace(/ /g,'_')})} />
+                <EditableRow label="Beds" value={deal.beds?String(deal.beds):''} onSave={v=>updateDeal.mutate({beds:parseInt(v)||null})} type="number" />
+                <EditableRow label="Baths" value={deal.baths?String(deal.baths):''} onSave={v=>updateDeal.mutate({baths:parseInt(v)||null})} type="number" />
+                <EditableRow label="Square Feet" value={deal.sqft?String(deal.sqft):''} onSave={v=>updateDeal.mutate({sqft:parseInt(v)||null})} type="number" />
+                <EditableRow label="Year Built" value={deal.yearBuilt?String(deal.yearBuilt):''} onSave={v=>updateDeal.mutate({yearBuilt:parseInt(v)||null})} type="number" />
+                <EditableRow label="Occupancy" value={deal.occupancy} onSave={v=>updateDeal.mutate({occupancy:v.toUpperCase().replace(/ /g,'_')})} />
+                <EditableRow label="Access" value={deal.accessInfo} onSave={v=>updateDeal.mutate({accessInfo:v})} />
                 <InfoRow label="HOA" value={deal.hoaStatus!=='UNKNOWN'?deal.hoaStatus:null} />
               </Card>
 
