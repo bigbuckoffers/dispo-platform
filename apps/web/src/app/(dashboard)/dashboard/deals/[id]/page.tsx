@@ -478,15 +478,55 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
   const seventyPctMinusRepairs = seventyPctAvg - (deal.repairEstimate || 0);
 
   const getMainAction = () => {
-    if (!deal.address || !deal.askingPrice) return { label: 'Complete Missing Info', icon: AlertCircle, color: 'bg-amber-600 hover:bg-amber-500', fn: () => setTab('dispo') };
-    if (missing.length > 4) return { label: 'Generate Follow-Up', icon: Send, color: 'bg-blue-600 hover:bg-blue-500', fn: () => followUpAction.mutate() };
-    if ((deal.matchedBuyerCount || 0) === 0) return { label: 'Run Buyer Match', icon: Target, color: 'bg-purple-600 hover:bg-purple-500', fn: () => matchAction.mutate() };
-    if (!hasPhotos) return { label: 'Add Photos', icon: Camera, color: 'bg-orange-600 hover:bg-orange-500', fn: () => setTab('dispo') };
-    if ((deal.matchedBuyerCount || 0) > 0) return { label: 'Generate Buyer Blast', icon: Zap, color: 'bg-green-600 hover:bg-green-500', fn: () => { setTab('dispo'); generateContent.mutate('sms'); } };
-    return { label: 'Run Buyer Match', icon: Target, color: 'bg-blue-600 hover:bg-blue-500', fn: () => matchAction.mutate() };
+    const b2 = deal.matchedBuyerCount || 0;
+    const isOwn2 = deal.sourceType === 'OWN';
+    const hasPerm2 = isOwn2 || !!(deal.dealSource?.permissionToMarket);
+    if (deal.status === 'OFFER_RECEIVED') return { label: 'Review Offer', icon: CheckCircle, color: 'bg-orange-600 hover:bg-orange-500', fn: () => setTab('dispo') };
+    if (deal.status === 'CAMPAIGN_ACTIVE') return { label: 'Follow Up Buyers', icon: Send, color: 'bg-emerald-600 hover:bg-emerald-500', fn: () => setTab('dispo') };
+    if (b2 > 0 && hasPhotos && hasPerm2) return { label: 'Generate Buyer Blast', icon: Zap, color: 'bg-green-600 hover:bg-green-500', fn: () => { setTab('dispo'); generateContent.mutate('sms'); } };
+    if (b2 > 0 && !hasPhotos) return { label: isOwn2 ? 'Upload Photos' : 'Request Photos', icon: Camera, color: 'bg-amber-600 hover:bg-amber-500', fn: () => setTab('dispo') };
+    if (b2 > 0 && !hasPerm2) return { label: 'Confirm JV Permission', icon: Shield, color: 'bg-purple-600 hover:bg-purple-500', fn: () => setTab('dispo') };
+    if (b2 === 0 && deal.askingPrice) return { label: 'Run Buyer Match', icon: Target, color: 'bg-blue-600 hover:bg-blue-500', fn: () => matchAction.mutate() };
+    return { label: 'Complete Missing Info', icon: AlertCircle, color: 'bg-amber-600 hover:bg-amber-500', fn: () => setTab('dispo') };
   };
   const mainAction = getMainAction();
   const isActionLoading = followUpAction.isPending || matchAction.isPending || generateContent.isPending;
+
+  const b = deal.matchedBuyerCount || 0;
+  const t1 = deal.tier1MatchCount || 0;
+  const isOwn = deal.sourceType === 'OWN';
+  const hasPermission = isOwn || !!(deal.dealSource?.permissionToMarket);
+  const hasCOE = !!deal.closingDate;
+  const hasDesc = !!deal.description;
+  const hasPrice = !!deal.askingPrice;
+  const hasValue = !!(deal.zillowEstimate || deal.realtorEstimate || deal.redfinEstimate || deal.arv);
+  const underValue = avgPublicEstimate > 0 && deal.askingPrice && deal.askingPrice < avgPublicEstimate * 0.75;
+  const underArv = deal.arv > 0 && deal.askingPrice && deal.askingPrice < deal.arv * 0.75;
+
+  const sellReasons: string[] = [];
+  const sellBlockers: string[] = [];
+  let sellScore = 0;
+  if (b > 0)         { sellScore += 25; sellReasons.push(`${b} matched buyer${b>1?'s':''}`); }
+  else                 { sellBlockers.push('No buyer matches — run match first'); }
+  if (t1 > 0)        { sellScore += 15; sellReasons.push(`${t1} Tier 1 buyer${t1>1?'s':''}`); }
+  if (hasPhotos)      { sellScore += 15; sellReasons.push('Photos available'); }
+  else                 { sellBlockers.push('Photos missing — buyers need to see the property'); }
+  if (hasPrice)       { sellScore += 10; }
+  else                 { sellBlockers.push('Asking price not set'); }
+  if (hasValue)       { sellScore += 10; sellReasons.push('Value/ARV data available'); }
+  else                 { sellBlockers.push('No ARV or public value estimates'); }
+  if (underValue || underArv) { sellScore += 10; sellReasons.push('Ask appears under market value'); }
+  if (hasDesc)        { sellScore += 5; }
+  if (hasPermission)  { sellScore += 5; }
+  else if (!isOwn)     { sellBlockers.push('JV permission to market not confirmed'); }
+  if (hasCOE)         { sellScore += 5; sellReasons.push('Closing date confirmed'); }
+  sellScore = Math.max(0, Math.min(100, sellScore + 10));
+
+  const sellLabel = sellScore >= 85 ? 'Hot — Highly Sellable' : sellScore >= 75 ? 'Strong Dispo Opportunity' : sellScore >= 60 ? 'Workable — Needs a Push' : sellScore >= 40 ? 'Needs Info / Not Ready' : 'Weak — Not Ready to Sell';
+  const sellColor = sellScore >= 75 ? 'text-green-400' : sellScore >= 60 ? 'text-blue-400' : sellScore >= 40 ? 'text-yellow-400' : 'text-red-400';
+  const sellBorderBg = sellScore >= 75 ? 'border-green-800/30 bg-green-900/5' : sellScore >= 60 ? 'border-blue-800/30 bg-blue-900/5' : sellScore >= 40 ? 'border-yellow-800/30 bg-yellow-900/5' : 'border-red-800/30 bg-red-900/5';
+  const sellBar = sellScore >= 75 ? 'bg-green-500' : sellScore >= 60 ? 'bg-blue-500' : sellScore >= 40 ? 'bg-yellow-500' : 'bg-red-500';
+  const bestBuyerProfile = b > 0 ? `${deal.city || 'Local'} ${deal.dealType === 'SUBTO' ? 'creative finance / Subto buyers' : (deal.overallCondition||'').includes('HEAVY') ? 'cash buyers comfortable with heavy rehab' : 'cash buyers and flippers'}` : `Seeking ${deal.city || 'local'} investors for ${(deal.propertyType||'single family').toLowerCase().replace(/_/g,' ')} deals`;
 
   return (
     <div className="p-4 max-w-7xl mx-auto space-y-4">
@@ -547,6 +587,73 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
             </button>
           </div>
         )}
+      </motion.div>
+
+
+      {/* DEAL SELLABILITY PANEL */}
+      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+        <div className={`rounded-xl border p-5 ${sellBorderBg}`}>
+          <div className="flex items-start justify-between gap-4 mb-5">
+            <div>
+              <div className="flex items-center gap-3 mb-1.5">
+                <span className={`text-4xl font-black leading-none ${sellColor}`}>{sellScore}</span>
+                <div>
+                  <p className="text-white font-bold text-base leading-tight">Deal Sellability</p>
+                  <p className={`text-sm font-medium ${sellColor}`}>{sellLabel}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 mt-1">
+                <div className="w-40 h-2 bg-gray-800 rounded-full">
+                  <div className={`h-full rounded-full ${sellBar}`} style={{width:`${sellScore}%`}}/>
+                </div>
+                <span className="text-gray-600 text-xs">{sellScore}/100</span>
+              </div>
+            </div>
+            <div className="flex gap-2 flex-wrap justify-end shrink-0">
+              {b > 0 && hasPhotos && hasPermission ? (
+                <button onClick={() => { setTab('dispo'); generateContent.mutate('sms'); }}
+                  className="flex items-center gap-2 px-4 py-2 bg-green-700 hover:bg-green-600 text-white text-sm rounded-xl font-semibold transition">
+                  <Zap size={14}/> Generate Buyer Blast
+                </button>
+              ) : b > 0 ? (
+                <button onClick={() => followUpAction.mutate()} disabled={followUpAction.isPending}
+                  className="flex items-center gap-2 px-4 py-2 bg-amber-700 hover:bg-amber-600 text-white text-sm rounded-xl font-semibold transition">
+                  <Send size={14}/> Request Missing Info
+                </button>
+              ) : (
+                <button onClick={() => matchAction.mutate()} disabled={matchAction.isPending}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-700 hover:bg-blue-600 text-white text-sm rounded-xl font-semibold transition">
+                  <Target size={14}/> {matchAction.isPending ? 'Matching...' : 'Run Buyer Match'}
+                </button>
+              )}
+              <button onClick={() => setTab('buyers')}
+                className="flex items-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm rounded-xl font-semibold transition border border-gray-700">
+                <Users size={14}/> View Buyers {b > 0 && <span className="ml-1 text-xs bg-gray-700 text-gray-300 px-1.5 py-0.5 rounded-full">{b}</span>}
+              </button>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 pt-4 border-t border-white/5">
+            <div>
+              <p className="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-2.5">Why it should sell</p>
+              {sellReasons.length > 0 ? (
+                <ul className="space-y-1.5">{sellReasons.map((r,i) => <li key={i} className="flex items-start gap-2 text-sm text-gray-300"><CheckCircle size={12} className="text-green-400 shrink-0 mt-0.5"/>{r}</li>)}</ul>
+              ) : <p className="text-gray-600 text-sm">No strong selling points yet. Add buyer matches and photos.</p>}
+            </div>
+            <div>
+              <p className="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-2.5">Main blockers</p>
+              {sellBlockers.length > 0 ? (
+                <ul className="space-y-1.5">{sellBlockers.slice(0,4).map((bl,i) => <li key={i} className="flex items-start gap-2 text-sm text-amber-300"><AlertCircle size={12} className="shrink-0 mt-0.5 text-amber-400"/>{bl}</li>)}</ul>
+              ) : <p className="text-green-400 text-sm flex items-center gap-1.5"><CheckCircle size={12}/> No major blockers</p>}
+            </div>
+            <div>
+              <p className="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-2.5">Best buyer profile</p>
+              <p className="text-gray-200 text-sm font-medium mb-1">{bestBuyerProfile}</p>
+              {b > 0 && <p className="text-gray-500 text-xs mb-3">Top {Math.min(b,12)} buyers{t1 > 0 ? `, incl. ${t1} Tier 1` : ''}</p>}
+              <p className="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Next best action</p>
+              <p className="text-gray-300 text-sm">{b > 0 && hasPhotos && hasPermission ? 'Ready — send blast to top matched buyers.' : b > 0 && !hasPhotos ? `${isOwn ? 'Upload' : 'Request'} buyer-safe photos, then generate blast.` : b > 0 && !hasPermission ? 'Confirm JV permission, then generate blast.' : !hasPrice ? 'Set asking price to enable buyer matching.' : 'Run buyer match to find qualified buyers.'}</p>
+            </div>
+          </div>
+        </div>
       </motion.div>
 
       {/* VISUAL DEAL SNAPSHOT */}
