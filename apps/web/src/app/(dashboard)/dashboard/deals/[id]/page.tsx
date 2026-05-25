@@ -856,16 +856,26 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
                   {zestimateFetching ? <><RefreshCw size={10} className="animate-spin"/> Fetching...</> : <><Sparkles size={10}/> Fetch Zestimate</>}
                 </button>
               </div>
-              {deal.zillowEstimate && (
+              {(deal.zillowEstimate || deal.zillowUrl) && (
                 <div className="mb-3 p-2.5 bg-blue-900/20 border border-blue-800/30 rounded-lg flex items-center justify-between">
                   <div>
-                    <p className="text-blue-300 text-xs font-semibold">Zillow Zestimate</p>
-                    <p className="text-white text-lg font-bold">{formatCurrency(deal.zillowEstimate)}</p>
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <p className="text-blue-300 text-xs font-semibold">Zillow Zestimate</p>
+                      {deal.zillowUrl && (
+                        <a href={deal.zillowUrl} target="_blank" rel="noopener noreferrer"
+                          className="text-[10px] px-1.5 py-0.5 bg-blue-800/50 hover:bg-blue-700/50 text-blue-300 rounded flex items-center gap-0.5 transition">
+                          <ExternalLink size={8}/> Zillow
+                        </a>
+                      )}
+                    </div>
+                    <p className="text-white text-lg font-bold">{deal.zillowEstimate ? formatCurrency(deal.zillowEstimate) : '—'}</p>
                   </div>
-                  <div className="text-right">
-                    <p className="text-gray-500 text-xs">70% of Zestimate</p>
-                    <p className="text-yellow-400 text-sm font-semibold">{formatCurrency(deal.zillowEstimate * 0.70)}</p>
-                  </div>
+                  {deal.zillowEstimate && (
+                    <div className="text-right">
+                      <p className="text-gray-500 text-xs">70% of Zestimate</p>
+                      <p className="text-yellow-400 text-sm font-semibold">{formatCurrency(deal.zillowEstimate * 0.70)}</p>
+                    </div>
+                  )}
                 </div>
               )}
               {(deal.zillowEstimate || deal.realtorEstimate || deal.redfinEstimate) ? (
