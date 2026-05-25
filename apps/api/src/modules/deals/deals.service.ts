@@ -232,6 +232,16 @@ export class DealsService {
         /"price":(\d+).*?"zestimate"/,
       ];
 
+      // Log zestimate context for debugging
+      const zIdx = html.indexOf('zestimate');
+      if (zIdx > 0) {
+        console.log('Zestimate context 1:', JSON.stringify(html.substring(zIdx-20, zIdx+150)));
+      }
+      const zIdx2 = html.indexOf('Zestimate');
+      if (zIdx2 > 0) {
+        console.log('Zestimate context 2:', JSON.stringify(html.substring(zIdx2-20, zIdx2+150)));
+      }
+
       for (const pattern of patterns) {
         const match = html.match(pattern);
         if (match) {
