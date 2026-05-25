@@ -417,6 +417,10 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
   const [arvLoading, setArvLoading] = useState(false);
   const [zestimateFetching, setZestimateFetching] = useState(false);
   const [zestimateResult, setZestimateResult] = useState<any>(null);
+  const [editingArv, setEditingArv] = useState(false);
+  const [editingRepairs, setEditingRepairs] = useState(false);
+  const [arvInput, setArvInput] = useState('');
+  const [repairsInput, setRepairsInput] = useState('');
 
   const { data: deal, isLoading } = useQuery({
     queryKey: ['deal', id],
@@ -653,17 +657,45 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
               </>
             )}
           </div>
-          {/* ARV */}
-          <div className="bg-gray-900 rounded-xl p-3 border border-gray-800 text-center">
-            <p className="text-lg font-bold text-white">{deal.arv ? formatCurrency(deal.arv) : '—'}</p>
-            <p className="text-gray-500 text-xs mt-0.5">ARV</p>
-            {!deal.arv && <p className="text-gray-700 text-[10px] mt-0.5">Not entered</p>}
+          {/* ARV - editable */}
+          <div className="bg-gray-900 rounded-xl p-3 border border-gray-800 text-center cursor-pointer group" onClick={() => { if(!editingArv){ setArvInput(deal.arv ? String(deal.arv) : ''); setEditingArv(true); } }}>
+            {editingArv ? (
+              <div onClick={e=>e.stopPropagation()}>
+                <input autoFocus type="number" value={arvInput} onChange={e=>setArvInput(e.target.value)}
+                  onKeyDown={e=>{ if(e.key==='Enter'){ updateDeal.mutate({arv:parseFloat(arvInput)||null}); setEditingArv(false); } if(e.key==='Escape') setEditingArv(false); }}
+                  className="w-full bg-gray-800 text-white text-center text-sm font-bold rounded px-2 py-1 focus:outline-none border border-blue-500" placeholder="Enter ARV" />
+                <div className="flex gap-1 mt-1 justify-center">
+                  <button onClick={()=>{ updateDeal.mutate({arv:parseFloat(arvInput)||null}); setEditingArv(false); }} className="text-[10px] px-2 py-0.5 bg-blue-600 text-white rounded">Save</button>
+                  <button onClick={()=>setEditingArv(false)} className="text-[10px] px-2 py-0.5 bg-gray-700 text-gray-400 rounded">Cancel</button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <p className="text-lg font-bold text-white group-hover:text-blue-300 transition">{deal.arv ? formatCurrency(deal.arv) : '—'}</p>
+                <p className="text-gray-500 text-xs mt-0.5">ARV <span className="text-gray-700 text-[9px]">✎</span></p>
+                {!deal.arv && <p className="text-gray-700 text-[10px] mt-0.5">Click to enter</p>}
+              </>
+            )}
           </div>
-          {/* Repairs */}
-          <div className="bg-gray-900 rounded-xl p-3 border border-gray-800 text-center">
-            <p className="text-lg font-bold text-white">{deal.repairEstimate ? formatCurrency(deal.repairEstimate) : '—'}</p>
-            <p className="text-gray-500 text-xs mt-0.5">Repairs</p>
-            {!deal.repairEstimate && <p className="text-gray-700 text-[10px] mt-0.5">Not entered</p>}
+          {/* Repairs - editable */}
+          <div className="bg-gray-900 rounded-xl p-3 border border-gray-800 text-center cursor-pointer group" onClick={() => { if(!editingRepairs){ setRepairsInput(deal.repairEstimate ? String(deal.repairEstimate) : ''); setEditingRepairs(true); } }}>
+            {editingRepairs ? (
+              <div onClick={e=>e.stopPropagation()}>
+                <input autoFocus type="number" value={repairsInput} onChange={e=>setRepairsInput(e.target.value)}
+                  onKeyDown={e=>{ if(e.key==='Enter'){ updateDeal.mutate({repairEstimate:parseFloat(repairsInput)||null}); setEditingRepairs(false); } if(e.key==='Escape') setEditingRepairs(false); }}
+                  className="w-full bg-gray-800 text-white text-center text-sm font-bold rounded px-2 py-1 focus:outline-none border border-blue-500" placeholder="Enter repairs" />
+                <div className="flex gap-1 mt-1 justify-center">
+                  <button onClick={()=>{ updateDeal.mutate({repairEstimate:parseFloat(repairsInput)||null}); setEditingRepairs(false); }} className="text-[10px] px-2 py-0.5 bg-blue-600 text-white rounded">Save</button>
+                  <button onClick={()=>setEditingRepairs(false)} className="text-[10px] px-2 py-0.5 bg-gray-700 text-gray-400 rounded">Cancel</button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <p className="text-lg font-bold text-white group-hover:text-blue-300 transition">{deal.repairEstimate ? formatCurrency(deal.repairEstimate) : '—'}</p>
+                <p className="text-gray-500 text-xs mt-0.5">Repairs <span className="text-gray-700 text-[9px]">✎</span></p>
+                {!deal.repairEstimate && <p className="text-gray-700 text-[10px] mt-0.5">Click to enter</p>}
+              </>
+            )}
           </div>
           {/* Buyers */}
           <div className="bg-gray-900 rounded-xl p-3 border border-gray-800 text-center">
