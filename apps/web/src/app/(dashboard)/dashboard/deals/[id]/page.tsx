@@ -324,7 +324,7 @@ function LocationPanel({ deal, mapsUrl, streetViewUrl }: any) {
           </a>
         </div>
       </div>
-      <div className="relative" style={{height:260}}>
+      <div className="relative" style={{height:300}}>
         <iframe
           src={embedSrc}
           width="100%"
@@ -336,11 +336,19 @@ function LocationPanel({ deal, mapsUrl, streetViewUrl }: any) {
           className="w-full h-full"
         />
       </div>
-      <div className="px-3 py-2 border-t border-gray-800 flex gap-2">
+      <div className="px-3 py-2 border-t border-gray-800 flex gap-2 flex-wrap">
         <a href={mapsUrl} target="_blank" rel="noopener noreferrer"
-          className="flex items-center gap-1 text-[10px] text-gray-500 hover:text-blue-400 transition">
-          <ExternalLink size={9} /> Open in Maps
+          className="flex items-center gap-1.5 text-[10px] px-2 py-1 bg-gray-800 hover:bg-gray-700 text-gray-400 rounded-lg transition">
+          <Globe size={9} /> Open Map
         </a>
+        <a href={streetViewHref} target="_blank" rel="noopener noreferrer"
+          className="flex items-center gap-1.5 text-[10px] px-2 py-1 bg-gray-800 hover:bg-gray-700 text-gray-400 rounded-lg transition">
+          <Eye size={9} /> Street View
+        </a>
+        <button onClick={() => navigator.clipboard.writeText(deal.address+', '+deal.city+', '+deal.state+' '+deal.zipCode)}
+          className="flex items-center gap-1.5 text-[10px] px-2 py-1 bg-gray-800 hover:bg-gray-700 text-gray-400 rounded-lg transition">
+          <Copy size={9} /> Copy Address
+        </button>
       </div>
     </div>
   );
@@ -564,11 +572,13 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
               {b > 0 && <span className="text-gray-500 font-normal"> &middot; {b} buyer{b>1?'s':''}{t1>0?' · '+t1+' Tier 1':''}{hasPhotos && hasPermission?' · ready to blast':primaryBlocker?' · fix: '+(primaryBlocker.split('—')[0].trim().toLowerCase()):''}</span>}
             </p>
           </div>
+          {!(b > 0 && hasPhotos && hasPermission && deal.status !== 'OFFER_RECEIVED' && deal.status !== 'CAMPAIGN_ACTIVE') && (
           <button onClick={mainAction.fn} disabled={isActionLoading}
             className={`flex items-center gap-2 px-5 py-2.5 ${mainAction.color} disabled:opacity-50 text-white text-sm rounded-xl font-medium transition shrink-0`}>
             <mainAction.icon size={15} />
             {isActionLoading ? 'Working...' : mainAction.label}
           </button>
+          )}
         </div>
 
         {/* Metric Cards */}
@@ -754,6 +764,7 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
 
 
       {/* Tabs */}
+      <div className="sticky top-0 z-30 -mx-4 px-4 py-2 bg-gray-950/95 backdrop-blur border-b border-gray-800/50">
       <div className="flex gap-1 bg-gray-900/80 p-1 rounded-xl border border-gray-800 w-fit">
         {([
           { id: 'property', label: 'Property Intelligence', icon: Building2 },
@@ -767,6 +778,7 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
             <span className="hidden md:inline">{t.label}</span>
           </button>
         ))}
+      </div>
       </div>
 
       <motion.div key={tab} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}>
@@ -1144,7 +1156,26 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
               <div className="px-4 py-3 border-b border-gray-800 flex items-center gap-2"><span className="w-5 h-5 rounded-full bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center shrink-0">3</span><h3 className="text-white text-sm font-medium">Generate Campaign</h3></div>
               <div className="p-4">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">{[{key:'sms',label:'SMS Blast',cl:'bg-green-900/40 hover:bg-green-900/60 border-green-700/40 text-green-300',icon:MessageSquare},{key:'email',label:'Email Blast',cl:'bg-blue-900/40 hover:bg-blue-900/60 border-blue-700/40 text-blue-300',icon:Mail},{key:'facebook',label:'FB Post',cl:'bg-indigo-900/40 hover:bg-indigo-900/60 border-indigo-700/40 text-indigo-300',icon:Facebook},{key:'followUp',label:'Follow-Up',cl:'bg-amber-900/40 hover:bg-amber-900/60 border-amber-700/40 text-amber-300',icon:Send}].map(btn=>(<button key={btn.key} onClick={()=>btn.key==='followUp'?followUpAction.mutate():generateContent.mutate(btn.key)} disabled={generateContent.isPending} className={'flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm border transition '+btn.cl}><btn.icon size={14}/> {btn.label}</button>))}</div>
-                <AnimatePresence>{generatedOutput.sms&&<div className="mb-3"><p className="text-gray-500 text-xs mb-1">SMS Preview</p><GeneratedOutput content={generatedOutput.sms} onClose={()=>setGeneratedOutput(p=>({...p,sms:''}))} /></div>}{generatedOutput.email&&<div className="mb-3"><p className="text-gray-500 text-xs mb-1">Email Preview</p><GeneratedOutput content={generatedOutput.email} onClose={()=>setGeneratedOutput(p=>({...p,email:''}))} /></div>}{generatedOutput.facebook&&<div className="mb-3"><p className="text-gray-500 text-xs mb-1">FB Post</p><GeneratedOutput content={generatedOutput.facebook} onClose={()=>setGeneratedOutput(p=>({...p,facebook:''}))} /></div>}{generatedOutput.followUp&&<div className="mb-3"><p className="text-gray-500 text-xs mb-1">Follow-Up</p><GeneratedOutput content={generatedOutput.followUp} onClose={()=>setGeneratedOutput(p=>({...p,followUp:''}))} /></div>}</AnimatePresence>
+                <AnimatePresence>
+                  {generatedOutput.sms && <div className="mb-3">
+                    <div className="flex items-center justify-between mb-1"><p className="text-gray-500 text-xs">📱 SMS Blast Preview</p><span className="text-gray-600 text-xs">{b} buyers selected</span></div>
+                    <GeneratedOutput content={generatedOutput.sms} onClose={()=>setGeneratedOutput(p=>({...p,sms:''}))} />
+                    <button onClick={()=>{ toast.success('Campaign started! (Twilio not yet configured)'); }} className="mt-2 flex items-center gap-2 px-4 py-2 bg-green-700 hover:bg-green-600 text-white text-xs rounded-lg transition font-semibold"><Zap size={11}/> Send to {b} Buyers</button>
+                  </div>}
+                  {generatedOutput.email && <div className="mb-3">
+                    <div className="flex items-center justify-between mb-1"><p className="text-gray-500 text-xs">📧 Email Blast Preview</p><span className="text-gray-600 text-xs">{b} buyers selected</span></div>
+                    <GeneratedOutput content={generatedOutput.email} onClose={()=>setGeneratedOutput(p=>({...p,email:''}))} />
+                    <button onClick={()=>{ toast.success('Email campaign started! (SendGrid not yet configured)'); }} className="mt-2 flex items-center gap-2 px-4 py-2 bg-blue-700 hover:bg-blue-600 text-white text-xs rounded-lg transition font-semibold"><Mail size={11}/> Send to {b} Buyers</button>
+                  </div>}
+                  {generatedOutput.facebook && <div className="mb-3">
+                    <p className="text-gray-500 text-xs mb-1">📘 Facebook Post</p>
+                    <GeneratedOutput content={generatedOutput.facebook} onClose={()=>setGeneratedOutput(p=>({...p,facebook:''}))} />
+                  </div>}
+                  {generatedOutput.followUp && <div className="mb-3">
+                    <p className="text-gray-500 text-xs mb-1">💬 Follow-Up Message</p>
+                    <GeneratedOutput content={generatedOutput.followUp} onClose={()=>setGeneratedOutput(p=>({...p,followUp:''}))} />
+                  </div>}
+                </AnimatePresence>
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
