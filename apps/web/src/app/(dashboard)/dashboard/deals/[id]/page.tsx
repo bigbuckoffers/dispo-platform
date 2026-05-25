@@ -355,9 +355,9 @@ function EditableTextarea({ value, onSave, placeholder }: { value: string; onSav
 function HeaderField({ value, placeholder, onSave, suffix='', width='w-20' }: {
   value: string; placeholder: string; onSave: (v:string)=>void; suffix?: string; width?: string;
 }) {
-  const [editing, setEditing] = React.useState(false);
-  const [val, setVal] = React.useState(value);
-  React.useEffect(() => { setVal(value); }, [value]);
+  const [editing, setEditing] = useState(false);
+  const [val, setVal] = useState(value);
+  useEffect(() => { setVal(value); }, [value]);
   if (editing) return (
     <input autoFocus value={val}
       onChange={e=>setVal(e.target.value)}
