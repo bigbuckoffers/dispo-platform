@@ -579,7 +579,7 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
             { label: 'Repairs', value: deal.repairEstimate ? formatCurrency(deal.repairEstimate) : '—', color: 'text-white' },
             { label: 'Potential Margin', value: potentialMargin > 0 ? formatCurrency(potentialMargin) : '—', color: potentialMargin > 0 ? 'text-green-400' : 'text-gray-500' },
             { label: 'Buyer Matches', value: deal.matchedBuyerCount || 0, color: (deal.matchedBuyerCount || 0) > 0 ? 'text-purple-400' : 'text-gray-600' },
-            { label: 'Sellability', value: sellScore, color: sellColor, badge: deal.dealPriorityScore > 0 ? priority : null },
+            { label: 'Dispo Score', value: deal.dealPriorityScore || '—', color: 'text-yellow-400', badge: deal.dealPriorityScore > 0 ? priority : null },
           ].map((m: any, i) => (
             <div key={i} className="bg-gray-900 rounded-xl p-3 border border-gray-800 text-center">
               <p className={`text-lg font-bold ${m.color}`}>{m.value}</p>
