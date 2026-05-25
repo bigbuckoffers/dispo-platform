@@ -488,28 +488,28 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
       <div className="max-w-7xl mx-auto px-4 py-4">
 
         {/* ── Above-the-fold Command Center ─────────────────────── */}
-        <div className="grid grid-cols-12 gap-4 mb-4">
+        <div className="grid grid-cols-12 gap-3 mb-3" style={{maxHeight:600}}>
 
           {/* LEFT: Photos (5 cols) */}
-          <div className="col-span-12 md:col-span-5">
+          <div className="col-span-12 md:col-span-5" style={{height:560}}>
             <PhotoGallery deal={deal} onUpdate={(data) => updateDeal.mutate(data)} />
           </div>
 
           {/* CENTER: Dispo Score + Blockers + Blast (4 cols) */}
-          <div className="col-span-12 md:col-span-4 flex flex-col gap-3">
+          <div className="col-span-12 md:col-span-4 flex flex-col gap-2 overflow-y-auto" style={{height:560}}>
 
             {/* Score card */}
-            <div className={`rounded-xl border p-4 ${scoreBg}`}>
-              <div className="flex items-start justify-between mb-3">
+            <div className={`rounded-xl border p-3 ${scoreBg}`}>
+              <div className="flex items-start justify-between mb-2">
                 <div>
                   <div className="flex items-baseline gap-2 mb-0.5">
-                    <span className={`text-4xl font-black leading-none ${scoreColor}`}>{sellScore}</span>
+                    <span className={`text-3xl font-black leading-none ${scoreColor}`}>{sellScore}</span>
                     <span className="text-gray-500 text-xs">/100</span>
                   </div>
                   <p className={`text-sm font-bold ${scoreColor}`}>{scoreLabel}</p>
                 <p className="text-gray-600 text-[10px] mt-0.5">Dispo Opportunity Score</p>
                 </div>
-                <div className="w-16 h-16">
+                <div className="w-12 h-12">
                   <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
                     <circle cx="18" cy="18" r="15.9" fill="none" stroke="#1f2937" strokeWidth="3"/>
                     <circle cx="18" cy="18" r="15.9" fill="none"
@@ -518,7 +518,7 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
                   </svg>
                 </div>
               </div>
-              <div className="space-y-1 mb-3">
+              <div className="space-y-1 mb-2">
                 {sellReasons.slice(0,3).map((r,i) => (
                   <div key={i} className="flex items-start gap-1.5 text-xs text-gray-300">
                     <CheckCircle size={11} className="text-green-400 shrink-0 mt-0.5"/>
@@ -588,7 +588,7 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
                     </>
                   ) : (
                     <>
-                      <div className="space-y-1 mb-3">
+                      <div className="space-y-1 mb-2">
                         {missingPermission && <p className="text-amber-400 text-xs flex items-center gap-1"><AlertCircle size={10}/> JV permission required before blast</p>}
                         {missingPhotos && <p className="text-red-400 text-xs flex items-center gap-1"><Camera size={10}/> Photos required before blast</p>}
                       </div>
@@ -650,103 +650,110 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
             </div>
           </div>
 
-          {/* RIGHT: Numbers + Price Position (3 cols) */}
-          <div className="col-span-12 md:col-span-3 flex flex-col gap-3">
+          {/* RIGHT: Deal Snapshot (3 cols) */}
+          <div className="col-span-12 md:col-span-3" style={{height:560}}>
+            <div className="bg-gray-900 rounded-xl border border-gray-800 h-full flex flex-col overflow-hidden">
+              <div className="px-3 py-2.5 border-b border-gray-800 flex items-center justify-between">
+                <span className="text-white text-xs font-semibold">Deal Snapshot</span>
+                {!refValue && (
+                  <button onClick={fetchZestimate} disabled={zestimateFetching}
+                    className="flex items-center gap-1 px-2 py-0.5 bg-blue-900/40 hover:bg-blue-900/60 text-blue-300 text-[10px] rounded border border-blue-700/40 transition">
+                    <Sparkles size={8}/> {zestimateFetching?'Fetching...':'Fetch Zestimate'}
+                  </button>
+                )}
+              </div>
+              <div className="p-3 flex-1 overflow-y-auto space-y-0">
 
-            {/* Price Position */}
-            <div className="bg-gray-900 rounded-xl border border-gray-800 p-4">
-              <p className="text-gray-500 text-[10px] font-bold uppercase tracking-wide mb-3">Price Position</p>
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-500 text-xs">Asking</span>
-                  <div className="text-right">
-                    <p className="text-white font-bold text-sm">{deal.askingPrice ? formatCurrency(deal.askingPrice) : '—'}</p>
-                    {pricePos && (
-                      <p className={`text-[10px] font-semibold ${pricePos==='UNDER_70'||pricePos==='NEAR_UNDER'?'text-green-400':pricePos==='NEAR_OVER'?'text-yellow-400':'text-red-400'}`}>
-                        {pricePos==='UNDER_70'?'Under 70%':pricePos==='NEAR_UNDER'?'Near 70%':pricePos==='NEAR_OVER'?'Near 70%':pricePos==='OVER_70'?'Over 70%':'Overpriced'}
-                      </p>
-                    )}
-                  </div>
-                </div>
-                {refValue > 0 && (
+                {/* Pricing block */}
+                <div className="space-y-1.5 pb-3 border-b border-gray-800 mb-3">
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-500 text-xs">{avgPub ? (pubEstimates.length>1?'Avg Public Val':'Zestimate') : 'ARV'}</span>
-                    <p className="text-gray-300 text-sm font-medium">{formatCurrency(refValue)}</p>
+                    <span className="text-gray-500 text-xs">Ask</span>
+                    <div className="text-right">
+                      <p className="text-white font-bold text-sm">{deal.askingPrice ? formatCurrency(deal.askingPrice) : '—'}</p>
+                      {pricePos && <p className={`text-[10px] font-semibold ${pricePos==='UNDER_70'||pricePos==='NEAR_UNDER'?'text-green-400':pricePos==='NEAR_OVER'?'text-yellow-400':'text-red-400'}`}>{pricePos==='UNDER_70'?'Under 70%':pricePos==='NEAR_UNDER'?'Near 70%':pricePos==='NEAR_OVER'?'Near 70%':pricePos==='OVER_70'?'Over 70%':'Overpriced'}</p>}
+                    </div>
                   </div>
-                )}
-                {threshold70 > 0 && (
-                  <div className="flex justify-between items-center pt-1 border-t border-gray-800">
-                    <span className="text-gray-500 text-xs">70% Threshold</span>
-                    <p className="text-yellow-400 text-sm font-bold">{formatCurrency(threshold70)}</p>
-                  </div>
-                )}
+                  {refValue > 0 && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-500 text-xs">{avgPub?(pubEstimates.length>1?'Avg Public Val':'Zestimate'):'ARV'}</span>
+                      <p className="text-gray-300 text-xs font-medium">{formatCurrency(refValue)}</p>
+                    </div>
+                  )}
+                  {threshold70 > 0 && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-500 text-xs">70% Threshold</span>
+                      <p className="text-yellow-400 text-xs font-bold">{formatCurrency(threshold70)}</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Price signal */}
                 {gap !== 0 && refValue > 0 && deal.askingPrice && (
-                  <div className={`text-center py-2 rounded-lg ${gap>0?'bg-green-900/30':'bg-red-900/30'}`}>
+                  <div className={`rounded-lg p-2 mb-3 text-center ${gap>0?'bg-green-900/30':'bg-red-900/30'}`}>
                     <p className={`text-xs font-bold ${gap>0?'text-green-400':'text-red-400'}`}>
-                      {gap > 0 ? `Ask is ${formatCurrency(Math.abs(gap))} under 70%` : `Ask is ${formatCurrency(Math.abs(gap))} over 70%`}
+                      {gap>0?`${formatCurrency(Math.abs(gap))} under 70%`:`${formatCurrency(Math.abs(gap))} over 70%`}
                     </p>
-                    <p className={`text-[10px] font-semibold mt-0.5 ${gap>20000?'text-green-500':gap>0?'text-green-400':gap>-20000?'text-yellow-400':'text-red-400'}`}>
+                    <p className={`text-[10px] mt-0.5 font-semibold ${gap>20000?'text-green-500':gap>0?'text-green-400':gap>-20000?'text-yellow-400':'text-red-400'}`}>
                       {gap>20000?'Strong Price Signal':gap>0?'Near Investor Threshold':gap>-20000?'Slightly Over Threshold':'Overpriced vs Public Value'}
                     </p>
                   </div>
                 )}
-                {!deal.arv && refValue > 0 && <p className="text-gray-700 text-[10px] italic">ARV Pending — public value used as quick reference</p>}
-                {!refValue && (
-                  <button onClick={fetchZestimate} disabled={zestimateFetching}
-                    className="w-full flex items-center justify-center gap-1.5 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs rounded-lg transition border border-gray-700 mt-1">
-                    <Sparkles size={10}/> {zestimateFetching ? 'Fetching...' : 'Fetch Zestimate'}
-                  </button>
-                )}
-              </div>
-            </div>
 
-            {/* ARV */}
-            <div className="bg-gray-900 rounded-xl border border-gray-800 p-4 cursor-pointer group" onClick={() => { if(!editingArv){ setArvInput(deal.arv?String(deal.arv):''); setEditingArv(true); }}}>
-              <p className="text-gray-500 text-[10px] font-bold uppercase tracking-wide mb-2">ARV <span className="text-gray-700 text-[9px] group-hover:text-gray-500 normal-case font-normal">✎ click to edit</span></p>
-              {editingArv ? (
-                <div onClick={e=>e.stopPropagation()} className="space-y-2">
-                  <input autoFocus type="number" value={arvInput} onChange={e=>setArvInput(e.target.value)}
-                    onKeyDown={e=>{ if(e.key==='Enter'){updateDeal.mutate({arv:parseFloat(arvInput)||null});setEditingArv(false);} if(e.key==='Escape') setEditingArv(false); }}
-                    className="w-full bg-gray-800 text-white text-center text-sm font-bold rounded-lg px-3 py-1.5 focus:outline-none border border-blue-500" placeholder="Enter ARV" />
-                  <div className="flex gap-1">
-                    <button onClick={()=>{updateDeal.mutate({arv:parseFloat(arvInput)||null});setEditingArv(false);}} className="flex-1 py-1 bg-blue-600 text-white text-xs rounded-lg">Save</button>
-                    <button onClick={()=>setEditingArv(false)} className="flex-1 py-1 bg-gray-700 text-gray-400 text-xs rounded-lg">Cancel</button>
+                {/* ARV + Repairs */}
+                <div className="space-y-1.5 pb-3 border-b border-gray-800 mb-3">
+                  <div className="flex justify-between items-center cursor-pointer group/arv" onClick={()=>{if(!editingArv){setArvInput(deal.arv?String(deal.arv):'');setEditingArv(true);}}}>
+                    <span className="text-gray-500 text-xs">ARV <span className="text-gray-700 text-[9px] group-hover/arv:text-gray-500">✎</span></span>
+                    {editingArv ? (
+                      <div className="flex gap-1" onClick={e=>e.stopPropagation()}>
+                        <input autoFocus type="number" value={arvInput} onChange={e=>setArvInput(e.target.value)}
+                          onKeyDown={e=>{if(e.key==='Enter'){updateDeal.mutate({arv:parseFloat(arvInput)||null});setEditingArv(false);}if(e.key==='Escape')setEditingArv(false);}}
+                          className="w-20 bg-gray-800 text-white text-xs text-center rounded px-1 py-0.5 border border-blue-500 focus:outline-none" placeholder="ARV"/>
+                        <button onClick={()=>{updateDeal.mutate({arv:parseFloat(arvInput)||null});setEditingArv(false);}} className="px-1.5 py-0.5 bg-blue-600 text-white text-[10px] rounded">✓</button>
+                      </div>
+                    ) : (
+                      <p className="text-white text-xs font-semibold group-hover/arv:text-blue-300 transition">{deal.arv?formatCurrency(deal.arv):<span className="text-gray-600">Not entered</span>}</p>
+                    )}
                   </div>
-                </div>
-              ) : (
-                <p className="text-white font-bold text-lg group-hover:text-blue-300 transition">{deal.arv ? formatCurrency(deal.arv) : '—'}</p>
-              )}
-              {!deal.arv && !editingArv && <p className="text-gray-700 text-[10px] mt-0.5">Not entered</p>}
-            </div>
-
-            {/* Repairs */}
-            <div className="bg-gray-900 rounded-xl border border-gray-800 p-4 cursor-pointer group" onClick={() => { if(!editingRepairs){ setRepairsInput(deal.repairEstimate?String(deal.repairEstimate):''); setEditingRepairs(true); }}}>
-              <p className="text-gray-500 text-[10px] font-bold uppercase tracking-wide mb-2">Repairs <span className="text-gray-700 text-[9px] group-hover:text-gray-500 normal-case font-normal">✎ click to edit</span></p>
-              {editingRepairs ? (
-                <div onClick={e=>e.stopPropagation()} className="space-y-2">
-                  <input autoFocus type="number" value={repairsInput} onChange={e=>setRepairsInput(e.target.value)}
-                    onKeyDown={e=>{ if(e.key==='Enter'){updateDeal.mutate({repairEstimate:parseFloat(repairsInput)||null});setEditingRepairs(false);} if(e.key==='Escape') setEditingRepairs(false); }}
-                    className="w-full bg-gray-800 text-white text-center text-sm font-bold rounded-lg px-3 py-1.5 focus:outline-none border border-blue-500" placeholder="Enter repairs" />
-                  <div className="flex gap-1">
-                    <button onClick={()=>{updateDeal.mutate({repairEstimate:parseFloat(repairsInput)||null});setEditingRepairs(false);}} className="flex-1 py-1 bg-blue-600 text-white text-xs rounded-lg">Save</button>
-                    <button onClick={()=>setEditingRepairs(false)} className="flex-1 py-1 bg-gray-700 text-gray-400 text-xs rounded-lg">Cancel</button>
+                  <div className="flex justify-between items-center cursor-pointer group/rep" onClick={()=>{if(!editingRepairs){setRepairsInput(deal.repairEstimate?String(deal.repairEstimate):'');setEditingRepairs(true);}}}>
+                    <span className="text-gray-500 text-xs">Repairs <span className="text-gray-700 text-[9px] group-hover/rep:text-gray-500">✎</span></span>
+                    {editingRepairs ? (
+                      <div className="flex gap-1" onClick={e=>e.stopPropagation()}>
+                        <input autoFocus type="number" value={repairsInput} onChange={e=>setRepairsInput(e.target.value)}
+                          onKeyDown={e=>{if(e.key==='Enter'){updateDeal.mutate({repairEstimate:parseFloat(repairsInput)||null});setEditingRepairs(false);}if(e.key==='Escape')setEditingRepairs(false);}}
+                          className="w-20 bg-gray-800 text-white text-xs text-center rounded px-1 py-0.5 border border-blue-500 focus:outline-none" placeholder="Repairs"/>
+                        <button onClick={()=>{updateDeal.mutate({repairEstimate:parseFloat(repairsInput)||null});setEditingRepairs(false);}} className="px-1.5 py-0.5 bg-blue-600 text-white text-[10px] rounded">✓</button>
+                      </div>
+                    ) : (
+                      <p className="text-white text-xs font-semibold group-hover/rep:text-blue-300 transition">{deal.repairEstimate?formatCurrency(deal.repairEstimate):<span className="text-gray-600">Not entered</span>}</p>
+                    )}
                   </div>
+                  {!deal.arv && refValue > 0 && <p className="text-gray-700 text-[10px] italic">ARV Pending — public value as reference</p>}
                 </div>
-              ) : (
-                <p className="text-white font-bold text-lg group-hover:text-blue-300 transition">{deal.repairEstimate ? formatCurrency(deal.repairEstimate) : '—'}</p>
-              )}
-              {!deal.repairEstimate && !editingRepairs && <p className="text-gray-700 text-[10px] mt-0.5">Not entered</p>}
-            </div>
 
-            {/* Buyers */}
-            <div className="bg-gray-900 rounded-xl border border-gray-800 p-4">
-              <p className="text-gray-500 text-[10px] font-bold uppercase tracking-wide mb-2">Buyer Demand</p>
-              <div className="flex items-baseline gap-2 mb-1">
-                <span className={`text-2xl font-black ${b>0?'text-purple-400':'text-gray-600'}`}>{b}</span>
-                <span className="text-gray-500 text-xs">buyers matched</span>
+                {/* Buyer Demand */}
+                <div className="space-y-1.5 pb-3 border-b border-gray-800 mb-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-500 text-xs">Buyers Matched</span>
+                    <span className={`text-sm font-black ${b>0?'text-purple-400':'text-gray-600'}`}>{b}</span>
+                  </div>
+                  {t1 > 0 && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-500 text-xs">Tier 1</span>
+                      <span className="text-orange-400 text-xs font-bold">{t1}</span>
+                    </div>
+                  )}
+                  {b === 0 && <p className="text-gray-600 text-[10px]">Run match to find buyers</p>}
+                </div>
+
+                {/* Property facts */}
+                <div className="space-y-1.5">
+                  {deal.beds && <div className="flex justify-between"><span className="text-gray-600 text-xs">Beds/Baths</span><span className="text-gray-400 text-xs">{deal.beds}bd / {deal.baths}ba</span></div>}
+                  {deal.sqft && <div className="flex justify-between"><span className="text-gray-600 text-xs">Sqft</span><span className="text-gray-400 text-xs">{deal.sqft.toLocaleString()}</span></div>}
+                  {deal.yearBuilt && <div className="flex justify-between"><span className="text-gray-600 text-xs">Built</span><span className="text-gray-400 text-xs">{deal.yearBuilt}</span></div>}
+                  {deal.occupancy && deal.occupancy!=='UNKNOWN' && <div className="flex justify-between"><span className="text-gray-600 text-xs">Occupancy</span><span className="text-gray-400 text-xs">{deal.occupancy}</span></div>}
+                </div>
+
               </div>
-              {t1 > 0 && <p className="text-orange-400 text-xs font-semibold">{t1} Tier 1</p>}
-              {b === 0 && <p className="text-gray-600 text-xs mt-1">Run buyer match to find buyers</p>}
             </div>
           </div>
         </div>
@@ -991,7 +998,7 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
                     { name: 'Regional Flipper', tier: 'TIER_2', match: 72, market: deal.state||'Regional', strategy: 'FLIP', price: deal.askingPrice?`Up to ${formatCurrency(deal.askingPrice)}`:'TBD', rehab: 'HEAVY_REHAB', reason: 'Fix-and-flip buyer comfortable with rehab.', concern: null },
                   ].slice(0, Math.max(1, b)).map((buyer, i) => (
                     <div key={i} className="bg-gray-900 rounded-xl border border-gray-800 p-4">
-                      <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-start justify-between mb-2">
                         <div className="flex items-center gap-2">
                           <span className="text-white font-semibold text-sm">{buyer.name}</span>
                           <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${buyer.tier==='TIER_1'?'bg-orange-900/60 text-orange-300':'bg-gray-800 text-gray-400'}`}>{buyer.tier==='TIER_1'?'Tier 1':'Tier 2'}</span>
