@@ -578,21 +578,20 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
             <PhotoGallery deal={deal} onUpdate={(data) => updateDeal.mutate(data)} />
           </div>
 
-          {/* CENTER: Dispo Score + Blockers + Blast (4 cols) */}
+                    {/* CENTER: Dispo Score + Blockers (4 cols) */}
           <div className="col-span-12 md:col-span-4 flex flex-col gap-2 overflow-y-auto" style={{height:420}}>
-
-            {/* Score card */}
-            <div className={`rounded-xl border p-3 ${scoreBg}`}>
-              <div className="flex items-start justify-between mb-2">
+            <div className={`rounded-xl border p-3 h-full flex flex-col ${scoreBg}`}>
+              {/* Score header */}
+              <div className="flex items-start justify-between mb-3">
                 <div>
                   <div className="flex items-baseline gap-2 mb-0.5">
                     <span className={`text-3xl font-black leading-none ${scoreColor}`}>{sellScore}</span>
                     <span className="text-gray-500 text-xs">/100</span>
                   </div>
                   <p className={`text-sm font-bold ${scoreColor}`}>{scoreLabel}</p>
-                <p className="text-gray-600 text-[10px] mt-0.5">Dispo Opportunity Score</p>
+                  <p className="text-blue-500 text-[10px] mt-0.5 font-semibold uppercase tracking-wide">Dispo Score</p>
                 </div>
-                <div className="w-12 h-12">
+                <div className="w-14 h-14">
                   <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
                     <circle cx="18" cy="18" r="15.9" fill="none" stroke="#1f2937" strokeWidth="3"/>
                     <circle cx="18" cy="18" r="15.9" fill="none"
@@ -601,7 +600,8 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
                   </svg>
                 </div>
               </div>
-              <div className="space-y-1 mb-2">
+              {/* Green reasons */}
+              <div className="space-y-1 mb-3">
                 {sellReasons.slice(0,3).map((r,i) => (
                   <div key={i} className="flex items-start gap-1.5 text-xs text-gray-300">
                     <CheckCircle size={11} className="text-green-400 shrink-0 mt-0.5"/>
@@ -609,9 +609,9 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
                   </div>
                 ))}
               </div>
+              {/* Blockers */}
               {sellBlockers.length > 0 && (
-                <div className="pt-2 border-t border-white/5 space-y-2">
-                  <p className="text-gray-600 text-[10px] font-bold uppercase tracking-wide">Blockers to fix</p>
+                <div className="pt-2 border-t border-white/5 space-y-2 flex-1">
                   {missingPermission && (
                     <div className="bg-amber-900/20 border border-amber-800/40 rounded-lg p-2.5">
                       <div className="flex items-start gap-1.5 mb-1.5">
@@ -649,46 +649,145 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
                   ))}
                 </div>
               )}
-            </div>
-
-            
-
-            {/* Dispo Strategy quick view */}
-            <div className="bg-gray-900 rounded-xl border border-gray-800 p-4 flex-1">
-              <p className="text-gray-500 text-[10px] font-bold uppercase tracking-wide mb-2">Dispo Strategy</p>
-              <div className="space-y-2.5">
-                <div>
-                  <p className="text-gray-600 text-[10px] font-semibold uppercase mb-0.5">Angle</p>
-                  <p className="text-gray-300 text-xs leading-relaxed">
-                    {deal.dealType==='SUBTO'
-                      ? `Market as creative finance Subto with assumable debt and cash flow in ${deal.city||'this market'}.`
-                      : (deal.overallCondition||'').includes('HEAVY')
-                      ? `Market as value-add heavy rehab — strong spread for experienced flippers in ${deal.city||'this market'}.`
-                      : `Market as off-market ${deal.beds||''}bd/${deal.baths||''}ba in ${deal.city||'this market'} with strong public value gap and active buyer demand.`}
-                  </p>
-                </div>
-                {deal.description && (
-                  <div>
-                    <p className="text-gray-600 text-[10px] font-semibold uppercase mb-0.5">Buyer Pitch</p>
-                    <p className="text-gray-400 text-xs leading-relaxed line-clamp-2">{deal.description}</p>
+              {sellBlockers.length === 0 && (
+                <div className="flex-1 flex items-center justify-center">
+                  <div className="text-center">
+                    <CheckCircle size={24} className="text-green-400 mx-auto mb-1"/>
+                    <p className="text-green-400 text-xs font-semibold">No Blockers</p>
+                    <p className="text-gray-600 text-[10px]">Ready to blast</p>
                   </div>
-                )}
-                <div>
-                  <p className="text-gray-600 text-[10px] font-semibold uppercase mb-0.5">Buyer Type</p>
-                  <p className="text-gray-400 text-xs">{deal.city||'Local'} {deal.dealType==='SUBTO'?'creative / Subto buyers comfortable with seller financing':'cash buyers and medium-rehab flippers'}.</p>
                 </div>
-                {(missingPhotos || missingPermission) && (
-                  <div className="pt-2 border-t border-gray-800">
-                    <p className="text-amber-500 text-[10px] font-semibold uppercase mb-0.5">Risk Notes</p>
-                    <p className="text-gray-500 text-[10px]">
-                      {missingPermission && 'JV permission not confirmed. '}
-                      {missingPhotos && 'Photos missing. '}
-                      Do not blast until blockers are resolved.
-                    </p>
-                  </div>
-                )}
-              </div>
+              )}
             </div>
+          </div>
+
+          {/* RIGHT: Deal Quality Score (3 cols) */}
+          <div className="col-span-12 md:col-span-3" style={{height:420}}>
+            {(() => {
+              let dqs = 0;
+              if (refValue > 0) dqs += 15;
+              if (gap > 0) dqs += 30;
+              if (gap > 20000) dqs += 10;
+              if (deal.arv) dqs += 20;
+              if (deal.repairEstimate) dqs += 15;
+              if (deal.askingPrice) dqs += 10;
+              dqs = Math.min(100, dqs);
+              const mao = deal.arv ? (deal.arv * 0.7) - (deal.repairEstimate || 0) : null;
+              const arvThreshold = deal.arv ? deal.arv * 0.7 : null;
+              const askVsArv = mao && deal.askingPrice ? deal.askingPrice - mao : null;
+              const dqColor = dqs >= 70 ? '#22c55e' : dqs >= 45 ? '#f59e0b' : '#ef4444';
+              const dqLabel = dqs >= 70 ? 'Strong Deal' : dqs >= 45 ? 'Possible Deal' : 'Weak Numbers';
+              const dqTextColor = dqs >= 70 ? 'text-green-400' : dqs >= 45 ? 'text-yellow-400' : 'text-red-400';
+              const dqBg = dqs >= 70 ? 'bg-green-950/40 border-green-900/40' : dqs >= 45 ? 'bg-yellow-950/40 border-yellow-900/40' : 'bg-red-950/40 border-red-900/40';
+              const circ = 2 * Math.PI * 15.9;
+              const offset = circ - (dqs / 100) * circ;
+              return (
+                <div className={`rounded-xl border p-3 h-full flex flex-col ${dqBg}`}>
+                  {/* Score header — matches left card layout */}
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <div className="flex items-baseline gap-2 mb-0.5">
+                        <span className={`text-3xl font-black leading-none ${dqTextColor}`}>{dqs}</span>
+                        <span className="text-gray-500 text-xs">/100</span>
+                      </div>
+                      <p className={`text-sm font-bold ${dqTextColor}`}>{dqLabel}</p>
+                      <p className="text-emerald-500 text-[10px] mt-0.5 font-semibold uppercase tracking-wide">Deal Quality</p>
+                    </div>
+                    <div className="flex flex-col items-end gap-1">
+                      <div className="w-14 h-14">
+                        <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
+                          <circle cx="18" cy="18" r="15.9" fill="none" stroke="#1f2937" strokeWidth="3"/>
+                          <circle cx="18" cy="18" r="15.9" fill="none" stroke={dqColor}
+                            strokeWidth="3" strokeDasharray={`${dqs} ${100-dqs}`} strokeLinecap="round"/>
+                        </svg>
+                      </div>
+                      <button onClick={fetchZestimate} disabled={zestimateFetching}
+                        className="flex items-center gap-1 px-1.5 py-0.5 bg-blue-900/40 hover:bg-blue-900/60 text-blue-300 text-[10px] rounded border border-blue-700/40 transition">
+                        <Sparkles size={8}/> {zestimateFetching?'...':'Zestimate'}
+                      </button>
+                    </div>
+                  </div>
+                  {/* Numbers */}
+                  <div className="space-y-1.5 flex-1 overflow-y-auto">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-500 text-xs">Asking Price</span>
+                      <div className="text-right">
+                        <p className="text-white font-bold text-xs">{deal.askingPrice ? formatCurrency(deal.askingPrice) : '—'}</p>
+                        {pricePos && <p className={`text-[10px] font-semibold ${pricePos==='UNDER_70'||pricePos==='NEAR_UNDER'?'text-green-400':pricePos==='NEAR_OVER'?'text-yellow-400':'text-red-400'}`}>
+                          {pricePos==='UNDER_70'?'Under 70%':pricePos==='NEAR_UNDER'?'Near 70%':pricePos==='NEAR_OVER'?'Near 70%':'Over 70%'}
+                        </p>}
+                      </div>
+                    </div>
+                    {refValue > 0 && <>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-500 text-xs">{avgPub?(pubEstimates.length>1?'Avg Public Val':'Zestimate'):'Public Val'}</span>
+                        <p className="text-gray-300 text-xs">{formatCurrency(refValue)}</p>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-500 text-xs">70% of Public Val</span>
+                        <p className="text-yellow-400 text-xs font-bold">{formatCurrency(threshold70)}</p>
+                      </div>
+                      {deal.askingPrice && (
+                        <div className={`rounded-lg px-2 py-1.5 text-center ${gap>0?'bg-green-900/30':'bg-red-900/30'}`}>
+                          <p className={`text-xs font-bold ${gap>0?'text-green-400':'text-red-400'}`}>
+                            {gap>0?`${formatCurrency(Math.abs(gap))} under 70%`:`${formatCurrency(Math.abs(gap))} over 70%`}
+                          </p>
+                          <p className={`text-[10px] font-semibold mt-0.5 ${gap>20000?'text-green-500':gap>0?'text-green-400':gap>-20000?'text-yellow-400':'text-red-400'}`}>
+                            {gap>20000?'Strong Price Signal':gap>0?'Near Investor Threshold':gap>-20000?'Slightly Over':'Overpriced'}
+                          </p>
+                        </div>
+                      )}
+                    </>}
+                    <div className="border-t border-white/5 pt-1.5 space-y-1.5">
+                      <div className="flex justify-between items-center cursor-pointer group/arv" onClick={()=>{if(!editingArv){setArvInput(deal.arv?String(deal.arv):'');setEditingArv(true);}}}>
+                        <span className="text-gray-500 text-xs">ARV <span className="text-gray-700 text-[9px] group-hover/arv:text-gray-500">✎</span></span>
+                        {editingArv ? (
+                          <div className="flex gap-1" onClick={e=>e.stopPropagation()}>
+                            <input autoFocus type="number" value={arvInput} onChange={e=>setArvInput(e.target.value)}
+                              onKeyDown={e=>{if(e.key==='Enter'){updateDeal.mutate({arv:parseFloat(arvInput)||null});setEditingArv(false);}if(e.key==='Escape')setEditingArv(false);}}
+                              className="w-20 bg-gray-800 text-white text-xs text-center rounded px-1 py-0.5 border border-blue-500 focus:outline-none"/>
+                            <button onClick={()=>{updateDeal.mutate({arv:parseFloat(arvInput)||null});setEditingArv(false);}} className="px-1.5 py-0.5 bg-blue-600 text-white text-[10px] rounded">✓</button>
+                          </div>
+                        ) : (
+                          <p className="text-white text-xs font-semibold group-hover/arv:text-blue-300">{deal.arv?formatCurrency(deal.arv):<span className="text-gray-600">—</span>}</p>
+                        )}
+                      </div>
+                      {arvThreshold && (
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-500 text-xs">70% of ARV</span>
+                          <p className="text-yellow-400 text-xs font-bold">{formatCurrency(arvThreshold)}</p>
+                        </div>
+                      )}
+                      <div className="flex justify-between items-center cursor-pointer group/rep" onClick={()=>{if(!editingRepairs){setRepairsInput(deal.repairEstimate?String(deal.repairEstimate):'');setEditingRepairs(true);}}}>
+                        <span className="text-gray-500 text-xs">Repairs <span className="text-gray-700 text-[9px] group-hover/rep:text-gray-500">✎</span></span>
+                        {editingRepairs ? (
+                          <div className="flex gap-1" onClick={e=>e.stopPropagation()}>
+                            <input autoFocus type="number" value={repairsInput} onChange={e=>setRepairsInput(e.target.value)}
+                              onKeyDown={e=>{if(e.key==='Enter'){updateDeal.mutate({repairEstimate:parseFloat(repairsInput)||null});setEditingRepairs(false);}if(e.key==='Escape')setEditingRepairs(false);}}
+                              className="w-20 bg-gray-800 text-white text-xs text-center rounded px-1 py-0.5 border border-blue-500 focus:outline-none"/>
+                            <button onClick={()=>{updateDeal.mutate({repairEstimate:parseFloat(repairsInput)||null});setEditingRepairs(false);}} className="px-1.5 py-0.5 bg-blue-600 text-white text-[10px] rounded">✓</button>
+                          </div>
+                        ) : (
+                          <p className="text-white text-xs font-semibold group-hover/rep:text-blue-300">{deal.repairEstimate?formatCurrency(deal.repairEstimate):<span className="text-gray-600">—</span>}</p>
+                        )}
+                      </div>
+                      {mao !== null && (
+                        <div className={`rounded-lg px-2 py-1.5 text-center ${askVsArv!==null&&askVsArv<=0?'bg-green-900/30':'bg-yellow-900/20'}`}>
+                          <p className="text-gray-500 text-[10px]">MAO (70% ARV − Repairs)</p>
+                          <p className="text-white font-bold text-xs mt-0.5">{formatCurrency(mao)}</p>
+                          {askVsArv !== null && (
+                            <p className={`text-[10px] font-semibold mt-0.5 ${askVsArv<=0?'text-green-400':'text-red-400'}`}>
+                              {askVsArv<=0?`${formatCurrency(Math.abs(askVsArv))} under MAO ✓`:`${formatCurrency(askVsArv)} over MAO`}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                      {!deal.arv && <p className="text-gray-700 text-[10px] text-center pt-1">Enter ARV to calculate MAO</p>}
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
 
                     {/* RIGHT: Deal Quality Score (3 cols) */}
