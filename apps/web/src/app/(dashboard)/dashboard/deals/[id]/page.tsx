@@ -692,58 +692,50 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
         <LocationPanel deal={deal} mapsUrl={mapsUrl} streetViewUrl={streetViewUrl} />
       </div>
 
-      {/* AI DEAL READ */}
+      {/* DISPO STRATEGY */}
       <div className="bg-gray-900 rounded-xl border border-gray-800 p-4">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <Sparkles size={14} className="text-purple-400" />
-            <h3 className="text-white text-sm font-medium">AI Deal Read</h3>
+            <h3 className="text-white text-sm font-medium">Dispo Strategy</h3>
           </div>
-          <button onClick={() => calcAction.mutate()} className="text-xs text-gray-500 hover:text-gray-300 flex items-center gap-1 transition">
-            <RefreshCw size={10} /> Refresh
+          <button onClick={() => followUpAction.mutate()} disabled={followUpAction.isPending}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs rounded-lg transition border border-gray-700">
+            <Send size={11} /> Generate Follow-Up
           </button>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div className="space-y-2">
             <div className="bg-gray-800/50 rounded-lg p-3">
-              <p className="text-gray-500 text-[10px] font-bold uppercase tracking-wide mb-1">Verdict</p>
-              <p className="text-white text-sm font-medium">{sellLabel}</p>
+              <p className="text-gray-500 text-[10px] font-bold uppercase tracking-wide mb-1">Dispo Angle</p>
+              <p className="text-gray-300 text-sm">{deal.dealType === 'SUBTO' ? 'Market as creative finance / Subto with assumable debt and cash flow.' : (deal.overallCondition||'').includes('HEAVY') ? 'Market as value-add heavy rehab for cash buyers and flippers.' : 'Market as off-market ' + (deal.propertyType||'SFR').replace(/_/g,' ').toLowerCase() + ' with active buyer demand in ' + (deal.city || 'this market') + '.'}</p>
             </div>
             <div className="bg-gray-800/50 rounded-lg p-3">
-              <p className="text-gray-500 text-[10px] font-bold uppercase tracking-wide mb-1">Best Buyer Type</p>
-              <p className="text-gray-300 text-sm">{bestBuyerProfile}</p>
-            </div>
-            <div className="bg-gray-800/50 rounded-lg p-3">
-              <p className="text-gray-500 text-[10px] font-bold uppercase tracking-wide mb-1">Next Step</p>
-              <p className="text-gray-300 text-sm">{b > 0 && hasPhotos && hasPermission ? 'Ready — send blast to top matched buyers.' : b > 0 && !hasPhotos ? `${isOwn ? 'Upload' : 'Request'} buyer-safe photos, then generate blast.` : b > 0 ? 'Fix remaining blockers, then send blast.' : 'Run buyer match to identify qualified buyers.'}</p>
+              <p className="text-gray-500 text-[10px] font-bold uppercase tracking-wide mb-1">Recommended Pitch</p>
+              <p className="text-gray-300 text-sm">{[deal.occupancy==='VACANT'?'Vacant':deal.occupancy==='OCCUPIED_TENANT'?'Tenant in place':null,deal.beds?(deal.beds+'bd/'+deal.baths+'ba'):null,deal.sqft?(deal.sqft.toLocaleString()+' sqft'):null,deal.askingPrice?('Ask '+formatCurrency(deal.askingPrice)):null,deal.arv?('ARV '+formatCurrency(deal.arv)):null,deal.overallCondition?(deal.overallCondition.replace(/_/g,' ').toLowerCase()+' condition'):null,deal.accessInfo?'lockbox access':null].filter(Boolean).join(', ') || 'Add property details to generate pitch.'}</p>
             </div>
           </div>
           <div className="space-y-2">
             <div className="bg-gray-800/50 rounded-lg p-3">
-              <p className="text-gray-500 text-[10px] font-bold uppercase tracking-wide mb-1.5">Why it works</p>
-              {sellReasons.length > 0 ? <ul className="space-y-1">{sellReasons.map((r,i)=><li key={i} className="text-xs text-gray-300 flex items-center gap-1.5"><CheckCircle size={10} className="text-green-400 shrink-0"/>{r}</li>)}</ul> : <p className="text-gray-600 text-xs">No strong signals yet</p>}
-            </div>
-            {sellBlockers.length > 0 && (
-              <div className="bg-gray-800/50 rounded-lg p-3">
-                <p className="text-gray-500 text-[10px] font-bold uppercase tracking-wide mb-1.5">Risks / blockers</p>
-                <ul className="space-y-1">{sellBlockers.map((bl,i)=><li key={i} className="text-xs text-amber-300 flex items-center gap-1.5"><AlertCircle size={10} className="text-amber-400 shrink-0"/>{bl.split('—')[0].trim()}</li>)}</ul>
+              <p className="text-gray-500 text-[10px] font-bold uppercase tracking-wide mb-1">Buyer Objections</p>
+              <div className="space-y-1">
+                {!hasValue && <p className="text-xs text-gray-300">· Buyers may ask about public value support — add Zillow/Realtor/Redfin.</p>}
+                {!hasPhotos && <p className="text-xs text-gray-300">· Buyers will ask for photos — add before blasting.</p>}
+                {!deal.closingDate && <p className="text-xs text-gray-300">· Buyers will ask about the closing timeline.</p>}
+                {deal.dealType === 'SUBTO' && <p className="text-xs text-gray-300">· Buyers may ask about HomeTap or equity positions on title.</p>}
+                {hasValue && hasPhotos && deal.closingDate && deal.dealType !== 'SUBTO' && <p className="text-xs text-gray-500">No major objections anticipated.</p>}
               </div>
-            )}
+            </div>
+            <div className="bg-gray-800/50 rounded-lg p-3">
+              <p className="text-gray-500 text-[10px] font-bold uppercase tracking-wide mb-1">Risk Notes</p>
+              <p className="text-gray-300 text-sm">{sellBlockers.length > 0 ? sellBlockers.slice(0,2).map((bl:string) => bl.split('—')[0].trim()).join('. ')+'.' : 'No major risk flags. Deal is in good shape to blast.'}</p>
+            </div>
           </div>
         </div>
-        {(deal.aiDealReadSummary || deal.description) && (
-          <p className="text-gray-500 text-xs mt-3 pt-3 border-t border-gray-800 leading-relaxed">{deal.aiDealReadSummary || deal.description}</p>
-        )}
-        <div className="flex gap-2 mt-3">
-          <button onClick={() => followUpAction.mutate()} disabled={followUpAction.isPending}
-            className="flex items-center gap-2 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs rounded-lg transition border border-gray-700">
-            <Send size={11} /> Generate Follow-Up
-          </button>
-        </div>
-        {generatedOutput.followUp && (
-          <GeneratedOutput content={generatedOutput.followUp} onClose={() => setGeneratedOutput(prev => ({ ...prev, followUp: '' }))} />
-        )}
+        {deal.description && <p className="text-gray-600 text-xs mt-3 pt-3 border-t border-gray-800 italic">"{deal.description}"</p>}
+        {generatedOutput.followUp && <GeneratedOutput content={generatedOutput.followUp} onClose={() => setGeneratedOutput(prev => ({...prev, followUp: ''}))} />}
       </div>
+
 
       {/* Tabs */}
       <div className="flex gap-1 bg-gray-900/80 p-1 rounded-xl border border-gray-800 w-fit">
@@ -1112,11 +1104,34 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
 
         {/* DISPO EXECUTION */}
         {tab === 'dispo' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card title="Blast Readiness" icon={CheckCircle}>
-              <BlastReadiness deal={deal} />
-            </Card>
-
+          <div className="space-y-4">
+            <div className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+              <div className="px-4 py-3 border-b border-gray-800 flex items-center gap-2">
+                <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center shrink-0">1</span>
+                <h3 className="text-white text-sm font-medium">Confirm Blast Requirements</h3>
+              </div>
+              <div className="p-4"><BlastReadiness deal={deal} /></div>
+            </div>
+            <div className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+              <div className="px-4 py-3 border-b border-gray-800 flex items-center justify-between">
+                <div className="flex items-center gap-2"><span className="w-5 h-5 rounded-full bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center shrink-0">2</span><h3 className="text-white text-sm font-medium">Select Buyers</h3></div>
+                <button onClick={() => matchAction.mutate()} disabled={matchAction.isPending} className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-700 hover:bg-blue-600 text-white text-xs rounded-lg transition"><Target size={11}/> {matchAction.isPending ? 'Matching...' : 'Re-run Match'}</button>
+              </div>
+              <div className="p-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+                  {[{label:'Total',value:b,c:b>0?'text-white':'text-gray-600'},{label:'Tier 1',value:t1,c:t1>0?'text-orange-400':'text-gray-600'},{label:'Recommended',value:b>0?Math.max(1,Math.round(b*0.75)):0,c:'text-green-400'},{label:'Excluded',value:b>0?Math.round(b*0.25):0,c:'text-gray-500'}].map(s=>(<div key={s.label} className="bg-gray-800/50 rounded-lg p-3 text-center"><p className={'text-xl font-bold '+s.c}>{s.value}</p><p className="text-gray-500 text-xs mt-0.5">{s.label}</p></div>))}
+                </div>
+                {b>0 ? <p className="text-gray-400 text-xs">Prioritize Tier 1 and active {deal.city||'local'} cash buyers.</p> : <p className="text-gray-600 text-sm">No buyers matched. Run match to build blast list.</p>}
+              </div>
+            </div>
+            <div className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+              <div className="px-4 py-3 border-b border-gray-800 flex items-center gap-2"><span className="w-5 h-5 rounded-full bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center shrink-0">3</span><h3 className="text-white text-sm font-medium">Generate Campaign</h3></div>
+              <div className="p-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">{[{key:'sms',label:'SMS Blast',cl:'bg-green-900/40 hover:bg-green-900/60 border-green-700/40 text-green-300',icon:MessageSquare},{key:'email',label:'Email Blast',cl:'bg-blue-900/40 hover:bg-blue-900/60 border-blue-700/40 text-blue-300',icon:Mail},{key:'facebook',label:'FB Post',cl:'bg-indigo-900/40 hover:bg-indigo-900/60 border-indigo-700/40 text-indigo-300',icon:Facebook},{key:'followUp',label:'Follow-Up',cl:'bg-amber-900/40 hover:bg-amber-900/60 border-amber-700/40 text-amber-300',icon:Send}].map(btn=>(<button key={btn.key} onClick={()=>btn.key==='followUp'?followUpAction.mutate():generateContent.mutate(btn.key)} disabled={generateContent.isPending} className={'flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm border transition '+btn.cl}><btn.icon size={14}/> {btn.label}</button>))}</div>
+                <AnimatePresence>{generatedOutput.sms&&<div className="mb-3"><p className="text-gray-500 text-xs mb-1">SMS Preview</p><GeneratedOutput content={generatedOutput.sms} onClose={()=>setGeneratedOutput(p=>({...p,sms:''}))} /></div>}{generatedOutput.email&&<div className="mb-3"><p className="text-gray-500 text-xs mb-1">Email Preview</p><GeneratedOutput content={generatedOutput.email} onClose={()=>setGeneratedOutput(p=>({...p,email:''}))} /></div>}{generatedOutput.facebook&&<div className="mb-3"><p className="text-gray-500 text-xs mb-1">FB Post</p><GeneratedOutput content={generatedOutput.facebook} onClose={()=>setGeneratedOutput(p=>({...p,facebook:''}))} /></div>}{generatedOutput.followUp&&<div className="mb-3"><p className="text-gray-500 text-xs mb-1">Follow-Up</p><GeneratedOutput content={generatedOutput.followUp} onClose={()=>setGeneratedOutput(p=>({...p,followUp:''}))} /></div>}</AnimatePresence>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Card title="Source / JV Partner" icon={Users}>
               <InfoRow label="Source Type" value={deal.sourceType} />
               <InfoRow label="Name" value={deal.sourceName} />
@@ -1182,44 +1197,12 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
               {!deal.closingDate && !deal.contractDate && <p className="text-gray-600 text-sm">No timeline data added yet</p>}
             </Card>
 
-            <div className="col-span-full">
-              <Card title="Campaign Actions" icon={Zap}>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-                  {[
-                    { key: 'sms', label: 'Generate SMS Blast', color: 'bg-green-900/40 hover:bg-green-900/60 border-green-700/40 text-green-300', icon: MessageSquare },
-                    { key: 'email', label: 'Generate Email Blast', color: 'bg-blue-900/40 hover:bg-blue-900/60 border-blue-700/40 text-blue-300', icon: Mail },
-                    { key: 'facebook', label: 'Generate FB Post', color: 'bg-indigo-900/40 hover:bg-indigo-900/60 border-indigo-700/40 text-indigo-300', icon: Facebook },
-                    { key: 'followUp', label: 'Generate Follow-Up', color: 'bg-amber-900/40 hover:bg-amber-900/60 border-amber-700/40 text-amber-300', icon: Send },
-                  ].map(btn => (
-                    <button key={btn.key}
-                      onClick={() => btn.key === 'followUp' ? followUpAction.mutate() : generateContent.mutate(btn.key)}
-                      disabled={generateContent.isPending}
-                      className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm border transition ${btn.color}`}>
-                      <btn.icon size={14} /> {btn.label}
-                    </button>
-                  ))}
-                </div>
-                <AnimatePresence>
-                  {generatedOutput.sms && <div className="mb-3"><p className="text-gray-500 text-xs mb-1">📱 SMS Blast</p><GeneratedOutput content={generatedOutput.sms} onClose={() => setGeneratedOutput(prev => ({ ...prev, sms: '' }))} /></div>}
-                  {generatedOutput.email && <div className="mb-3"><p className="text-gray-500 text-xs mb-1">📧 Email Blast</p><GeneratedOutput content={generatedOutput.email} onClose={() => setGeneratedOutput(prev => ({ ...prev, email: '' }))} /></div>}
-                  {generatedOutput.facebook && <div className="mb-3"><p className="text-gray-500 text-xs mb-1">📘 Facebook Post</p><GeneratedOutput content={generatedOutput.facebook} onClose={() => setGeneratedOutput(prev => ({ ...prev, facebook: '' }))} /></div>}
-                  {generatedOutput.followUp && <div className="mb-3"><p className="text-gray-500 text-xs mb-1">💬 Follow-Up</p><GeneratedOutput content={generatedOutput.followUp} onClose={() => setGeneratedOutput(prev => ({ ...prev, followUp: '' }))} /></div>}
-                </AnimatePresence>
-                <div className="mt-4 pt-4 border-t border-gray-800">
-                  <p className="text-gray-500 text-xs mb-2">Update Status</p>
-                  <div className="flex gap-2 flex-wrap">
-                    {['OFFER_RECEIVED', 'ASSIGNED', 'CLOSED', 'DEAD'].map(s => (
-                      <button key={s} onClick={() => updateStatus.mutate(s)}
-                        className="px-3 py-1.5 text-xs bg-gray-800 hover:bg-gray-700 text-gray-400 rounded-lg transition border border-gray-700">
-                        Mark {s.replace(/_/g, ' ')}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </Card>
             </div>
-
-            <Card title="Activity Log" icon={FileText}>
+            <div className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+              <div className="px-4 py-3 border-b border-gray-800 flex items-center gap-2"><span className="w-5 h-5 rounded-full bg-gray-700 text-gray-400 text-[10px] font-bold flex items-center justify-center shrink-0">5</span><h3 className="text-white text-sm font-medium">Track Responses</h3></div>
+              <div className="p-4"><p className="text-gray-600 text-xs mb-3">Response tracking coming soon.</p><div className="flex gap-2 flex-wrap">{['OFFER_RECEIVED','ASSIGNED','CLOSED','DEAD'].map(s=>(<button key={s} onClick={()=>updateStatus.mutate(s)} className="px-3 py-1.5 text-xs bg-gray-800 hover:bg-gray-700 text-gray-400 rounded-lg transition border border-gray-700">Mark {s.replace(/_/g,' ')}</button>))}</div></div>
+            </div>
+                        <Card title="Activity Log" icon={FileText}>
               <div className="space-y-2">
                 <div className="flex items-start gap-2">
                   <div className="w-1.5 h-1.5 rounded-full bg-blue-400 mt-1.5 shrink-0" />
