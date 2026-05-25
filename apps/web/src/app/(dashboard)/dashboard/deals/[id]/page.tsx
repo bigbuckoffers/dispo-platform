@@ -270,13 +270,19 @@ function PhotoGallery({ deal, onUpdate }: { deal: any; onUpdate: (data: any) => 
           </>
         )}
       </div>
-      {photos.length > 1 && (
+      {photos.length > 0 && (
         <div className="flex gap-1.5 p-2 overflow-x-auto">
           {photos.map((p, i) => (
-            <button key={i} onClick={() => setActiveIdx(i)}
-              className={`shrink-0 w-12 h-12 rounded-lg overflow-hidden border-2 transition ${i === activeIdx ? 'border-blue-500' : 'border-transparent'}`}>
-              <img src={p} alt="" className="w-full h-full object-cover" />
-            </button>
+            <div key={i} className="relative shrink-0 group/thumb">
+              <button onClick={() => setActiveIdx(i)}
+                className={`w-12 h-12 rounded-lg overflow-hidden border-2 transition block ${i === activeIdx ? 'border-blue-500' : 'border-transparent'}`}>
+                <img src={p} alt="" className="w-full h-full object-cover" />
+              </button>
+              <button onClick={() => { const updated = photos.filter((_,j) => j!==i); onUpdate({photos:updated}); if(activeIdx>=updated.length) setActiveIdx(Math.max(0,updated.length-1)); }}
+                className="absolute -top-1 -right-1 w-4 h-4 bg-red-600 hover:bg-red-500 text-white rounded-full text-[9px] items-center justify-center hidden group-hover/thumb:flex transition">
+                ✕
+              </button>
+            </div>
           ))}
         </div>
       )}
