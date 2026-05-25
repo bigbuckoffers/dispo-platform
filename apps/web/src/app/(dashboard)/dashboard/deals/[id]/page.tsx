@@ -535,7 +535,8 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
   const sellColor = sellScore >= 75 ? 'text-green-400' : sellScore >= 60 ? 'text-blue-400' : sellScore >= 40 ? 'text-yellow-400' : 'text-red-400';
   const sellBorderBg = sellScore >= 75 ? 'border-green-800/30 bg-green-900/5' : sellScore >= 60 ? 'border-blue-800/30 bg-blue-900/5' : sellScore >= 40 ? 'border-yellow-800/30 bg-yellow-900/5' : 'border-red-800/30 bg-red-900/5';
   const sellBar = sellScore >= 75 ? 'bg-green-500' : sellScore >= 60 ? 'bg-blue-500' : sellScore >= 40 ? 'bg-yellow-500' : 'bg-red-500';
-  const bestBuyerProfile = b > 0 ? `${deal.city || 'Local'} ${deal.dealType === 'SUBTO' ? 'creative finance / Subto buyers' : (deal.overallCondition||'').includes('HEAVY') ? 'cash buyers comfortable with heavy rehab' : 'cash buyers and flippers'}` : `Seeking ${deal.city || 'local'} investors for ${(deal.propertyType||'single family').toLowerCase().replace(/_/g,' ')} deals`;
+  const _buyerType = deal.dealType === 'SUBTO' ? 'creative finance / Subto buyers' : (deal.overallCondition||'').includes('HEAVY') ? 'cash buyers comfortable with heavy rehab' : 'cash buyers and flippers';
+  const bestBuyerProfile = b > 0 ? ((deal.city || 'Local') + ' ' + _buyerType) : ('Seeking ' + (deal.city || 'local') + ' investors for ' + (deal.propertyType||'single family').toLowerCase().replace(/_/g,' ') + ' deals');
 
   return (
     <div className="p-4 max-w-7xl mx-auto space-y-4">
