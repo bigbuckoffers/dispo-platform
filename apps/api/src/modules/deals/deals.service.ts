@@ -214,6 +214,10 @@ export class DealsService {
 
       const response = await fetch(scraperUrl, { signal: AbortSignal.timeout(30000) });
       const html = await response.text();
+      console.log('Zillow scrape status:', response.status, 'html length:', html.length);
+      console.log('Zillow html snippet:', html.substring(0, 500));
+      const zestimateRaw = html.match(/zestimate/gi);
+      console.log('Zestimate mentions in HTML:', zestimateRaw?.length || 0);
 
       // Extract Zestimate from HTML
       let zestimate: number | null = null;
