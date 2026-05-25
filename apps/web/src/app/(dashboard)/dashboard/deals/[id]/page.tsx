@@ -571,15 +571,15 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
       <div className="max-w-7xl mx-auto px-4 py-4">
 
         {/* ── Above-the-fold Command Center ─────────────────────── */}
-        <div className="grid grid-cols-12 gap-3 mb-3" style={{maxHeight:360}}>
+        <div className="grid grid-cols-12 gap-3 mb-3" style={{maxHeight:460}}>
 
           {/* LEFT: Photos (5 cols) */}
-          <div className="col-span-12 md:col-span-5" style={{height:320}}>
+          <div className="col-span-12 md:col-span-5" style={{height:420}}>
             <PhotoGallery deal={deal} onUpdate={(data) => updateDeal.mutate(data)} />
           </div>
 
           {/* CENTER: Dispo Score + Blockers + Blast (4 cols) */}
-          <div className="col-span-12 md:col-span-4 flex flex-col gap-2 overflow-y-auto" style={{height:320}}>
+          <div className="col-span-12 md:col-span-4 flex flex-col gap-2 overflow-y-auto" style={{height:420}}>
 
             {/* Score card */}
             <div className={`rounded-xl border p-3 ${scoreBg}`}>
@@ -692,7 +692,7 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
           </div>
 
           {/* RIGHT: Deal Snapshot (3 cols) */}
-          <div className="col-span-12 md:col-span-3" style={{height:320}}>
+          <div className="col-span-12 md:col-span-3" style={{height:420}}>
             <div className="bg-gray-900 rounded-xl border border-gray-800 h-full flex flex-col overflow-hidden">
               <div className="px-3 py-2.5 border-b border-gray-800 flex items-center justify-between">
                 <span className="text-white text-xs font-semibold">Deal Snapshot</span>
