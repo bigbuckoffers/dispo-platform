@@ -579,7 +579,7 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
             { label: 'Repairs', value: deal.repairEstimate ? formatCurrency(deal.repairEstimate) : '—', color: 'text-white' },
             { label: 'Potential Margin', value: potentialMargin > 0 ? formatCurrency(potentialMargin) : '—', color: potentialMargin > 0 ? 'text-green-400' : 'text-gray-500' },
             { label: 'Buyer Matches', value: deal.matchedBuyerCount || 0, color: (deal.matchedBuyerCount || 0) > 0 ? 'text-purple-400' : 'text-gray-600' },
-            { label: 'Dispo Score', value: deal.dealPriorityScore || '—', color: 'text-yellow-400', badge: deal.dealPriorityScore > 0 ? priority : null },
+            { label: 'Sellability', value: sellScore, color: sellColor, badge: deal.dealPriorityScore > 0 ? priority : null },
           ].map((m: any, i) => (
             <div key={i} className="bg-gray-900 rounded-xl p-3 border border-gray-800 text-center">
               <p className={`text-lg font-bold ${m.color}`}>{m.value}</p>
@@ -670,19 +670,33 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
             </div>
           </div>
           {/* Blast Recommendation */}
-          {b > 0 && (
-            <div className="mt-4 pt-4 border-t border-white/5 flex items-center justify-between gap-4">
-              <div>
-                <p className="text-gray-400 text-xs font-semibold uppercase tracking-wide mb-0.5">Recommended Blast</p>
-                <p className="text-gray-300 text-sm">Send to <span className="text-white font-semibold">{b} matched buyer{b>1?'s':''}</span>{t1>0?<>, starting with <span className="text-orange-300 font-semibold">{t1} Tier 1</span></>:null} — {bestBuyerProfile}</p>
+          <div className="mt-4 pt-4 border-t border-white/5">
+            {b > 0 ? (
+              <div className={`rounded-xl p-4 flex items-center justify-between gap-4 ${hasPhotos && hasPermission ? 'bg-green-900/20 border border-green-800/30' : 'bg-gray-800/40 border border-gray-700/40'}`}>
+                <div>
+                  <p className={`text-xs font-bold uppercase tracking-wide mb-1 ${hasPhotos && hasPermission ? 'text-green-400' : 'text-gray-400'}`}>Recommended Blast</p>
+                  <p className="text-white text-sm font-semibold">{b} matched buyer{b>1?'s':''}{t1>0?', '+t1+' Tier 1 first':''}</p>
+                  <p className="text-gray-400 text-xs mt-0.5">{bestBuyerProfile}</p>
+                </div>
+                <button onClick={() => { setTab('dispo'); generateContent.mutate('sms'); }}
+                  disabled={!hasPhotos || !hasPermission}
+                  className="flex items-center gap-2 px-5 py-2.5 bg-green-700 hover:bg-green-600 disabled:bg-gray-700 disabled:text-gray-500 text-white text-sm rounded-xl font-bold transition shrink-0 whitespace-nowrap shadow-lg">
+                  <Zap size={14}/> {!hasPhotos ? 'Add Photos First' : !hasPermission ? 'Confirm JV First' : 'Blast '+b+' Buyers'}
+                </button>
               </div>
-              <button onClick={() => { setTab('dispo'); generateContent.mutate('sms'); }}
-                disabled={!hasPhotos || !hasPermission}
-                className="flex items-center gap-2 px-5 py-2 bg-green-700 hover:bg-green-600 disabled:bg-gray-700 disabled:text-gray-500 text-white text-sm rounded-xl font-semibold transition shrink-0 whitespace-nowrap">
-                <Zap size={13}/> {!hasPhotos ? 'Add Photos First' : !hasPermission ? 'Confirm JV First' : `Blast ${b} Buyers`}
-              </button>
-            </div>
-          )}
+            ) : (
+              <div className="bg-gray-800/40 border border-gray-700/40 rounded-xl p-4 flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-gray-500 text-xs font-bold uppercase tracking-wide mb-1">No Buyer Matches Yet</p>
+                  <p className="text-gray-400 text-sm">Run buyer match to find qualified buyers for this deal.</p>
+                </div>
+                <button onClick={() => matchAction.mutate()} disabled={matchAction.isPending}
+                  className="flex items-center gap-2 px-5 py-2.5 bg-blue-700 hover:bg-blue-600 text-white text-sm rounded-xl font-bold transition shrink-0 whitespace-nowrap">
+                  <Target size={14}/> {matchAction.isPending ? 'Matching...' : 'Run Buyer Match'}
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </motion.div>
 
@@ -699,10 +713,12 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
             <Sparkles size={14} className="text-purple-400" />
             <h3 className="text-white text-sm font-medium">Dispo Strategy</h3>
           </div>
+          {!(b > 0 && hasPhotos && hasPermission) && (
           <button onClick={() => followUpAction.mutate()} disabled={followUpAction.isPending}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs rounded-lg transition border border-gray-700">
             <Send size={11} /> Generate Follow-Up
           </button>
+          )}
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div className="space-y-2">
