@@ -258,11 +258,10 @@ function LocationPanel({ deal, mapsUrl, streetViewUrl }: any) {
   const addr = encodeURIComponent(`${deal.address}, ${deal.city}, ${deal.state} ${deal.zipCode}`);
   const addrShort = encodeURIComponent(`${deal.address}, ${deal.city}, ${deal.state}`);
 
-  const embedSrc = view === 'street'
-    ? `https://www.google.com/maps/embed/v1/streetview?key=AIzaSyCcCi23uCqY8teR3eET_fZuybvhJ8lb1_s&location=${addrShort}&heading=210&pitch=10&fov=90`
-    : view === 'satellite'
+  const embedSrc = view === 'satellite'
     ? `https://www.google.com/maps/embed/v1/place?key=AIzaSyCcCi23uCqY8teR3eET_fZuybvhJ8lb1_s&q=${addr}&maptype=satellite&zoom=18`
     : `https://www.google.com/maps/embed/v1/place?key=AIzaSyCcCi23uCqY8teR3eET_fZuybvhJ8lb1_s&q=${addr}&zoom=15`;
+  const streetViewHref = `https://www.google.com/maps/@?api=1&map_action=pano&query=${addr}`;
 
   return (
     <div className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden flex flex-col">
@@ -272,12 +271,16 @@ function LocationPanel({ deal, mapsUrl, streetViewUrl }: any) {
           <span className="text-white text-sm font-medium">Location</span>
         </div>
         <div className="flex gap-1">
-          {(['map','satellite','street'] as const).map(v => (
+          {(['map','satellite'] as const).map(v => (
             <button key={v} onClick={() => setView(v)}
               className={`text-[10px] px-2.5 py-1 rounded-full font-medium transition capitalize ${view===v ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-gray-200'}`}>
               {v}
             </button>
           ))}
+          <a href={streetViewHref} target="_blank" rel="noopener noreferrer"
+            className="text-[10px] px-2.5 py-1 rounded-full font-medium transition bg-gray-800 text-gray-400 hover:text-gray-200">
+            Street ↗
+          </a>
         </div>
       </div>
       <div className="relative" style={{height:260}}>
