@@ -561,7 +561,7 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
             {/* Verdict line */}
             <p className={`text-sm font-semibold mt-2 ${sellColor}`}>
               {sellLabel}
-              {b > 0 && <span className="text-gray-500 font-normal"> · {b} buyer{b>1?'s':''}{t1>0?` · ${t1} Tier 1`:''}{hasPhotos && hasPermission && b>0?' · ready to blast':primaryBlocker?\` · fix: ${primaryBlocker.split('—')[0].split('—')[0].trim().toLowerCase()}`:''}</span>}
+              {b > 0 && <span className="text-gray-500 font-normal"> &middot; {b} buyer{b>1?'s':''}{t1>0?' · '+t1+' Tier 1':''}{hasPhotos && hasPermission?' · ready to blast':primaryBlocker?' · fix: '+(primaryBlocker.split('—')[0].trim().toLowerCase()):''}</span>}
             </p>
           </div>
           <button onClick={mainAction.fn} disabled={isActionLoading}
