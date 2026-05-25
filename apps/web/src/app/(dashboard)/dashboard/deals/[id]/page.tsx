@@ -532,11 +532,7 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
               {b > 0 && <span className="text-purple-400">· {b} buyers</span>}
               {sellBlockers.length > 0 && <span className="text-amber-400">· {sellBlockers.length} blocker{sellBlockers.length>1?'s':''}</span>}
             </div>
-            <button onClick={primaryAction.fn} disabled={matchAction.isPending || generateContent.isPending}
-              className={`flex items-center gap-1.5 px-4 py-1.5 ${primaryAction.color} disabled:opacity-50 text-white text-xs rounded-lg font-semibold transition`}>
-              <primaryAction.icon size={12} />
-              {matchAction.isPending || generateContent.isPending ? 'Working...' : primaryAction.label}
-            </button>
+            
           </div>
         </div>
       </div>
@@ -545,15 +541,15 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
       <div className="max-w-7xl mx-auto px-4 py-4">
 
         {/* ── Above-the-fold Command Center ─────────────────────── */}
-        <div className="grid grid-cols-12 gap-3 mb-3" style={{maxHeight:600}}>
+        <div className="grid grid-cols-12 gap-3 mb-3" style={{maxHeight:360}}>
 
           {/* LEFT: Photos (5 cols) */}
-          <div className="col-span-12 md:col-span-5" style={{height:560}}>
+          <div className="col-span-12 md:col-span-5" style={{height:320}}>
             <PhotoGallery deal={deal} onUpdate={(data) => updateDeal.mutate(data)} />
           </div>
 
           {/* CENTER: Dispo Score + Blockers + Blast (4 cols) */}
-          <div className="col-span-12 md:col-span-4 flex flex-col gap-2 overflow-y-auto" style={{height:560}}>
+          <div className="col-span-12 md:col-span-4 flex flex-col gap-2 overflow-y-auto" style={{height:320}}>
 
             {/* Score card */}
             <div className={`rounded-xl border p-3 ${scoreBg}`}>
@@ -625,49 +621,7 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
               )}
             </div>
 
-            {/* Recommended Blast */}
-            <div className={`rounded-xl p-4 ${b>0&&!missingPhotos&&!missingPermission ? 'bg-green-900/20 border border-green-800/40' : 'bg-gray-900 border border-gray-800'}`}>
-              <p className="text-gray-500 text-[10px] font-bold uppercase tracking-wide mb-2">Recommended Blast</p>
-              {b > 0 ? (
-                <>
-                  <div className="flex items-baseline gap-2 mb-0.5">
-                    <span className="text-white text-sm font-semibold">{b} buyer{b>1?'s':''} matched</span>
-                    {t1>0&&<span className="text-orange-400 text-xs font-bold">{t1} Tier 1 first</span>}
-                  </div>
-                  <p className="text-gray-500 text-xs mb-3">Audience: {deal.city || 'Local'} {deal.dealType==='SUBTO'?'creative / Subto buyers':'cash buyers and flippers'}</p>
-                  {!missingPhotos && !missingPermission ? (
-                    <>
-                      <p className="text-green-400 text-xs mb-2 font-medium">✓ Ready to blast</p>
-                      <button onClick={() => { setTab('dispo'); generateContent.mutate('sms'); }}
-                        className="w-full flex items-center justify-center gap-2 py-2.5 bg-green-600 hover:bg-green-500 text-white text-sm rounded-lg font-bold transition">
-                        <Zap size={13}/> Blast {b} Buyers
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <div className="space-y-1 mb-2">
-                        {missingPermission && <p className="text-amber-400 text-xs flex items-center gap-1"><AlertCircle size={10}/> JV permission required before blast</p>}
-                        {missingPhotos && <p className="text-red-400 text-xs flex items-center gap-1"><Camera size={10}/> Photos required before blast</p>}
-                      </div>
-                      <button onClick={primaryAction.fn}
-                        className={`w-full flex items-center justify-center gap-2 py-2.5 ${primaryAction.color} text-white text-sm rounded-lg font-semibold transition`}>
-                        <primaryAction.icon size={13}/>
-                        {primaryAction.label}
-                      </button>
-                    </>
-                  )}
-                </>
-              ) : (
-                <>
-                  <p className="text-gray-500 text-sm mb-1">No buyers matched yet.</p>
-                  <p className="text-gray-600 text-xs mb-3">Run buyer match to build your blast list.</p>
-                  <button onClick={() => matchAction.mutate()} disabled={matchAction.isPending}
-                    className="w-full flex items-center justify-center gap-2 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm rounded-lg font-semibold transition disabled:opacity-50">
-                    <Target size={13}/> {matchAction.isPending ? 'Matching...' : 'Run Buyer Match'}
-                  </button>
-                </>
-              )}
-            </div>
+            
 
             {/* Dispo Strategy quick view */}
             <div className="bg-gray-900 rounded-xl border border-gray-800 p-4 flex-1">
@@ -708,7 +662,7 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
           </div>
 
           {/* RIGHT: Deal Snapshot (3 cols) */}
-          <div className="col-span-12 md:col-span-3" style={{height:560}}>
+          <div className="col-span-12 md:col-span-3" style={{height:320}}>
             <div className="bg-gray-900 rounded-xl border border-gray-800 h-full flex flex-col overflow-hidden">
               <div className="px-3 py-2.5 border-b border-gray-800 flex items-center justify-between">
                 <span className="text-white text-xs font-semibold">Deal Snapshot</span>
