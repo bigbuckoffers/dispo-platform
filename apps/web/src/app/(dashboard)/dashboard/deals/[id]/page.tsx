@@ -326,7 +326,7 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
 
   const followUpAction = useMutation({
     mutationFn: () => api.post(`/deals/${id}/generate-follow-up`).then(r => r.data),
-    onSuccess: (data) => { setGeneratedOutput(prev => ({ ...prev, followUp: data.message })); },
+    onSuccess: (data) => { setGeneratedOutput(prev => ({ ...prev, followUp: data.message })); toast.success('Follow-up generated!'); },
   });
 
   const generateContent = useMutation({
@@ -373,14 +373,12 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
   const hasPhotos = !!(deal.photosUrl || deal.googleDriveUrl || (deal.photos && deal.photos.length > 0));
   const isOwn = deal.sourceType === 'OWN';
   const hasPermission = isOwn || !!(deal.dealSource?.permissionToMarket);
-  const missingPhotos = !hasPhotos;
-  const missingPermission = !hasPermission && !isOwn;
   const b = deal.matchedBuyerCount || 0;
   const t1 = deal.tier1MatchCount || 0;
   const pubEstimates = [deal.zillowEstimate, deal.realtorEstimate, deal.redfinEstimate].filter(Boolean) as number[];
   const avgPub = pubEstimates.length > 0 ? pubEstimates.reduce((a,x) => a+x, 0) / pubEstimates.length : 0;
+  const threshold70 = (avgPub || deal.arv || 0) * 0.70;
   const refValue = avgPub || deal.arv || 0;
-  const threshold70 = refValue * 0.70;
   const gap = deal.askingPrice && refValue ? threshold70 - deal.askingPrice : 0;
   const pricePos = !deal.askingPrice || !refValue ? null
     : gap > 20000 ? 'UNDER_70' : gap > 0 ? 'NEAR_UNDER' : gap > -20000 ? 'NEAR_OVER' : gap > -50000 ? 'OVER_70' : 'OVERPRICED';
@@ -391,18 +389,21 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
   const sellBlockers: string[] = [];
   let sellScore = 0;
   if (b > 0)                  { sellScore += 25; sellReasons.push(`${b} buyer${b>1?'s':''} matched`); }
-  else                          { sellBlockers.push('no-buyers'); }
+  else                          { sellBlockers.push('No buyer matches yet'); }
   if (t1 > 0)                 { sellScore += 15; sellReasons.push(`${t1} Tier 1 buyer${t1>1?'s':''}`); }
   if (hasPhotos)               { sellScore += 15; sellReasons.push('Photos confirmed'); }
-  else                          { sellBlockers.push('missing-photos'); }
+  else                          { sellBlockers.push('Photos missing — required before blast'); }
   if (deal.askingPrice)        { sellScore += 10; }
-  else                          { sellBlockers.push('no-price'); }
+  else                          { sellBlockers.push('Asking price not set'); }
   if (refValue)                { sellScore += 10; sellReasons.push('Public value data available'); }
-  if (pricePos === 'UNDER_70') { sellScore += 15; sellReasons.push(`Ask ${formatCurrency(Math.abs(gap))} under 70% of ${avgPub ? 'public value' : 'ARV'}`); }
-  else if (pricePos === 'NEAR_UNDER') { sellScore += 8; sellReasons.push('Ask near investor threshold'); }
+  else                          { sellBlockers.push('No public value or ARV'); }
+  if (pricePos === 'UNDER_70') { sellScore += 15; sellReasons.push(`Ask is ${formatCurrency(Math.abs(gap))} under 70% of ${avgPub ? 'public value' : 'ARV'}`); }
+  else if (pricePos === 'NEAR_UNDER') { sellScore += 8; sellReasons.push('Ask is near the 70% investor threshold'); }
   if (deal.description)        { sellScore += 5; }
   if (hasPermission)           { sellScore += 5; }
-  else if (!isOwn)               { sellBlockers.push('no-permission'); }
+  else if (!isOwn)               { sellBlockers.push('JV permission to market not confirmed'); }
+  if (deal.closingDate)        { sellScore += 5; sellReasons.push('Closing date confirmed'); }
+  // Hard caps
   if (!b)           sellScore = Math.min(sellScore, 60);
   if (!hasPhotos)   sellScore = Math.min(sellScore, 82);
   if (!refValue)    sellScore = Math.min(sellScore, 70);
@@ -415,10 +416,15 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
     : sellScore >= 60 ? 'Workable — Fix Blockers'
     : sellScore >= 40 ? 'Needs Work'
     : 'Not Ready';
+  const scoreSublabel = 'Dispo Opportunity Score';
   const scoreColor = sellScore >= 75 ? 'text-green-400' : sellScore >= 60 ? 'text-blue-400' : sellScore >= 40 ? 'text-yellow-400' : 'text-red-400';
-  const scoreBarColor = sellScore >= 75 ? '#22c55e' : sellScore >= 60 ? '#3b82f6' : sellScore >= 40 ? '#eab308' : '#ef4444';
+  const scoreBg = sellScore >= 75 ? 'border-green-800/40 bg-green-900/10' : sellScore >= 60 ? 'border-blue-800/40 bg-blue-900/10' : sellScore >= 40 ? 'border-yellow-800/40 bg-yellow-900/10' : 'border-red-800/40 bg-red-900/10';
+  const scoreBar = sellScore >= 75 ? 'bg-green-500' : sellScore >= 60 ? 'bg-blue-500' : sellScore >= 40 ? 'bg-yellow-500' : 'bg-red-500';
 
   // ── Primary action ────────────────────────────────────────────────────
+  // Primary action: single most important next step
+  const missingPhotos = !hasPhotos;
+  const missingPermission = !hasPermission && !isOwn;
   const primaryAction = deal.status === 'OFFER_RECEIVED'
     ? { label: 'Review Offer', color: 'bg-orange-600 hover:bg-orange-500', icon: CheckCircle, fn: () => setTab('dispo') }
     : deal.status === 'CAMPAIGN_ACTIVE'
@@ -430,7 +436,7 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
     : missingPermission
     ? { label: 'Confirm JV Permission', color: 'bg-purple-600 hover:bg-purple-500', icon: Shield, fn: () => setTab('source') }
     : missingPhotos
-    ? { label: isOwn ? 'Upload Photos' : 'Request Photos', color: 'bg-amber-600 hover:bg-amber-500', icon: Camera, fn: () => {} }
+    ? { label: isOwn ? 'Upload Photos' : 'Request Photos', color: 'bg-amber-600 hover:bg-amber-500', icon: Camera, fn: () => setTab('dispo') }
     : b === 0 && deal.askingPrice
     ? { label: 'Run Buyer Match', color: 'bg-blue-600 hover:bg-blue-500', icon: Target, fn: () => matchAction.mutate() }
     : { label: 'Complete Deal Info', color: 'bg-amber-600 hover:bg-amber-500', icon: AlertCircle, fn: () => setTab('dispo') };
@@ -438,62 +444,180 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
   const TABS = [
     { id: 'overview' as Tab, label: 'Overview', icon: Building2 },
     { id: 'dealmath' as Tab, label: 'Deal Math', icon: DollarSign },
-    { id: 'buyers' as Tab, label: `Buyers${b > 0 ? ` (${b})` : ''}`, icon: Users },
-    { id: 'dispo' as Tab, label: 'Execution', icon: Zap },
+    { id: 'buyers' as Tab, label: `Buyers ${b > 0 ? `(${b})` : ''}`, icon: Users },
+    { id: 'dispo' as Tab, label: 'Dispo Execution', icon: Zap },
     { id: 'source' as Tab, label: 'Source', icon: FileText },
   ];
 
   return (
     <div className="min-h-screen bg-gray-950">
 
-      {/* ── Sticky Header ─────────────────────────────────────────────── */}
+      {/* ── Sticky Deal Header ─────────────────────────────────────── */}
       <div className="sticky top-0 z-40 bg-gray-900/95 backdrop-blur border-b border-gray-800">
-        <div className="max-w-screen-xl mx-auto px-4 h-12 flex items-center justify-between gap-4">
+        <div className="max-w-7xl mx-auto px-4 h-12 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 min-w-0">
-            <a href="/dashboard/deals" className="text-gray-500 hover:text-gray-300 shrink-0"><ArrowLeft size={15}/></a>
-            <div className="flex items-center gap-2 min-w-0">
-              <span className="text-white font-semibold text-sm truncate">{deal.address}</span>
-              <span className="text-gray-500 text-xs hidden md:block shrink-0">{deal.city}, {deal.state} {deal.zipCode}</span>
-              <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium shrink-0 ${STATUS_COLORS[deal.status] || 'bg-gray-800 text-gray-400'}`}>{(deal.status||'DRAFT').replace(/_/g,' ')}</span>
-              {deal.dealType && <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-900/60 text-indigo-300 border border-indigo-700/40 shrink-0">{deal.dealType}</span>}
+            <a href="/dashboard/deals" className="text-gray-500 hover:text-gray-300 transition shrink-0">
+              <ArrowLeft size={15} />
+            </a>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="text-white font-semibold text-sm truncate">{deal.address}</span>
+                <span className="text-gray-600 text-sm hidden md:block">{deal.city}, {deal.state} {deal.zipCode}</span>
+                <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium shrink-0 ${STATUS_COLORS[deal.status] || 'bg-gray-800 text-gray-400'}`}>{(deal.status||'DRAFT').replace(/_/g,' ')}</span>
+                {deal.dealType && <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-900/60 text-indigo-300 border border-indigo-700/40 shrink-0">{deal.dealType}</span>}
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-3 shrink-0">
-            <div className="hidden lg:flex items-center gap-2 text-xs text-gray-500">
-              <span className={`font-bold text-sm ${scoreColor}`}>{sellScore}</span>
-              <span className="text-gray-600">·</span>
+            <div className="hidden md:flex items-center gap-2 text-xs text-gray-500">
+              <span className={`font-bold ${scoreColor}`}>{sellScore}</span>
               <span>{scoreLabel}</span>
-              {b > 0 && <><span className="text-gray-600">·</span><span className="text-purple-400">{b} buyers</span></>}
-              {sellBlockers.length > 0 && <><span className="text-gray-600">·</span><span className="text-amber-400">{sellBlockers.length} blocker{sellBlockers.length>1?'s':''}</span></>}
+              {b > 0 && <span className="text-purple-400">· {b} buyers</span>}
+              {sellBlockers.length > 0 && <span className="text-amber-400">· {sellBlockers.length} blocker{sellBlockers.length>1?'s':''}</span>}
             </div>
             <button onClick={primaryAction.fn} disabled={matchAction.isPending || generateContent.isPending}
               className={`flex items-center gap-1.5 px-4 py-1.5 ${primaryAction.color} disabled:opacity-50 text-white text-xs rounded-lg font-semibold transition`}>
-              <primaryAction.icon size={12}/>
-              {matchAction.isPending ? 'Matching...' : generateContent.isPending ? 'Generating...' : primaryAction.label}
+              <primaryAction.icon size={12} />
+              {matchAction.isPending || generateContent.isPending ? 'Working...' : primaryAction.label}
             </button>
           </div>
         </div>
       </div>
 
-      {/* ── Two-column layout ──────────────────────────────────────── */}
-      <div className="max-w-screen-xl mx-auto px-4 py-4">
-        <div className="flex gap-5">
+      {/* ── Main Content ───────────────────────────────────────────── */}
+      <div className="max-w-7xl mx-auto px-4 py-4">
 
-          {/* ── LEFT MAIN COLUMN (70%) ─────────────────────────────── */}
-          <div className="flex-1 min-w-0 space-y-4">
+        {/* ── Above-the-fold Command Center ─────────────────────── */}
+        <div className="grid grid-cols-12 gap-3 mb-3" style={{maxHeight:600}}>
 
-            {/* Photo */}
+          {/* LEFT: Photos (5 cols) */}
+          <div className="col-span-12 md:col-span-5" style={{height:560}}>
             <PhotoGallery deal={deal} onUpdate={(data) => updateDeal.mutate(data)} />
+          </div>
 
-            {/* Dispo Strategy */}
-            <div className="bg-gray-900 rounded-xl border border-gray-800 p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <Zap size={14} className="text-purple-400"/>
-                <h3 className="text-white text-sm font-semibold">Dispo Strategy</h3>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
+          {/* CENTER: Dispo Score + Blockers + Blast (4 cols) */}
+          <div className="col-span-12 md:col-span-4 flex flex-col gap-2 overflow-y-auto" style={{height:560}}>
+
+            {/* Score card */}
+            <div className={`rounded-xl border p-3 ${scoreBg}`}>
+              <div className="flex items-start justify-between mb-2">
                 <div>
-                  <p className="text-gray-600 text-[10px] font-bold uppercase tracking-wide mb-1">Dispo Angle</p>
+                  <div className="flex items-baseline gap-2 mb-0.5">
+                    <span className={`text-3xl font-black leading-none ${scoreColor}`}>{sellScore}</span>
+                    <span className="text-gray-500 text-xs">/100</span>
+                  </div>
+                  <p className={`text-sm font-bold ${scoreColor}`}>{scoreLabel}</p>
+                <p className="text-gray-600 text-[10px] mt-0.5">Dispo Opportunity Score</p>
+                </div>
+                <div className="w-12 h-12">
+                  <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
+                    <circle cx="18" cy="18" r="15.9" fill="none" stroke="#1f2937" strokeWidth="3"/>
+                    <circle cx="18" cy="18" r="15.9" fill="none"
+                      stroke={sellScore>=75?"#22c55e":sellScore>=60?"#3b82f6":sellScore>=40?"#eab308":"#ef4444"}
+                      strokeWidth="3" strokeDasharray={`${sellScore} ${100-sellScore}`} strokeLinecap="round"/>
+                  </svg>
+                </div>
+              </div>
+              <div className="space-y-1 mb-2">
+                {sellReasons.slice(0,3).map((r,i) => (
+                  <div key={i} className="flex items-start gap-1.5 text-xs text-gray-300">
+                    <CheckCircle size={11} className="text-green-400 shrink-0 mt-0.5"/>
+                    {r}
+                  </div>
+                ))}
+              </div>
+              {sellBlockers.length > 0 && (
+                <div className="pt-2 border-t border-white/5 space-y-2">
+                  <p className="text-gray-600 text-[10px] font-bold uppercase tracking-wide">Blockers to fix</p>
+                  {missingPermission && (
+                    <div className="bg-amber-900/20 border border-amber-800/40 rounded-lg p-2.5">
+                      <div className="flex items-start gap-1.5 mb-1.5">
+                        <AlertCircle size={10} className="text-amber-400 shrink-0 mt-0.5"/>
+                        <p className="text-amber-300 text-xs font-semibold">JV Permission Required</p>
+                      </div>
+                      <p className="text-gray-500 text-[10px] mb-2">Confirm permission before marketing this JV deal.</p>
+                      <button onClick={() => setTab('source')} className="flex items-center gap-1 px-2.5 py-1 bg-amber-700/50 hover:bg-amber-700/70 text-amber-200 text-[10px] rounded-lg transition font-medium">
+                        <Shield size={9}/> Confirm JV Permission
+                      </button>
+                    </div>
+                  )}
+                  {missingPhotos && (
+                    <div className="bg-red-900/20 border border-red-800/40 rounded-lg p-2.5">
+                      <div className="flex items-start gap-1.5 mb-1.5">
+                        <Camera size={10} className="text-red-400 shrink-0 mt-0.5"/>
+                        <p className="text-red-300 text-xs font-semibold">Photos Required</p>
+                      </div>
+                      <p className="text-gray-500 text-[10px] mb-2">Buyers need photos before blasting.</p>
+                      <div className="flex gap-1.5">
+                        <button onClick={() => setTab('overview')} className="flex items-center gap-1 px-2.5 py-1 bg-red-700/50 hover:bg-red-700/70 text-red-200 text-[10px] rounded-lg transition font-medium">
+                          <Upload size={9}/> Upload Photos
+                        </button>
+                        <button onClick={() => toast('Request photos from source via phone/text')} className="flex items-center gap-1 px-2.5 py-1 bg-gray-800 hover:bg-gray-700 text-gray-400 text-[10px] rounded-lg transition">
+                          <Send size={9}/> Request Photos
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  {sellBlockers.filter(bl => !bl.includes('Photos') && !bl.includes('JV') && !bl.includes('permission')).slice(0,2).map((bl,i) => (
+                    <div key={i} className="flex items-start gap-1.5 text-xs text-gray-500">
+                      <AlertCircle size={10} className="text-gray-600 shrink-0 mt-0.5"/>
+                      {bl.split('—')[0].trim()}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Recommended Blast */}
+            <div className={`rounded-xl p-4 ${b>0&&!missingPhotos&&!missingPermission ? 'bg-green-900/20 border border-green-800/40' : 'bg-gray-900 border border-gray-800'}`}>
+              <p className="text-gray-500 text-[10px] font-bold uppercase tracking-wide mb-2">Recommended Blast</p>
+              {b > 0 ? (
+                <>
+                  <div className="flex items-baseline gap-2 mb-0.5">
+                    <span className="text-white text-sm font-semibold">{b} buyer{b>1?'s':''} matched</span>
+                    {t1>0&&<span className="text-orange-400 text-xs font-bold">{t1} Tier 1 first</span>}
+                  </div>
+                  <p className="text-gray-500 text-xs mb-3">Audience: {deal.city || 'Local'} {deal.dealType==='SUBTO'?'creative / Subto buyers':'cash buyers and flippers'}</p>
+                  {!missingPhotos && !missingPermission ? (
+                    <>
+                      <p className="text-green-400 text-xs mb-2 font-medium">✓ Ready to blast</p>
+                      <button onClick={() => { setTab('dispo'); generateContent.mutate('sms'); }}
+                        className="w-full flex items-center justify-center gap-2 py-2.5 bg-green-600 hover:bg-green-500 text-white text-sm rounded-lg font-bold transition">
+                        <Zap size={13}/> Blast {b} Buyers
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <div className="space-y-1 mb-2">
+                        {missingPermission && <p className="text-amber-400 text-xs flex items-center gap-1"><AlertCircle size={10}/> JV permission required before blast</p>}
+                        {missingPhotos && <p className="text-red-400 text-xs flex items-center gap-1"><Camera size={10}/> Photos required before blast</p>}
+                      </div>
+                      <button onClick={primaryAction.fn}
+                        className={`w-full flex items-center justify-center gap-2 py-2.5 ${primaryAction.color} text-white text-sm rounded-lg font-semibold transition`}>
+                        <primaryAction.icon size={13}/>
+                        {primaryAction.label}
+                      </button>
+                    </>
+                  )}
+                </>
+              ) : (
+                <>
+                  <p className="text-gray-500 text-sm mb-1">No buyers matched yet.</p>
+                  <p className="text-gray-600 text-xs mb-3">Run buyer match to build your blast list.</p>
+                  <button onClick={() => matchAction.mutate()} disabled={matchAction.isPending}
+                    className="w-full flex items-center justify-center gap-2 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm rounded-lg font-semibold transition disabled:opacity-50">
+                    <Target size={13}/> {matchAction.isPending ? 'Matching...' : 'Run Buyer Match'}
+                  </button>
+                </>
+              )}
+            </div>
+
+            {/* Dispo Strategy quick view */}
+            <div className="bg-gray-900 rounded-xl border border-gray-800 p-4 flex-1">
+              <p className="text-gray-500 text-[10px] font-bold uppercase tracking-wide mb-2">Dispo Strategy</p>
+              <div className="space-y-2.5">
+                <div>
+                  <p className="text-gray-600 text-[10px] font-semibold uppercase mb-0.5">Angle</p>
                   <p className="text-gray-300 text-xs leading-relaxed">
                     {deal.dealType==='SUBTO'
                       ? `Market as creative finance Subto with assumable debt and cash flow in ${deal.city||'this market'}.`
@@ -504,540 +628,607 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
                 </div>
                 {deal.description && (
                   <div>
-                    <p className="text-gray-600 text-[10px] font-bold uppercase tracking-wide mb-1">Buyer Pitch</p>
-                    <p className="text-gray-400 text-xs leading-relaxed">{deal.description}</p>
+                    <p className="text-gray-600 text-[10px] font-semibold uppercase mb-0.5">Buyer Pitch</p>
+                    <p className="text-gray-400 text-xs leading-relaxed line-clamp-2">{deal.description}</p>
                   </div>
                 )}
                 <div>
-                  <p className="text-gray-600 text-[10px] font-bold uppercase tracking-wide mb-1">Buyer Objections</p>
-                  <p className="text-gray-500 text-xs">
-                    {[
-                      missingPhotos && 'Buyers will ask for photos',
-                      'Buyers will ask about closing timeline',
-                      deal.overallCondition?.includes('HEAVY') && 'Buyers will ask for rehab scope',
-                    ].filter(Boolean).join(' · ')}
-                  </p>
+                  <p className="text-gray-600 text-[10px] font-semibold uppercase mb-0.5">Buyer Type</p>
+                  <p className="text-gray-400 text-xs">{deal.city||'Local'} {deal.dealType==='SUBTO'?'creative / Subto buyers comfortable with seller financing':'cash buyers and medium-rehab flippers'}.</p>
                 </div>
-                <div>
-                  <p className="text-gray-600 text-[10px] font-bold uppercase tracking-wide mb-1">Suggested Buyer</p>
-                  <p className="text-gray-400 text-xs">{deal.city||'Local'} {deal.dealType==='SUBTO'?'creative / Subto buyers':'cash buyers and medium-rehab flippers'}.</p>
-                  {(missingPhotos || missingPermission) && (
-                    <p className="text-amber-500 text-[10px] mt-1">
-                      ⚠ {[missingPermission&&'JV permission not confirmed',missingPhotos&&'Photos missing'].filter(Boolean).join(' · ')}. Do not blast until resolved.
+                {(missingPhotos || missingPermission) && (
+                  <div className="pt-2 border-t border-gray-800">
+                    <p className="text-amber-500 text-[10px] font-semibold uppercase mb-0.5">Risk Notes</p>
+                    <p className="text-gray-500 text-[10px]">
+                      {missingPermission && 'JV permission not confirmed. '}
+                      {missingPhotos && 'Photos missing. '}
+                      Do not blast until blockers are resolved.
                     </p>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
-            </div>
-
-            {/* Tabs */}
-            <div>
-              <div className="flex gap-1 bg-gray-900/80 p-1 rounded-xl border border-gray-800 w-fit mb-4">
-                {TABS.map(t => (
-                  <button key={t.id} onClick={() => setTab(t.id)}
-                    className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition ${tab===t.id?'bg-gray-800 text-white shadow':'text-gray-500 hover:text-gray-300'}`}>
-                    <t.icon size={13}/>
-                    <span className="hidden md:inline">{t.label}</span>
-                  </button>
-                ))}
-              </div>
-
-              <motion.div key={tab} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}>
-
-                {/* OVERVIEW */}
-                {tab === 'overview' && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Card title="Property Details" icon={Building2}>
-                      <InfoRow label="Address" value={deal.address} />
-                      <InfoRow label="City / State / ZIP" value={[deal.city,deal.state,deal.zipCode].filter(Boolean).join(', ')} />
-                      <InfoRow label="County" value={deal.county} />
-                      <InfoRow label="Property Type" value={deal.propertyType?.replace(/_/g,' ')} />
-                      <InfoRow label="Beds / Baths" value={deal.beds?`${deal.beds} bd / ${deal.baths} ba`:null} />
-                      <InfoRow label="Square Feet" value={deal.sqft?`${deal.sqft.toLocaleString()} sqft`:null} />
-                      <InfoRow label="Year Built" value={deal.yearBuilt} />
-                      <InfoRow label="Occupancy" value={deal.occupancy?.replace(/_/g,' ')} />
-                      <InfoRow label="Access" value={deal.accessInfo} />
-                    </Card>
-                    <div className="space-y-4">
-                      <Card title="Condition" icon={Shield}>
-                        <InfoRow label="Overall" value={deal.overallCondition?.replace(/_/g,' ')} />
-                        {deal.roofCondition && <InfoRow label="Roof" value={`${deal.roofCondition}${deal.roofAge?' · '+deal.roofAge:''}`} />}
-                        {deal.hvacCondition && <InfoRow label="HVAC" value={`${deal.hvacCondition}${deal.hvacAge?' · '+deal.hvacAge:''}`} />}
-                        {!deal.overallCondition && <p className="text-gray-600 text-sm">No condition data</p>}
-                      </Card>
-                      <Card title="Location Map" icon={MapPin}>
-                        <div className="rounded-lg overflow-hidden mb-2" style={{height:180}}>
-                          <iframe src={`https://www.google.com/maps/embed/v1/place?key=AIzaSyCcCi23uCqY8teR3eET_fZuybvhJ8lb1_s&q=${encodeURIComponent(`${deal.address}, ${deal.city}, ${deal.state} ${deal.zipCode}`)}&zoom=15`}
-                            width="100%" height="100%" style={{border:0}} allowFullScreen loading="lazy" referrerPolicy="no-referrer-when-downgrade"/>
-                        </div>
-                        <div className="flex gap-2">
-                          <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[10px] px-2 py-1 bg-gray-800 hover:bg-gray-700 text-gray-400 rounded-lg transition"><Globe size={9}/> Open Map</a>
-                          <a href={`https://www.google.com/maps/@?api=1&map_action=pano&query=${encodeURIComponent(`${deal.address}, ${deal.city}, ${deal.state}`)}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[10px] px-2 py-1 bg-gray-800 hover:bg-gray-700 text-gray-400 rounded-lg transition"><Eye size={9}/> Street View</a>
-                          <button onClick={()=>navigator.clipboard.writeText(`${deal.address}, ${deal.city}, ${deal.state} ${deal.zipCode}`)} className="flex items-center gap-1 text-[10px] px-2 py-1 bg-gray-800 hover:bg-gray-700 text-gray-400 rounded-lg transition"><Copy size={9}/> Copy</button>
-                        </div>
-                      </Card>
-                    </div>
-                    <Card title="Public Value Estimates" icon={TrendingUp}
-                      action={<button onClick={fetchZestimate} disabled={zestimateFetching} className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-900/40 hover:bg-blue-900/60 text-blue-300 text-xs rounded-lg border border-blue-700/40 disabled:opacity-50">{zestimateFetching?<><RefreshCw size={9} className="animate-spin"/>Fetching...</>:<><Sparkles size={9}/>Fetch Zestimate</>}</button>}>
-                      {(deal.zillowEstimate||deal.zillowUrl) && (
-                        <div className="mb-3 p-2.5 bg-blue-900/20 border border-blue-800/30 rounded-lg flex items-center justify-between">
-                          <div>
-                            <div className="flex items-center gap-2 mb-0.5">
-                              <p className="text-blue-300 text-xs font-semibold">Zillow Zestimate</p>
-                              {deal.zillowUrl && <a href={deal.zillowUrl} target="_blank" rel="noopener noreferrer" className="text-[10px] px-1.5 py-0.5 bg-blue-800/50 hover:bg-blue-700/50 text-blue-300 rounded flex items-center gap-0.5"><ExternalLink size={8}/> Zillow</a>}
-                            </div>
-                            <p className="text-white text-lg font-bold">{deal.zillowEstimate?formatCurrency(deal.zillowEstimate):'—'}</p>
-                          </div>
-                          {deal.zillowEstimate && <div className="text-right"><p className="text-gray-500 text-xs">70% of Zestimate</p><p className="text-yellow-400 text-sm font-semibold">{formatCurrency(deal.zillowEstimate*0.70)}</p></div>}
-                        </div>
-                      )}
-                      <div className="flex gap-2 mb-3 flex-wrap">
-                        {[{name:'Zillow',url:deal.zillowUrl||`https://www.zillow.com/homes/${encodeURIComponent(`${deal.address}, ${deal.city}, ${deal.state}`)}`},{name:'Realtor',url:deal.realtorUrl||`https://www.realtor.com/realestateandhomes-search/${(deal.city||'').replace(' ','-')}_${deal.state}`},{name:'Redfin',url:deal.redfinUrl||`https://www.redfin.com/city/${(deal.city||'').replace(' ','-')}/${deal.state}`}].map(s=>(
-                          <a key={s.name} href={s.url} target="_blank" rel="noopener noreferrer" className="text-xs px-2.5 py-1 bg-gray-800 hover:bg-gray-700 text-gray-400 rounded-lg border border-gray-700 flex items-center gap-1"><ExternalLink size={10}/> {s.name}</a>
-                        ))}
-                      </div>
-                      {avgPub > 0 ? (
-                        <div className="bg-gray-800/60 rounded-lg p-3 space-y-1.5">
-                          <div className="flex justify-between text-sm"><span className="text-gray-400">Avg Public Estimate</span><span className="text-white font-medium">{formatCurrency(avgPub)}</span></div>
-                          <div className="flex justify-between text-sm"><span className="text-gray-400">70% of Average</span><span className="text-yellow-400">{formatCurrency(avgPub*0.70)}</span></div>
-                          {deal.repairEstimate && <div className="flex justify-between text-sm"><span className="text-gray-400">70% Avg − Repairs</span><span className="text-green-400">{formatCurrency(avgPub*0.70-(deal.repairEstimate||0))}</span></div>}
-                          {deal.askingPrice && avgPub > 0 && <div className={`text-xs font-semibold mt-1 pt-2 border-t border-gray-700 ${gap>0?'text-green-400':'text-red-400'}`}>Ask is {gap>0?formatCurrency(Math.abs(gap))+' under':formatCurrency(Math.abs(gap))+' over'} 70% of public value</div>}
-                          <p className="text-gray-600 text-[10px] italic">Public estimates are quick references — verify ARV with comps.</p>
-                        </div>
-                      ) : <p className="text-gray-600 text-sm">No public estimates yet. Click Fetch Zestimate.</p>}
-                    </Card>
-                    {deal.description && <Card title="Description" icon={FileText}><p className="text-gray-300 text-sm leading-relaxed">{deal.description}</p></Card>}
-                  </div>
-                )}
-
-                {/* DEAL MATH */}
-                {tab === 'dealmath' && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Card title="Pricing" icon={DollarSign}>
-                      <InfoRow label="Asking / Dispo Price" value={deal.askingPrice?formatCurrency(deal.askingPrice):null} />
-                      <InfoRow label="ARV" value={deal.arv?formatCurrency(deal.arv):null} />
-                      <InfoRow label="Repair Estimate" value={deal.repairEstimate?formatCurrency(deal.repairEstimate):null} />
-                      <InfoRow label="Assignment Fee" value={deal.assignmentFee?formatCurrency(deal.assignmentFee):null} />
-                      <InfoRow label="JV Fee" value={deal.jvFee?formatCurrency(deal.jvFee):null} />
-                    </Card>
-                    <Card title="Deal Analysis" icon={TrendingUp}>
-                      {deal.arv && deal.askingPrice && (
-                        <div className="flex justify-between items-center py-2 border-b border-gray-800 mb-2">
-                          <span className="text-gray-500 text-sm">Potential Margin</span>
-                          <span className={`text-xl font-bold ${(deal.arv-deal.askingPrice-(deal.repairEstimate||0))>0?'text-green-400':'text-red-400'}`}>{formatCurrency(deal.arv-deal.askingPrice-(deal.repairEstimate||0))}</span>
-                        </div>
-                      )}
-                      {deal.arv && <InfoRow label="70% Rule Max" value={formatCurrency(deal.arv*0.70)} />}
-                      {deal.arv && deal.askingPrice && <InfoRow label="Asking vs 70% ARV" value={deal.askingPrice<=deal.arv*0.70?`✓ ${formatCurrency(deal.arv*0.70-deal.askingPrice)} under`:`${formatCurrency(deal.askingPrice-deal.arv*0.70)} over`} />}
-                      {avgPub > 0 && <>
-                        <InfoRow label="Avg Public Estimate" value={formatCurrency(avgPub)} />
-                        <InfoRow label="70% Public Avg" value={formatCurrency(avgPub*0.70)} />
-                        {deal.repairEstimate && <InfoRow label="70% Avg − Repairs" value={formatCurrency(avgPub*0.70-(deal.repairEstimate||0))} />}
-                      </>}
-                    </Card>
-                    <Card title="Rental Analysis" icon={BarChart3}>
-                      <InfoRow label="Rent Estimate (mo)" value={deal.rentEstimate?formatCurrency(deal.rentEstimate):null} />
-                      <InfoRow label="Current Rent (mo)" value={deal.currentRent?formatCurrency(deal.currentRent):null} />
-                      {!deal.rentEstimate && !deal.currentRent && <p className="text-gray-600 text-sm">No rental data</p>}
-                    </Card>
-                    <div className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
-                      <div className="px-4 py-3 border-b border-gray-800 flex items-center justify-between">
-                        <div className="flex items-center gap-2"><Sparkles size={14} className="text-purple-400"/><h3 className="text-white text-sm font-medium">AI ARV Analysis</h3></div>
-                        <button onClick={runArvAnalysis} disabled={arvLoading} className="flex items-center gap-2 px-4 py-1.5 bg-purple-700 hover:bg-purple-600 disabled:opacity-50 text-white text-xs rounded-lg transition">
-                          {arvLoading?<><RefreshCw size={11} className="animate-spin"/>Analyzing...</>:<><Sparkles size={11}/>Run Analysis</>}
-                        </button>
-                      </div>
-                      <div className="p-4">
-                        {!arvAnalysis && !arvLoading && <p className="text-gray-600 text-sm text-center py-4">Run analysis to search comps and estimate ARV.</p>}
-                        {arvLoading && <div className="text-center py-6"><RefreshCw size={24} className="text-purple-400 mx-auto mb-2 animate-spin"/><p className="text-gray-400 text-sm">Searching comps...</p></div>}
-                        {arvAnalysis && !arvAnalysis.error && (
-                          <div className="space-y-3">
-                            <div className="grid grid-cols-3 gap-3">
-                              {[{l:'Conservative',v:arvAnalysis.arvLow,c:'text-amber-400'},{l:'Best Estimate',v:arvAnalysis.arvMedian,c:'text-green-400'},{l:'High',v:arvAnalysis.arvHigh,c:'text-blue-400'}].map(x=>(
-                                <div key={x.l} className="bg-gray-800/60 rounded-xl p-3 text-center"><p className={`text-lg font-bold ${x.c}`}>{x.v?formatCurrency(x.v):'—'}</p><p className="text-gray-500 text-xs mt-0.5">{x.l}</p></div>
-                              ))}
-                            </div>
-                            {arvAnalysis.recommendation && <p className="text-gray-300 text-sm bg-blue-900/20 border border-blue-800/40 rounded-lg p-3">{arvAnalysis.recommendation}</p>}
-                          </div>
-                        )}
-                        {arvAnalysis?.error && <p className="text-red-400 text-xs">{arvAnalysis.error}</p>}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* BUYERS */}
-                {tab === 'buyers' && (
-                  <div className="space-y-4">
-                    <div className="bg-gray-900 rounded-xl border border-gray-800 p-4">
-                      <div className="flex items-start justify-between mb-4">
-                        <div>
-                          <h3 className="text-white font-semibold text-sm mb-0.5">Recommended Blast List</h3>
-                          <p className="text-gray-500 text-xs">{deal.city||'Local'} {deal.dealType==='SUBTO'?'creative / Subto buyers':'cash buyers and flippers'}</p>
-                        </div>
-                        <button onClick={()=>generateContent.mutate('sms')} disabled={b===0} className="flex items-center gap-2 px-4 py-2 bg-green-700 hover:bg-green-600 disabled:bg-gray-800 disabled:text-gray-600 text-white text-xs rounded-xl font-semibold transition">
-                          <Zap size={12}/> Generate Buyer Blast
-                        </button>
-                      </div>
-                      <div className="grid grid-cols-4 gap-3 mb-4">
-                        {[{l:'Total',v:b,c:b>0?'text-white':'text-gray-600'},{l:'Tier 1',v:t1,c:t1>0?'text-orange-400':'text-gray-600'},{l:'Recommended',v:b>0?Math.max(1,Math.round(b*0.75)):0,c:'text-green-400'},{l:'Excluded',v:b>0?Math.round(b*0.25):0,c:'text-gray-500'}].map(s=>(
-                          <div key={s.l} className="bg-gray-800/60 rounded-lg p-3 text-center"><p className={`text-xl font-bold ${s.c}`}>{s.v}</p><p className="text-gray-500 text-xs mt-0.5">{s.l}</p></div>
-                        ))}
-                      </div>
-                      <div className="flex gap-2 flex-wrap">
-                        <button onClick={()=>generateContent.mutate('sms')} disabled={b===0} className="flex items-center gap-1.5 px-3 py-1.5 bg-green-900/40 hover:bg-green-900/60 border border-green-700/40 text-green-300 text-xs rounded-lg transition disabled:opacity-40"><MessageSquare size={11}/> Preview SMS</button>
-                        <button onClick={()=>generateContent.mutate('email')} disabled={b===0} className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-900/40 hover:bg-blue-900/60 border border-blue-700/40 text-blue-300 text-xs rounded-lg transition disabled:opacity-40"><Mail size={11}/> Preview Email</button>
-                        <button onClick={()=>generateContent.mutate('facebook')} disabled={b===0} className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-900/40 hover:bg-indigo-900/60 border border-indigo-700/40 text-indigo-300 text-xs rounded-lg transition disabled:opacity-40"><Facebook size={11}/> Preview FB Post</button>
-                      </div>
-                      {(generatedOutput.sms||generatedOutput.email||generatedOutput.facebook) && (
-                        <div className="mt-3 space-y-2">
-                          {generatedOutput.sms && <div><p className="text-gray-500 text-xs mb-1">📱 SMS Preview</p><GeneratedOutput content={generatedOutput.sms} onClose={()=>setGeneratedOutput(p=>({...p,sms:''}))} /></div>}
-                          {generatedOutput.email && <div><p className="text-gray-500 text-xs mb-1">📧 Email</p><GeneratedOutput content={generatedOutput.email} onClose={()=>setGeneratedOutput(p=>({...p,email:''}))} /></div>}
-                          {generatedOutput.facebook && <div><p className="text-gray-500 text-xs mb-1">📘 FB Post</p><GeneratedOutput content={generatedOutput.facebook} onClose={()=>setGeneratedOutput(p=>({...p,facebook:''}))} /></div>}
-                        </div>
-                      )}
-                    </div>
-                    {b > 0 ? (
-                      <div className="space-y-3">
-                        {[
-                          {name:'Top Cash Buyer',tier:'TIER_1',match:94,strategy:'WHOLESALE',price:deal.askingPrice?formatCurrency(deal.askingPrice):'TBD',rehab:'MEDIUM REHAB',reason:`Actively buys SFR in ${deal.city||'this market'} and has responded to similar deals.`,concern:null},
-                          {name:'Active Investor',tier:'TIER_1',match:87,strategy:'BUY AND HOLD',price:deal.askingPrice?formatCurrency(deal.askingPrice):'TBD',rehab:'MEDIUM REHAB',reason:'Buy-and-hold investor with DSCR financing.',concern:'Has not been contacted in 30+ days.'},
-                          {name:'Regional Flipper',tier:'TIER_2',match:72,strategy:'FLIP',price:deal.askingPrice?`Up to ${formatCurrency(deal.askingPrice)}`:'TBD',rehab:'HEAVY REHAB',reason:'Fix-and-flip buyer comfortable with rehab.',concern:null},
-                        ].slice(0,Math.max(1,b)).map((buyer,i) => (
-                          <div key={i} className="bg-gray-900 rounded-xl border border-gray-800 p-4">
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="flex items-center gap-2">
-                                <span className="text-white font-semibold text-sm">{buyer.name}</span>
-                                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${buyer.tier==='TIER_1'?'bg-orange-900/60 text-orange-300':'bg-gray-800 text-gray-400'}`}>{buyer.tier==='TIER_1'?'Tier 1':'Tier 2'}</span>
-                              </div>
-                              <span className={`text-sm font-bold ${buyer.match>=80?'text-green-400':buyer.match>=60?'text-yellow-400':'text-gray-400'}`}>{buyer.match}% match</span>
-                            </div>
-                            <div className="grid grid-cols-3 gap-3 mb-3 text-xs">
-                              <div><p className="text-gray-600 mb-0.5">Strategy</p><p className="text-gray-300 font-medium">{buyer.strategy}</p></div>
-                              <div><p className="text-gray-600 mb-0.5">Price</p><p className="text-gray-300 font-medium">{buyer.price}</p></div>
-                              <div><p className="text-gray-600 mb-0.5">Rehab</p><p className="text-gray-300 font-medium">{buyer.rehab}</p></div>
-                            </div>
-                            <div className="bg-green-900/20 border border-green-800/40 rounded-lg p-2.5 mb-2">
-                              <p className="text-green-400 text-[10px] font-bold mb-0.5">Why they match</p>
-                              <p className="text-gray-300 text-xs">{buyer.reason}</p>
-                            </div>
-                            {buyer.concern && <div className="bg-amber-900/20 border border-amber-800/40 rounded-lg p-2.5 mb-2"><p className="text-amber-400 text-[10px] font-bold mb-0.5">Concern</p><p className="text-gray-300 text-xs">{buyer.concern}</p></div>}
-                            <div className="flex gap-2"><button className="flex items-center gap-1 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs rounded-lg border border-gray-700"><Phone size={11}/> Contact</button><button className="flex items-center gap-1 px-3 py-1.5 bg-blue-900/40 hover:bg-blue-900/60 text-blue-300 text-xs rounded-lg border border-blue-700/40"><Plus size={11}/> Add to Blast</button></div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-12 bg-gray-900 rounded-xl border border-gray-800">
-                        <Users size={32} className="text-gray-700 mx-auto mb-3"/>
-                        <p className="text-gray-400 font-medium mb-1">No buyers matched yet</p>
-                        <p className="text-gray-600 text-sm mb-4">Run buyer match to find qualified buyers.</p>
-                        <button onClick={()=>matchAction.mutate()} disabled={matchAction.isPending} className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm rounded-xl font-medium transition mx-auto disabled:opacity-50"><Target size={14}/>{matchAction.isPending?'Matching...':'Run Buyer Match'}</button>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* EXECUTION */}
-                {tab === 'dispo' && (
-                  <div className="space-y-4">
-                    {[
-                      {n:1,t:'Confirm Requirements',content:()=>{
-                        const checks=[
-                          {l:'Photos available',ok:hasPhotos,req:true,action:<button onClick={()=>{}} className="text-[10px] px-2 py-0.5 bg-amber-900/40 text-amber-300 rounded border border-amber-700/40">Add Photos</button>},
-                          {l:'Asking price confirmed',ok:!!deal.askingPrice,req:true,action:null},
-                          {l:'Buyer-facing description',ok:!!deal.description,req:true,action:null},
-                          {l:'Permission to market',ok:hasPermission,req:true,action:!hasPermission?<button onClick={()=>setTab('source')} className="text-[10px] px-2 py-0.5 bg-purple-900/40 text-purple-300 rounded border border-purple-700/40">Go to Source</button>:null},
-                          {l:'Buyer matches selected',ok:b>0,req:true,action:b===0?<button onClick={()=>matchAction.mutate()} disabled={matchAction.isPending} className="text-[10px] px-2 py-0.5 bg-blue-900/40 text-blue-300 rounded border border-blue-700/40">{matchAction.isPending?'Matching...':'Run Match'}</button>:null},
-                          {l:'Access / lockbox confirmed',ok:!!deal.accessInfo,req:false,action:null},
-                          {l:'COE / closing date known',ok:!!deal.closingDate,req:false,action:null},
-                        ];
-                        const passed=checks.filter(c=>c.ok).length;
-                        const blastReady=checks.filter(c=>c.req).every(c=>c.ok);
-                        const pct=Math.round((passed/checks.length)*100);
-                        return(<>
-                          <div className="flex items-center justify-between mb-2"><span className={`text-sm font-bold ${blastReady?'text-green-400':'text-amber-400'}`}>{blastReady?'✓ Blast Ready':`${pct}% complete`}</span><span className="text-gray-500 text-xs">{passed}/{checks.length}</span></div>
-                          <div className="h-1.5 bg-gray-800 rounded-full mb-3"><div className={`h-full rounded-full ${blastReady?'bg-green-500':pct>=60?'bg-amber-500':'bg-red-500'}`} style={{width:`${pct}%`}}/></div>
-                          <div className="space-y-2">{checks.map((c,i)=>(
-                            <div key={i} className="flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                <div className={`w-4 h-4 rounded-full flex items-center justify-center shrink-0 ${c.ok?'bg-green-900/60':c.req?'bg-red-900/60':'bg-gray-800'}`}>{c.ok?<CheckCircle size={10} className="text-green-400"/>:<X size={8} className={c.req?'text-red-400':'text-gray-600'}/>}</div>
-                                <span className={`text-xs ${c.ok?'text-gray-400':c.req?'text-red-300':'text-gray-500'}`}>{c.l}</span>
-                                {!c.ok && c.req && <span className="text-[9px] text-red-500 uppercase font-bold">required</span>}
-                              </div>
-                              {!c.ok && c.action}
-                            </div>
-                          ))}</div>
-                        </>);
-                      }},
-                      {n:2,t:'Select Buyers',content:()=>(<>
-                        <div className="grid grid-cols-4 gap-3 mb-3">
-                          {[{l:'Total',v:b,c:b>0?'text-white':'text-gray-600'},{l:'Tier 1',v:t1,c:t1>0?'text-orange-400':'text-gray-600'},{l:'Recommended',v:b>0?Math.max(1,Math.round(b*0.75)):0,c:'text-green-400'},{l:'Excluded',v:b>0?Math.round(b*0.25):0,c:'text-gray-500'}].map(s=>(
-                            <div key={s.l} className="bg-gray-800/50 rounded-lg p-3 text-center"><p className={`text-xl font-bold ${s.c}`}>{s.v}</p><p className="text-gray-500 text-xs mt-0.5">{s.l}</p></div>
-                          ))}
-                        </div>
-                        <button onClick={()=>matchAction.mutate()} disabled={matchAction.isPending} className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-700 hover:bg-blue-600 text-white text-xs rounded-lg transition disabled:opacity-50"><Target size={11}/>{matchAction.isPending?'Matching...':'Re-run Match'}</button>
-                      </>)},
-                      {n:3,t:'Generate Campaign',content:()=>(<>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-                          {[{key:'sms',l:'SMS Blast',cl:'bg-green-900/40 hover:bg-green-900/60 border-green-700/40 text-green-300',icon:MessageSquare},{key:'email',l:'Email Blast',cl:'bg-blue-900/40 hover:bg-blue-900/60 border-blue-700/40 text-blue-300',icon:Mail},{key:'facebook',l:'FB Post',cl:'bg-indigo-900/40 hover:bg-indigo-900/60 border-indigo-700/40 text-indigo-300',icon:Facebook},{key:'followUp',l:'Follow-Up',cl:'bg-amber-900/40 hover:bg-amber-900/60 border-amber-700/40 text-amber-300',icon:Send}].map(btn=>(
-                            <button key={btn.key} onClick={()=>btn.key==='followUp'?followUpAction.mutate():generateContent.mutate(btn.key)} disabled={generateContent.isPending} className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm border transition ${btn.cl}`}><btn.icon size={13}/> {btn.l}</button>
-                          ))}
-                        </div>
-                        <AnimatePresence>
-                          {generatedOutput.sms && <div className="mb-3"><div className="flex items-center justify-between mb-1"><p className="text-gray-500 text-xs">📱 SMS Preview</p><span className="text-gray-600 text-xs">{b} buyers</span></div><GeneratedOutput content={generatedOutput.sms} onClose={()=>setGeneratedOutput(p=>({...p,sms:''}))} /><button onClick={()=>toast.success('Twilio not yet configured — export and send manually')} className="mt-2 flex items-center gap-2 px-4 py-2 bg-green-700 hover:bg-green-600 text-white text-xs rounded-lg font-semibold"><Zap size={11}/> Send to {b} Buyers</button></div>}
-                          {generatedOutput.email && <div className="mb-3"><p className="text-gray-500 text-xs mb-1">📧 Email</p><GeneratedOutput content={generatedOutput.email} onClose={()=>setGeneratedOutput(p=>({...p,email:''}))} /></div>}
-                          {generatedOutput.facebook && <div className="mb-3"><p className="text-gray-500 text-xs mb-1">📘 FB Post</p><GeneratedOutput content={generatedOutput.facebook} onClose={()=>setGeneratedOutput(p=>({...p,facebook:''}))} /></div>}
-                          {generatedOutput.followUp && <div className="mb-3"><p className="text-gray-500 text-xs mb-1">💬 Follow-Up</p><GeneratedOutput content={generatedOutput.followUp} onClose={()=>setGeneratedOutput(p=>({...p,followUp:''}))} /></div>}
-                        </AnimatePresence>
-                      </>)},
-                      {n:4,t:'Track & Close',content:()=>(<>
-                        <div className="grid grid-cols-3 md:grid-cols-6 gap-2 mb-4">
-                          {['Contacted','Replied','Interested','Offers','Best Offer','Follow-Ups'].map(l=>(<div key={l} className="bg-gray-800/50 rounded-lg p-2.5 text-center"><p className="text-white text-sm font-bold">—</p><p className="text-gray-600 text-[10px] mt-0.5">{l}</p></div>))}
-                        </div>
-                        <p className="text-gray-600 text-xs mb-3">Response tracking coming soon.</p>
-                        <div className="flex gap-2 flex-wrap">
-                          {['OFFER_RECEIVED','ASSIGNED','CLOSED','DEAD'].map(s=>(<button key={s} onClick={()=>updateStatus.mutate(s)} className="px-3 py-1.5 text-xs bg-gray-800 hover:bg-gray-700 text-gray-400 rounded-lg border border-gray-700">Mark {s.replace(/_/g,' ')}</button>))}
-                        </div>
-                      </>)},
-                    ].map(step => (
-                      <div key={step.n} className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
-                        <div className="px-4 py-3 border-b border-gray-800 flex items-center gap-2">
-                          <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center">{step.n}</span>
-                          <h3 className="text-white text-sm font-medium">{step.t}</h3>
-                        </div>
-                        <div className="p-4">{step.content()}</div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* SOURCE */}
-                {tab === 'source' && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Card title="Source / JV Partner" icon={Users}>
-                      <InfoRow label="Source Type" value={deal.sourceType} />
-                      <InfoRow label="Name" value={deal.sourceName} />
-                      {deal.sourcePhone && <div className="flex justify-between py-2 border-b border-gray-800/50"><span className="text-gray-500 text-sm">Phone</span><a href={`tel:${deal.sourcePhone}`} className="text-blue-400 text-sm flex items-center gap-1"><Phone size={11}/> {deal.sourcePhone}</a></div>}
-                      {deal.sourceEmail && <div className="flex justify-between py-2 border-b border-gray-800/50"><span className="text-gray-500 text-sm">Email</span><a href={`mailto:${deal.sourceEmail}`} className="text-blue-400 text-sm flex items-center gap-1"><Mail size={11}/> {deal.sourceEmail}</a></div>}
-                      <InfoRow label="Permission to Market" value={deal.permissionToMarket} />
-                      <InfoRow label="JV Agreement" value={deal.jvAgreementStatus} />
-                      {deal.facebookPostUrl && <InfoRow label="FB Post" value="View Post" href={deal.facebookPostUrl} />}
-                      {!deal.sourceName && !deal.sourcePhone && <p className="text-gray-600 text-sm">No source info added</p>}
-                      {deal.originalPostText && (
-                        <div className="mt-3 pt-3 border-t border-gray-800">
-                          <button onClick={()=>setShowOriginalPost(!showOriginalPost)} className="flex items-center gap-1 text-gray-500 text-xs hover:text-gray-300">
-                            {showOriginalPost?<ChevronUp size={12}/>:<ChevronDown size={12}/>} {showOriginalPost?'Hide':'Show'} Original Post
-                          </button>
-                          {showOriginalPost && <p className="text-gray-400 text-xs mt-2 bg-gray-800/60 rounded-lg p-3 leading-relaxed whitespace-pre-wrap">{deal.originalPostText}</p>}
-                        </div>
-                      )}
-                    </Card>
-                    <Card title="Timeline" icon={Clock}>
-                      <InfoRow label="Contract Date" value={deal.contractDate?new Date(deal.contractDate).toLocaleDateString():null} />
-                      <InfoRow label="Inspection Deadline" value={deal.inspectionDeadline?new Date(deal.inspectionDeadline).toLocaleDateString():null} />
-                      <InfoRow label="Closing / COE" value={deal.closingDate?new Date(deal.closingDate).toLocaleDateString():null} />
-                      <InfoRow label="Vacant at Close" value={deal.vacantAtClose!=='UNKNOWN'?deal.vacantAtClose:null} />
-                      <InfoRow label="Title Company" value={deal.titleCompany} />
-                      {!deal.closingDate && !deal.contractDate && <p className="text-gray-600 text-sm">No timeline data</p>}
-                    </Card>
-                    <Card title="Activity Log" icon={FileText}>
-                      <div className="space-y-2">
-                        <div className="flex items-start gap-2"><div className="w-1.5 h-1.5 rounded-full bg-blue-400 mt-1.5 shrink-0"/><div><p className="text-gray-300 text-xs">Deal created</p><p className="text-gray-600 text-xs">{new Date(deal.createdAt).toLocaleString()}</p></div></div>
-                        {deal.status !== 'DRAFT' && <div className="flex items-start gap-2"><div className="w-1.5 h-1.5 rounded-full bg-green-400 mt-1.5 shrink-0"/><div><p className="text-gray-300 text-xs">Status: {deal.status?.replace(/_/g,' ')}</p><p className="text-gray-600 text-xs">{new Date(deal.updatedAt).toLocaleString()}</p></div></div>}
-                        <p className="text-gray-700 text-xs mt-2 pt-2 border-t border-gray-800">Full activity log coming soon</p>
-                      </div>
-                    </Card>
-                  </div>
-                )}
-
-              </motion.div>
             </div>
           </div>
 
-          {/* ── RIGHT STICKY SIDEBAR (30%) ─────────────────────────────── */}
-          <div className="w-80 xl:w-96 shrink-0">
-            <div className="sticky top-16 space-y-3 max-h-[calc(100vh-5rem)] overflow-y-auto pb-4">
+          {/* RIGHT: Deal Snapshot (3 cols) */}
+          <div className="col-span-12 md:col-span-3" style={{height:560}}>
+            <div className="bg-gray-900 rounded-xl border border-gray-800 h-full flex flex-col overflow-hidden">
+              <div className="px-3 py-2.5 border-b border-gray-800 flex items-center justify-between">
+                <span className="text-white text-xs font-semibold">Deal Snapshot</span>
+                {!refValue && (
+                  <button onClick={fetchZestimate} disabled={zestimateFetching}
+                    className="flex items-center gap-1 px-2 py-0.5 bg-blue-900/40 hover:bg-blue-900/60 text-blue-300 text-[10px] rounded border border-blue-700/40 transition">
+                    <Sparkles size={8}/> {zestimateFetching?'Fetching...':'Fetch Zestimate'}
+                  </button>
+                )}
+              </div>
+              <div className="p-3 flex-1 overflow-y-auto space-y-0">
 
-              {/* Dispo Opportunity Score */}
-              <div className="bg-gray-900 rounded-xl border border-gray-800 p-4">
-                <p className="text-gray-600 text-[10px] font-bold uppercase tracking-wide mb-3">Dispo Opportunity Score</p>
-                <div className="flex items-center gap-4 mb-3">
-                  <div className="relative w-16 h-16 shrink-0">
-                    <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
-                      <circle cx="18" cy="18" r="15.9" fill="none" stroke="#1f2937" strokeWidth="3.5"/>
-                      <circle cx="18" cy="18" r="15.9" fill="none" stroke={scoreBarColor} strokeWidth="3.5"
-                        strokeDasharray={`${sellScore} ${100-sellScore}`} strokeLinecap="round"/>
-                    </svg>
-                    <span className={`absolute inset-0 flex items-center justify-center text-lg font-black ${scoreColor}`}>{sellScore}</span>
+                {/* Pricing block */}
+                <div className="space-y-1.5 pb-3 border-b border-gray-800 mb-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-500 text-xs">Ask</span>
+                    <div className="text-right">
+                      <p className="text-white font-bold text-sm">{deal.askingPrice ? formatCurrency(deal.askingPrice) : '—'}</p>
+                      {pricePos && <p className={`text-[10px] font-semibold ${pricePos==='UNDER_70'||pricePos==='NEAR_UNDER'?'text-green-400':pricePos==='NEAR_OVER'?'text-yellow-400':'text-red-400'}`}>{pricePos==='UNDER_70'?'Under 70%':pricePos==='NEAR_UNDER'?'Near 70%':pricePos==='NEAR_OVER'?'Near 70%':pricePos==='OVER_70'?'Over 70%':'Overpriced'}</p>}
+                    </div>
                   </div>
-                  <div>
-                    <p className={`text-base font-bold leading-tight ${scoreColor}`}>{scoreLabel}</p>
-                    <p className="text-gray-600 text-[10px] mt-0.5">
-                      {sellReasons.slice(0,2).join(' · ')}
+                  {refValue > 0 && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-500 text-xs">{avgPub?(pubEstimates.length>1?'Avg Public Val':'Zestimate'):'ARV'}</span>
+                      <p className="text-gray-300 text-xs font-medium">{formatCurrency(refValue)}</p>
+                    </div>
+                  )}
+                  {threshold70 > 0 && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-500 text-xs">70% Threshold</span>
+                      <p className="text-yellow-400 text-xs font-bold">{formatCurrency(threshold70)}</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Price signal */}
+                {gap !== 0 && refValue > 0 && deal.askingPrice && (
+                  <div className={`rounded-lg p-2 mb-3 text-center ${gap>0?'bg-green-900/30':'bg-red-900/30'}`}>
+                    <p className={`text-xs font-bold ${gap>0?'text-green-400':'text-red-400'}`}>
+                      {gap>0?`${formatCurrency(Math.abs(gap))} under 70%`:`${formatCurrency(Math.abs(gap))} over 70%`}
+                    </p>
+                    <p className={`text-[10px] mt-0.5 font-semibold ${gap>20000?'text-green-500':gap>0?'text-green-400':gap>-20000?'text-yellow-400':'text-red-400'}`}>
+                      {gap>20000?'Strong Price Signal':gap>0?'Near Investor Threshold':gap>-20000?'Slightly Over Threshold':'Overpriced vs Public Value'}
                     </p>
                   </div>
-                </div>
-                <div className="space-y-1">
-                  {sellReasons.slice(0,4).map((r,i) => (
-                    <div key={i} className="flex items-center gap-1.5 text-xs text-gray-400">
-                      <CheckCircle size={10} className="text-green-400 shrink-0"/>{r}
-                    </div>
-                  ))}
-                </div>
-              </div>
+                )}
 
-              {/* Next Best Action */}
-              <div className="bg-gray-900 rounded-xl border border-gray-800 p-4">
-                <p className="text-gray-600 text-[10px] font-bold uppercase tracking-wide mb-2">Next Best Action</p>
-                <p className="text-gray-300 text-xs mb-3 leading-relaxed">
-                  {missingPermission && missingPhotos ? 'Confirm JV permission and add photos before marketing this deal.'
-                    : missingPermission ? 'Confirm JV permission before marketing this JV deal.'
-                    : missingPhotos ? 'Add photos so buyers can see the property before blasting.'
-                    : b === 0 ? 'Run buyer match to find qualified buyers for this market and deal type.'
-                    : deal.status === 'CAMPAIGN_ACTIVE' ? 'Campaign is active. Follow up with interested buyers.'
-                    : `${b} buyers ready. All requirements met — generate your buyer blast now.`}
-                </p>
-                <button onClick={primaryAction.fn} disabled={matchAction.isPending || generateContent.isPending}
-                  className={`w-full flex items-center justify-center gap-2 py-2.5 ${primaryAction.color} text-white text-sm rounded-xl font-bold transition disabled:opacity-50`}>
-                  <primaryAction.icon size={13}/>
-                  {matchAction.isPending ? 'Matching...' : generateContent.isPending ? 'Generating...' : primaryAction.label}
-                </button>
-              </div>
-
-              {/* Deal Snapshot */}
-              <div className="bg-gray-900 rounded-xl border border-gray-800 p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <p className="text-gray-600 text-[10px] font-bold uppercase tracking-wide">Deal Snapshot</p>
-                  {!refValue && <button onClick={fetchZestimate} disabled={zestimateFetching} className="flex items-center gap-1 px-2 py-0.5 bg-blue-900/40 hover:bg-blue-900/60 text-blue-300 text-[10px] rounded border border-blue-700/40"><Sparkles size={8}/>{zestimateFetching?'Fetching...':'Fetch Zestimate'}</button>}
-                </div>
-                <div className="space-y-1.5">
-                  {deal.askingPrice && (
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-500 text-xs">Ask</span>
-                      <div className="text-right">
-                        <span className="text-white text-sm font-bold">{formatCurrency(deal.askingPrice)}</span>
-                        {pricePos && <span className={`ml-2 text-[10px] font-semibold ${pricePos==='UNDER_70'||pricePos==='NEAR_UNDER'?'text-green-400':pricePos==='NEAR_OVER'?'text-yellow-400':'text-red-400'}`}>{pricePos==='UNDER_70'?'↓ Under 70%':pricePos==='NEAR_UNDER'?'Near 70%':pricePos==='NEAR_OVER'?'Near 70%':'Over 70%'}</span>}
-                      </div>
-                    </div>
-                  )}
-                  {refValue > 0 && <div className="flex justify-between"><span className="text-gray-500 text-xs">{avgPub?(pubEstimates.length>1?'Avg Public Val':'Zestimate'):'ARV'}</span><span className="text-gray-300 text-xs font-medium">{formatCurrency(refValue)}</span></div>}
-                  {threshold70 > 0 && <div className="flex justify-between"><span className="text-gray-500 text-xs">70% Threshold</span><span className="text-yellow-400 text-xs font-bold">{formatCurrency(threshold70)}</span></div>}
-                  {gap !== 0 && refValue > 0 && deal.askingPrice && (
-                    <div className={`rounded-lg p-2 text-center ${gap>0?'bg-green-900/20':'bg-red-900/20'}`}>
-                      <p className={`text-xs font-bold ${gap>0?'text-green-400':'text-red-400'}`}>{gap>0?`${formatCurrency(Math.abs(gap))} under 70%`:`${formatCurrency(Math.abs(gap))} over 70%`}</p>
-                      <p className={`text-[10px] font-semibold mt-0.5 ${gap>20000?'text-green-500':gap>0?'text-green-400':gap>-20000?'text-yellow-400':'text-red-400'}`}>{gap>20000?'Strong Price Signal':gap>0?'Near Investor Threshold':gap>-20000?'Slightly Over':'Overpriced'}</p>
-                    </div>
-                  )}
-                  {!refValue && <p className="text-gray-700 text-[10px]">Fetch Zestimate to see price position</p>}
-                </div>
-                <div className="border-t border-gray-800 mt-3 pt-3 space-y-1.5">
-                  {/* ARV inline edit */}
+                {/* ARV + Repairs */}
+                <div className="space-y-1.5 pb-3 border-b border-gray-800 mb-3">
                   <div className="flex justify-between items-center cursor-pointer group/arv" onClick={()=>{if(!editingArv){setArvInput(deal.arv?String(deal.arv):'');setEditingArv(true);}}}>
                     <span className="text-gray-500 text-xs">ARV <span className="text-gray-700 text-[9px] group-hover/arv:text-gray-500">✎</span></span>
                     {editingArv ? (
                       <div className="flex gap-1" onClick={e=>e.stopPropagation()}>
                         <input autoFocus type="number" value={arvInput} onChange={e=>setArvInput(e.target.value)}
                           onKeyDown={e=>{if(e.key==='Enter'){updateDeal.mutate({arv:parseFloat(arvInput)||null});setEditingArv(false);}if(e.key==='Escape')setEditingArv(false);}}
-                          className="w-24 bg-gray-800 text-white text-xs text-center rounded px-2 py-0.5 border border-blue-500 focus:outline-none"/>
-                        <button onClick={()=>{updateDeal.mutate({arv:parseFloat(arvInput)||null});setEditingArv(false);}} className="px-2 py-0.5 bg-blue-600 text-white text-[10px] rounded">✓</button>
-                        <button onClick={()=>setEditingArv(false)} className="px-1.5 py-0.5 bg-gray-700 text-gray-400 text-[10px] rounded">✕</button>
+                          className="w-20 bg-gray-800 text-white text-xs text-center rounded px-1 py-0.5 border border-blue-500 focus:outline-none" placeholder="ARV"/>
+                        <button onClick={()=>{updateDeal.mutate({arv:parseFloat(arvInput)||null});setEditingArv(false);}} className="px-1.5 py-0.5 bg-blue-600 text-white text-[10px] rounded">✓</button>
                       </div>
-                    ) : <span className={`text-xs font-medium ${deal.arv?'text-white':'text-gray-600'}`}>{deal.arv?formatCurrency(deal.arv):'Not entered'}</span>}
+                    ) : (
+                      <p className="text-white text-xs font-semibold group-hover/arv:text-blue-300 transition">{deal.arv?formatCurrency(deal.arv):<span className="text-gray-600">Not entered</span>}</p>
+                    )}
                   </div>
-                  {/* Repairs inline edit */}
                   <div className="flex justify-between items-center cursor-pointer group/rep" onClick={()=>{if(!editingRepairs){setRepairsInput(deal.repairEstimate?String(deal.repairEstimate):'');setEditingRepairs(true);}}}>
                     <span className="text-gray-500 text-xs">Repairs <span className="text-gray-700 text-[9px] group-hover/rep:text-gray-500">✎</span></span>
                     {editingRepairs ? (
                       <div className="flex gap-1" onClick={e=>e.stopPropagation()}>
                         <input autoFocus type="number" value={repairsInput} onChange={e=>setRepairsInput(e.target.value)}
                           onKeyDown={e=>{if(e.key==='Enter'){updateDeal.mutate({repairEstimate:parseFloat(repairsInput)||null});setEditingRepairs(false);}if(e.key==='Escape')setEditingRepairs(false);}}
-                          className="w-24 bg-gray-800 text-white text-xs text-center rounded px-2 py-0.5 border border-blue-500 focus:outline-none"/>
-                        <button onClick={()=>{updateDeal.mutate({repairEstimate:parseFloat(repairsInput)||null});setEditingRepairs(false);}} className="px-2 py-0.5 bg-blue-600 text-white text-[10px] rounded">✓</button>
-                        <button onClick={()=>setEditingRepairs(false)} className="px-1.5 py-0.5 bg-gray-700 text-gray-400 text-[10px] rounded">✕</button>
+                          className="w-20 bg-gray-800 text-white text-xs text-center rounded px-1 py-0.5 border border-blue-500 focus:outline-none" placeholder="Repairs"/>
+                        <button onClick={()=>{updateDeal.mutate({repairEstimate:parseFloat(repairsInput)||null});setEditingRepairs(false);}} className="px-1.5 py-0.5 bg-blue-600 text-white text-[10px] rounded">✓</button>
                       </div>
-                    ) : <span className={`text-xs font-medium ${deal.repairEstimate?'text-white':'text-gray-600'}`}>{deal.repairEstimate?formatCurrency(deal.repairEstimate):'Not entered'}</span>}
-                  </div>
-                  {!deal.arv && refValue > 0 && <p className="text-gray-700 text-[10px] italic">ARV pending — using public value as reference</p>}
-                </div>
-                <div className="border-t border-gray-800 mt-3 pt-3">
-                  <div className="flex justify-between"><span className="text-gray-500 text-xs">Buyers Matched</span><span className={`text-sm font-black ${b>0?'text-purple-400':'text-gray-600'}`}>{b}</span></div>
-                  {t1 > 0 && <div className="flex justify-between mt-1"><span className="text-gray-500 text-xs">Tier 1</span><span className="text-orange-400 text-xs font-bold">{t1}</span></div>}
-                  {deal.beds && <div className="flex justify-between mt-1"><span className="text-gray-500 text-xs">Beds/Baths</span><span className="text-gray-400 text-xs">{deal.beds}bd / {deal.baths}ba</span></div>}
-                  {deal.sqft && <div className="flex justify-between mt-1"><span className="text-gray-500 text-xs">Sqft</span><span className="text-gray-400 text-xs">{deal.sqft.toLocaleString()}</span></div>}
-                  {deal.occupancy && deal.occupancy!=='UNKNOWN' && <div className="flex justify-between mt-1"><span className="text-gray-500 text-xs">Occupancy</span><span className="text-gray-400 text-xs">{deal.occupancy}</span></div>}
-                </div>
-              </div>
-
-              {/* Blockers */}
-              {(missingPermission || missingPhotos || !b) && (
-                <div className="bg-gray-900 rounded-xl border border-gray-800 p-4">
-                  <p className="text-gray-600 text-[10px] font-bold uppercase tracking-wide mb-3">Blockers to Fix</p>
-                  <div className="space-y-2.5">
-                    {missingPermission && (
-                      <div className="bg-amber-900/20 border border-amber-800/40 rounded-lg p-3">
-                        <div className="flex items-start gap-1.5 mb-1.5"><AlertCircle size={10} className="text-amber-400 mt-0.5 shrink-0"/><p className="text-amber-300 text-xs font-semibold">JV Permission Required</p></div>
-                        <p className="text-gray-500 text-[10px] mb-2">Confirm permission before marketing this JV deal.</p>
-                        <button onClick={()=>setTab('source')} className="flex items-center gap-1 px-2.5 py-1 bg-amber-700/50 hover:bg-amber-700/70 text-amber-200 text-[10px] rounded-lg font-medium"><Shield size={9}/> Confirm Permission</button>
-                      </div>
-                    )}
-                    {missingPhotos && (
-                      <div className="bg-red-900/20 border border-red-800/40 rounded-lg p-3">
-                        <div className="flex items-start gap-1.5 mb-1.5"><Camera size={10} className="text-red-400 mt-0.5 shrink-0"/><p className="text-red-300 text-xs font-semibold">Photos Required</p></div>
-                        <p className="text-gray-500 text-[10px] mb-2">Buyers need photos before blasting.</p>
-                        <div className="flex gap-1.5">
-                          <button className="flex items-center gap-1 px-2.5 py-1 bg-red-700/50 hover:bg-red-700/70 text-red-200 text-[10px] rounded-lg font-medium"><Upload size={9}/> Upload Photos</button>
-                          <button onClick={()=>toast('Request photos from source')} className="flex items-center gap-1 px-2.5 py-1 bg-gray-800 hover:bg-gray-700 text-gray-400 text-[10px] rounded-lg"><Send size={9}/> Request</button>
-                        </div>
-                      </div>
-                    )}
-                    {b === 0 && (
-                      <div className="bg-blue-900/20 border border-blue-800/40 rounded-lg p-3">
-                        <div className="flex items-start gap-1.5 mb-1.5"><Users size={10} className="text-blue-400 mt-0.5 shrink-0"/><p className="text-blue-300 text-xs font-semibold">No Buyers Matched</p></div>
-                        <p className="text-gray-500 text-[10px] mb-2">Run buyer match to build your blast list.</p>
-                        <button onClick={()=>matchAction.mutate()} disabled={matchAction.isPending} className="flex items-center gap-1 px-2.5 py-1 bg-blue-700/50 hover:bg-blue-700/70 text-blue-200 text-[10px] rounded-lg font-medium disabled:opacity-50"><Target size={9}/> {matchAction.isPending?'Matching...':'Run Buyer Match'}</button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Recommended Blast */}
-              <div className={`rounded-xl border p-4 ${b>0&&!missingPhotos&&!missingPermission?'bg-green-900/20 border-green-800/40':'bg-gray-900 border-gray-800'}`}>
-                <p className="text-gray-600 text-[10px] font-bold uppercase tracking-wide mb-2">Recommended Blast</p>
-                {b > 0 ? (
-                  <>
-                    <div className="flex items-baseline gap-2 mb-0.5">
-                      <span className="text-white text-sm font-semibold">{b} buyer{b>1?'s':''} matched</span>
-                      {t1 > 0 && <span className="text-orange-400 text-xs font-bold">{t1} Tier 1 first</span>}
-                    </div>
-                    <p className="text-gray-500 text-xs mb-3">Audience: {deal.city||'Local'} {deal.dealType==='SUBTO'?'creative / Subto buyers':'cash buyers and flippers'}</p>
-                    {!missingPhotos && !missingPermission ? (
-                      <>
-                        <p className="text-green-400 text-xs mb-2 font-medium">✓ Ready to blast</p>
-                        <button onClick={()=>{setTab('dispo');generateContent.mutate('sms');}} className="w-full flex items-center justify-center gap-2 py-2.5 bg-green-600 hover:bg-green-500 text-white text-sm rounded-xl font-bold transition"><Zap size={13}/> Blast {b} Buyers</button>
-                      </>
                     ) : (
-                      <>
-                        <div className="space-y-1 mb-3">
-                          {missingPermission && <p className="text-amber-400 text-xs flex items-center gap-1"><AlertCircle size={10}/> JV permission required</p>}
-                          {missingPhotos && <p className="text-red-400 text-xs flex items-center gap-1"><Camera size={10}/> Photos required</p>}
-                        </div>
-                        <button onClick={primaryAction.fn} className={`w-full flex items-center justify-center gap-2 py-2.5 ${primaryAction.color} text-white text-sm rounded-xl font-semibold transition`}><primaryAction.icon size={13}/>{primaryAction.label}</button>
-                      </>
+                      <p className="text-white text-xs font-semibold group-hover/rep:text-blue-300 transition">{deal.repairEstimate?formatCurrency(deal.repairEstimate):<span className="text-gray-600">Not entered</span>}</p>
                     )}
-                  </>
-                ) : (
-                  <>
-                    <p className="text-gray-500 text-sm mb-1">No buyers matched yet.</p>
-                    <p className="text-gray-600 text-xs mb-3">Run buyer match to build blast list.</p>
-                    <button onClick={()=>matchAction.mutate()} disabled={matchAction.isPending} className="w-full flex items-center justify-center gap-2 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm rounded-xl font-semibold transition disabled:opacity-50"><Target size={13}/>{matchAction.isPending?'Matching...':'Run Buyer Match'}</button>
-                  </>
-                )}
-              </div>
+                  </div>
+                  {!deal.arv && refValue > 0 && <p className="text-gray-700 text-[10px] italic">ARV Pending — public value as reference</p>}
+                </div>
 
+                {/* Buyer Demand */}
+                <div className="space-y-1.5 pb-3 border-b border-gray-800 mb-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-500 text-xs">Buyers Matched</span>
+                    <span className={`text-sm font-black ${b>0?'text-purple-400':'text-gray-600'}`}>{b}</span>
+                  </div>
+                  {t1 > 0 && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-500 text-xs">Tier 1</span>
+                      <span className="text-orange-400 text-xs font-bold">{t1}</span>
+                    </div>
+                  )}
+                  {b === 0 && <p className="text-gray-600 text-[10px]">Run match to find buyers</p>}
+                </div>
+
+                {/* Property facts */}
+                <div className="space-y-1.5">
+                  {deal.beds && <div className="flex justify-between"><span className="text-gray-600 text-xs">Beds/Baths</span><span className="text-gray-400 text-xs">{deal.beds}bd / {deal.baths}ba</span></div>}
+                  {deal.sqft && <div className="flex justify-between"><span className="text-gray-600 text-xs">Sqft</span><span className="text-gray-400 text-xs">{deal.sqft.toLocaleString()}</span></div>}
+                  {deal.yearBuilt && <div className="flex justify-between"><span className="text-gray-600 text-xs">Built</span><span className="text-gray-400 text-xs">{deal.yearBuilt}</span></div>}
+                  {deal.occupancy && deal.occupancy!=='UNKNOWN' && <div className="flex justify-between"><span className="text-gray-600 text-xs">Occupancy</span><span className="text-gray-400 text-xs">{deal.occupancy}</span></div>}
+                </div>
+
+              </div>
             </div>
           </div>
         </div>
+
+        {/* ── Tabs ──────────────────────────────────────────────────── */}
+        <div className="sticky top-12 z-30 -mx-4 px-4 py-2 bg-gray-950/95 backdrop-blur border-b border-gray-800/50 mb-4">
+          <div className="flex gap-1 bg-gray-900/80 p-1 rounded-xl border border-gray-800 w-fit">
+            {TABS.map(t => (
+              <button key={t.id} onClick={() => setTab(t.id)}
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition ${tab===t.id?'bg-gray-800 text-white shadow':'text-gray-500 hover:text-gray-300'}`}>
+                <t.icon size={13} />
+                <span className="hidden md:inline">{t.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* ── Tab Content ────────────────────────────────────────── */}
+        <motion.div key={tab} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}>
+
+          {/* OVERVIEW TAB */}
+          {tab === 'overview' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Card title="Property Details" icon={Building2}>
+                <InfoRow label="Address" value={deal.address} />
+                <InfoRow label="City / State / ZIP" value={[deal.city,deal.state,deal.zipCode].filter(Boolean).join(', ')} />
+                <InfoRow label="County" value={deal.county} />
+                <InfoRow label="Property Type" value={deal.propertyType?.replace(/_/g,' ')} />
+                <InfoRow label="Beds / Baths" value={deal.beds?`${deal.beds} bd / ${deal.baths} ba`:null} />
+                <InfoRow label="Square Feet" value={deal.sqft?`${deal.sqft.toLocaleString()} sqft`:null} />
+                <InfoRow label="Year Built" value={deal.yearBuilt} />
+                <InfoRow label="Occupancy" value={deal.occupancy?.replace(/_/g,' ')} />
+                <InfoRow label="Access" value={deal.accessInfo} />
+                <InfoRow label="HOA" value={deal.hoaStatus!=='UNKNOWN'?deal.hoaStatus:null} />
+              </Card>
+
+              <div className="space-y-4">
+                <Card title="Condition" icon={Shield}>
+                  <InfoRow label="Overall" value={deal.overallCondition?.replace(/_/g,' ')} />
+                  {deal.roofCondition && <InfoRow label="Roof" value={`${deal.roofCondition}${deal.roofAge?' · '+deal.roofAge:''}`} />}
+                  {deal.hvacCondition && <InfoRow label="HVAC" value={`${deal.hvacCondition}${deal.hvacAge?' · '+deal.hvacAge:''}`} />}
+                  <InfoRow label="Foundation" value={deal.foundationCondition} />
+                  {deal.moldOrWaterDamage && <p className="text-red-400 text-xs mt-2">⚠ Mold / Water Damage</p>}
+                  {deal.conditionNotes && <p className="text-gray-400 text-xs mt-2 pt-2 border-t border-gray-800">{deal.conditionNotes}</p>}
+                </Card>
+                <Card title="Location Map" icon={MapPin}>
+                  <div className="rounded-lg overflow-hidden" style={{height:200}}>
+                    <iframe
+                      src={`https://www.google.com/maps/embed/v1/place?key=AIzaSyCcCi23uCqY8teR3eET_fZuybvhJ8lb1_s&q=${encodeURIComponent(`${deal.address}, ${deal.city}, ${deal.state} ${deal.zipCode}`)}&zoom=15`}
+                      width="100%" height="100%" style={{border:0}} allowFullScreen loading="lazy" referrerPolicy="no-referrer-when-downgrade" />
+                  </div>
+                  <div className="flex gap-2 mt-2">
+                    <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[10px] px-2 py-1 bg-gray-800 hover:bg-gray-700 text-gray-400 rounded-lg transition"><Globe size={9}/> Open Map</a>
+                    <a href={`https://www.google.com/maps/@?api=1&map_action=pano&query=${encodeURIComponent(`${deal.address}, ${deal.city}, ${deal.state}`)}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[10px] px-2 py-1 bg-gray-800 hover:bg-gray-700 text-gray-400 rounded-lg transition"><Eye size={9}/> Street View</a>
+                    <button onClick={()=>navigator.clipboard.writeText(`${deal.address}, ${deal.city}, ${deal.state} ${deal.zipCode}`)} className="flex items-center gap-1 text-[10px] px-2 py-1 bg-gray-800 hover:bg-gray-700 text-gray-400 rounded-lg transition"><Copy size={9}/> Copy</button>
+                  </div>
+                </Card>
+              </div>
+
+              {/* Public Value Estimates */}
+              <Card title="Public Value Estimates" icon={TrendingUp}
+                action={
+                  <button onClick={fetchZestimate} disabled={zestimateFetching}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-900/40 hover:bg-blue-900/60 text-blue-300 text-xs rounded-lg transition border border-blue-700/40 disabled:opacity-50">
+                    {zestimateFetching ? <><RefreshCw size={9} className="animate-spin"/>Fetching...</> : <><Sparkles size={9}/>Fetch Zestimate</>}
+                  </button>
+                }>
+                {(deal.zillowEstimate || deal.zillowUrl) && (
+                  <div className="mb-3 p-2.5 bg-blue-900/20 border border-blue-800/30 rounded-lg flex items-center justify-between">
+                    <div>
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <p className="text-blue-300 text-xs font-semibold">Zillow Zestimate</p>
+                        {deal.zillowUrl && <a href={deal.zillowUrl} target="_blank" rel="noopener noreferrer" className="text-[10px] px-1.5 py-0.5 bg-blue-800/50 hover:bg-blue-700/50 text-blue-300 rounded flex items-center gap-0.5 transition"><ExternalLink size={8}/> Zillow</a>}
+                      </div>
+                      <p className="text-white text-lg font-bold">{deal.zillowEstimate ? formatCurrency(deal.zillowEstimate) : '—'}</p>
+                    </div>
+                    {deal.zillowEstimate && <div className="text-right"><p className="text-gray-500 text-xs">70% of Zestimate</p><p className="text-yellow-400 text-sm font-semibold">{formatCurrency(deal.zillowEstimate*0.70)}</p></div>}
+                  </div>
+                )}
+                <div className="flex gap-2 mb-3 flex-wrap">
+                  {[
+                    { name: 'Zillow', url: deal.zillowUrl || `https://www.zillow.com/homes/${encodeURIComponent(`${deal.address}, ${deal.city}, ${deal.state}`)}` },
+                    { name: 'Realtor', url: deal.realtorUrl || `https://www.realtor.com/realestateandhomes-search/${(deal.city||'').replace(' ','-')}_${deal.state}` },
+                    { name: 'Redfin', url: deal.redfinUrl || `https://www.redfin.com/city/${(deal.city||'').replace(' ','-')}/${deal.state}` },
+                  ].map(s => (
+                    <a key={s.name} href={s.url} target="_blank" rel="noopener noreferrer"
+                      className="text-xs px-2.5 py-1 bg-gray-800 hover:bg-gray-700 text-gray-400 rounded-lg border border-gray-700 transition flex items-center gap-1">
+                      <ExternalLink size={10}/> {s.name}
+                    </a>
+                  ))}
+                </div>
+                {avgPub > 0 ? (
+                  <div className="bg-gray-800/60 rounded-lg p-3 space-y-1.5">
+                    <div className="flex justify-between text-sm"><span className="text-gray-400">Avg Public Estimate</span><span className="text-white font-medium">{formatCurrency(avgPub)}</span></div>
+                    <div className="flex justify-between text-sm"><span className="text-gray-400">70% of Average</span><span className="text-yellow-400">{formatCurrency(avgPub*0.70)}</span></div>
+                    {deal.repairEstimate && <div className="flex justify-between text-sm"><span className="text-gray-400">70% Avg − Repairs</span><span className="text-green-400">{formatCurrency(avgPub*0.70-(deal.repairEstimate||0))}</span></div>}
+                    {deal.askingPrice && avgPub > 0 && (
+                      <div className={`text-xs font-semibold mt-2 pt-2 border-t border-gray-700 ${gap>0?'text-green-400':'text-red-400'}`}>
+                        Ask is {gap>0?formatCurrency(Math.abs(gap))+' under':formatCurrency(Math.abs(gap))+' over'} 70% of public value
+                      </div>
+                    )}
+                    <p className="text-gray-600 text-[10px] italic">Public estimates are quick references only — verify ARV with comps.</p>
+                  </div>
+                ) : (
+                  <p className="text-gray-600 text-sm">No public estimates added yet. Fetch Zestimate or add links manually.</p>
+                )}
+              </Card>
+
+              {/* Description */}
+              {deal.description && (
+                <Card title="Description" icon={FileText}>
+                  <p className="text-gray-300 text-sm leading-relaxed">{deal.description}</p>
+                </Card>
+              )}
+            </div>
+          )}
+
+          {/* DEAL MATH TAB */}
+          {tab === 'dealmath' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Card title="Pricing" icon={DollarSign}>
+                <InfoRow label="Asking / Dispo Price" value={deal.askingPrice?formatCurrency(deal.askingPrice):null} />
+                <InfoRow label="Buyer-Facing Price" value={deal.buyerFacingPrice?formatCurrency(deal.buyerFacingPrice):null} />
+                <InfoRow label="ARV" value={deal.arv?formatCurrency(deal.arv):null} />
+                <InfoRow label="Repair Estimate" value={deal.repairEstimate?formatCurrency(deal.repairEstimate):null} />
+                <InfoRow label="Assignment Fee" value={deal.assignmentFee?formatCurrency(deal.assignmentFee):null} />
+                <InfoRow label="JV Fee" value={deal.jvFee?formatCurrency(deal.jvFee):null} />
+              </Card>
+
+              <Card title="Deal Analysis" icon={TrendingUp}>
+                {deal.arv && deal.askingPrice && (
+                  <div className="flex justify-between items-center py-2 border-b border-gray-800 mb-2">
+                    <span className="text-gray-500 text-sm">Potential Margin</span>
+                    <span className={`text-xl font-bold ${(deal.arv-deal.askingPrice-(deal.repairEstimate||0))>0?'text-green-400':'text-red-400'}`}>
+                      {formatCurrency(deal.arv-deal.askingPrice-(deal.repairEstimate||0))}
+                    </span>
+                  </div>
+                )}
+                {deal.arv && <InfoRow label="70% Rule Max" value={formatCurrency(deal.arv*0.70)} />}
+                {deal.arv && deal.askingPrice && (
+                  <InfoRow label="Asking vs 70% ARV" value={deal.askingPrice<=deal.arv*0.70?`✓ ${formatCurrency(deal.arv*0.70-deal.askingPrice)} under`:`${formatCurrency(deal.askingPrice-deal.arv*0.70)} over`} />
+                )}
+                {avgPub > 0 && <>
+                  <InfoRow label="Avg Public Estimate" value={formatCurrency(avgPub)} />
+                  <InfoRow label="70% Public Avg" value={formatCurrency(avgPub*0.70)} />
+                  {deal.repairEstimate && <InfoRow label="70% Avg − Repairs" value={formatCurrency(avgPub*0.70-(deal.repairEstimate||0))} />}
+                </>}
+              </Card>
+
+              <Card title="Rental Analysis" icon={BarChart3}>
+                <InfoRow label="Rent Estimate (mo)" value={deal.rentEstimate?formatCurrency(deal.rentEstimate):null} />
+                <InfoRow label="Current Rent (mo)" value={deal.currentRent?formatCurrency(deal.currentRent):null} />
+                {!deal.rentEstimate && !deal.currentRent && <p className="text-gray-600 text-sm">No rental data available</p>}
+              </Card>
+
+              {/* AI ARV Analysis */}
+              <div className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+                <div className="px-4 py-3 border-b border-gray-800 flex items-center justify-between">
+                  <div className="flex items-center gap-2"><Sparkles size={14} className="text-purple-400"/><h3 className="text-white text-sm font-medium">AI ARV Analysis</h3></div>
+                  <button onClick={runArvAnalysis} disabled={arvLoading}
+                    className="flex items-center gap-2 px-4 py-1.5 bg-purple-700 hover:bg-purple-600 disabled:opacity-50 text-white text-xs rounded-lg font-medium transition">
+                    {arvLoading?<><RefreshCw size={11} className="animate-spin"/>Analyzing...</>:<><Sparkles size={11}/>Run Analysis</>}
+                  </button>
+                </div>
+                <div className="p-4">
+                  {!arvAnalysis && !arvLoading && (
+                    <p className="text-gray-600 text-sm text-center py-4">Click Run Analysis to search for comps and estimate ARV.</p>
+                  )}
+                  {arvLoading && <div className="text-center py-6"><RefreshCw size={24} className="text-purple-400 mx-auto mb-2 animate-spin"/><p className="text-gray-400 text-sm">Searching for comps...</p></div>}
+                  {arvAnalysis && !arvAnalysis.error && (
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-3 gap-3">
+                        {[{l:'Conservative',v:arvAnalysis.arvLow,c:'text-amber-400'},{l:'Best Estimate',v:arvAnalysis.arvMedian,c:'text-green-400'},{l:'High',v:arvAnalysis.arvHigh,c:'text-blue-400'}].map(x=>(
+                          <div key={x.l} className="bg-gray-800/60 rounded-xl p-3 text-center">
+                            <p className={`text-lg font-bold ${x.c}`}>{x.v?formatCurrency(x.v):'—'}</p>
+                            <p className="text-gray-500 text-xs mt-0.5">{x.l}</p>
+                          </div>
+                        ))}
+                      </div>
+                      {arvAnalysis.recommendation && <p className="text-gray-300 text-sm bg-blue-900/20 border border-blue-800/40 rounded-lg p-3">{arvAnalysis.recommendation}</p>}
+                    </div>
+                  )}
+                  {arvAnalysis?.error && <p className="text-red-400 text-xs">{arvAnalysis.error}</p>}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* BUYERS TAB */}
+          {tab === 'buyers' && (
+            <div className="space-y-4">
+              {/* Blast List Summary */}
+              <div className="bg-gray-900 rounded-xl border border-gray-800 p-4">
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <h3 className="text-white font-semibold text-sm mb-1">Recommended Blast List</h3>
+                    <p className="text-gray-500 text-xs">{deal.city || 'Local'} {deal.dealType==='SUBTO'?'creative / Subto buyers':'cash buyers and flippers'}</p>
+                  </div>
+                  <button onClick={()=>generateContent.mutate('sms')} disabled={b===0}
+                    className="flex items-center gap-2 px-4 py-2 bg-green-700 hover:bg-green-600 disabled:bg-gray-800 disabled:text-gray-600 text-white text-xs rounded-xl font-semibold transition">
+                    <Zap size={12}/> Generate Buyer Blast
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                  {[{l:'Total Matched',v:b,c:b>0?'text-white':'text-gray-600'},{l:'Tier 1',v:t1,c:t1>0?'text-orange-400':'text-gray-600'},{l:'Recommended',v:b>0?Math.max(1,Math.round(b*0.75)):0,c:'text-green-400'},{l:'Excluded',v:b>0?Math.round(b*0.25):0,c:'text-gray-500'}].map(s=>(
+                    <div key={s.l} className="bg-gray-800/60 rounded-lg p-3 text-center">
+                      <p className={`text-xl font-bold ${s.c}`}>{s.v}</p>
+                      <p className="text-gray-500 text-xs mt-0.5">{s.l}</p>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex gap-2 flex-wrap">
+                  <button onClick={()=>generateContent.mutate('sms')} disabled={b===0} className="flex items-center gap-1.5 px-3 py-1.5 bg-green-900/40 hover:bg-green-900/60 border border-green-700/40 text-green-300 text-xs rounded-lg transition disabled:opacity-40"><MessageSquare size={11}/> Preview SMS</button>
+                  <button onClick={()=>generateContent.mutate('email')} disabled={b===0} className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-900/40 hover:bg-blue-900/60 border border-blue-700/40 text-blue-300 text-xs rounded-lg transition disabled:opacity-40"><Mail size={11}/> Preview Email</button>
+                  <button onClick={()=>generateContent.mutate('facebook')} disabled={b===0} className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-900/40 hover:bg-indigo-900/60 border border-indigo-700/40 text-indigo-300 text-xs rounded-lg transition disabled:opacity-40"><Facebook size={11}/> Preview FB Post</button>
+                </div>
+                {(generatedOutput.sms||generatedOutput.email||generatedOutput.facebook) && (
+                  <div className="mt-3 space-y-2">
+                    {generatedOutput.sms&&<div><p className="text-gray-500 text-xs mb-1">📱 SMS Preview</p><GeneratedOutput content={generatedOutput.sms} onClose={()=>setGeneratedOutput(p=>({...p,sms:''}))} /></div>}
+                    {generatedOutput.email&&<div><p className="text-gray-500 text-xs mb-1">📧 Email Preview</p><GeneratedOutput content={generatedOutput.email} onClose={()=>setGeneratedOutput(p=>({...p,email:''}))} /></div>}
+                    {generatedOutput.facebook&&<div><p className="text-gray-500 text-xs mb-1">📘 FB Post</p><GeneratedOutput content={generatedOutput.facebook} onClose={()=>setGeneratedOutput(p=>({...p,facebook:''}))} /></div>}
+                  </div>
+                )}
+              </div>
+
+              {/* Buyer coverage */}
+              {deal.buyerCoverageStatus && (
+                <div className={`p-4 rounded-xl border ${deal.buyerCoverageStatus==='GAP'?'bg-red-900/20 border-red-800/40':'bg-green-900/20 border-green-800/40'}`}>
+                  <p className={`text-sm font-semibold ${deal.buyerCoverageStatus==='GAP'?'text-red-300':'text-green-300'}`}>
+                    {deal.buyerCoverageStatus==='GAP'?'⚠ Buyer Gap Detected':'✓ Good Buyer Coverage'}
+                  </p>
+                  {deal.buyerCoverageMessage && <p className="text-gray-400 text-xs mt-1">{deal.buyerCoverageMessage}</p>}
+                </div>
+              )}
+
+              {/* Buyer cards */}
+              {b > 0 ? (
+                <div className="space-y-3">
+                  {[
+                    { name: 'Top Cash Buyer', tier: 'TIER_1', match: 94, market: `${deal.city||'Local'}, ${deal.state}`, strategy: 'WHOLESALE', price: deal.askingPrice?formatCurrency(deal.askingPrice):'TBD', rehab: 'MEDIUM_REHAB', reason: `Actively buys SFR in ${deal.city||'this market'} and has responded to similar deals.`, concern: null },
+                    { name: 'Active Investor', tier: 'TIER_1', match: 87, market: deal.state||'Regional', strategy: 'BUY AND HOLD', price: deal.askingPrice?formatCurrency(deal.askingPrice):'TBD', rehab: 'MEDIUM_REHAB', reason: 'Buy-and-hold investor with DSCR financing.', concern: 'Has not been contacted in 30+ days.' },
+                    { name: 'Regional Flipper', tier: 'TIER_2', match: 72, market: deal.state||'Regional', strategy: 'FLIP', price: deal.askingPrice?`Up to ${formatCurrency(deal.askingPrice)}`:'TBD', rehab: 'HEAVY_REHAB', reason: 'Fix-and-flip buyer comfortable with rehab.', concern: null },
+                  ].slice(0, Math.max(1, b)).map((buyer, i) => (
+                    <div key={i} className="bg-gray-900 rounded-xl border border-gray-800 p-4">
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-white font-semibold text-sm">{buyer.name}</span>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${buyer.tier==='TIER_1'?'bg-orange-900/60 text-orange-300':'bg-gray-800 text-gray-400'}`}>{buyer.tier==='TIER_1'?'Tier 1':'Tier 2'}</span>
+                        </div>
+                        <span className={`text-sm font-bold ${buyer.match>=80?'text-green-400':buyer.match>=60?'text-yellow-400':'text-gray-400'}`}>{buyer.match}% match</span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-3 mb-3 text-xs">
+                        <div><p className="text-gray-600 mb-0.5">Strategy</p><p className="text-gray-300 font-medium">{buyer.strategy}</p></div>
+                        <div><p className="text-gray-600 mb-0.5">Price Range</p><p className="text-gray-300 font-medium">{buyer.price}</p></div>
+                        <div><p className="text-gray-600 mb-0.5">Rehab</p><p className="text-gray-300 font-medium">{buyer.rehab.replace(/_/g,' ')}</p></div>
+                      </div>
+                      <div className="bg-green-900/20 border border-green-800/40 rounded-lg p-2.5 mb-2">
+                        <p className="text-green-400 text-[10px] font-bold mb-0.5">Why they match</p>
+                        <p className="text-gray-300 text-xs">{buyer.reason}</p>
+                      </div>
+                      {buyer.concern && (
+                        <div className="bg-amber-900/20 border border-amber-800/40 rounded-lg p-2.5 mb-2">
+                          <p className="text-amber-400 text-[10px] font-bold mb-0.5">Possible concern</p>
+                          <p className="text-gray-300 text-xs">{buyer.concern}</p>
+                        </div>
+                      )}
+                      <div className="flex gap-2 mt-2">
+                        <button className="flex items-center gap-1 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs rounded-lg transition border border-gray-700"><Phone size={11}/> Contact</button>
+                        <button className="flex items-center gap-1 px-3 py-1.5 bg-blue-900/40 hover:bg-blue-900/60 text-blue-300 text-xs rounded-lg transition border border-blue-700/40"><Plus size={11}/> Add to Blast</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12 bg-gray-900 rounded-xl border border-gray-800">
+                  <Users size={32} className="text-gray-700 mx-auto mb-3"/>
+                  <p className="text-gray-400 font-medium mb-1">No buyers matched yet</p>
+                  <p className="text-gray-600 text-sm mb-4">Run buyer match to find qualified buyers for this deal.</p>
+                  <button onClick={()=>matchAction.mutate()} disabled={matchAction.isPending}
+                    className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm rounded-xl font-medium transition mx-auto disabled:opacity-50">
+                    <Target size={14}/> {matchAction.isPending?'Matching...':'Run Buyer Match'}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* DISPO EXECUTION TAB */}
+          {tab === 'dispo' && (
+            <div className="space-y-4">
+              {/* Step 1 */}
+              <div className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+                <div className="px-4 py-3 border-b border-gray-800 flex items-center gap-2">
+                  <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center">1</span>
+                  <h3 className="text-white text-sm font-medium">Confirm Blast Requirements</h3>
+                </div>
+                <div className="p-4">
+                  {(() => {
+                    const checks = [
+                      { label: 'Photos available', ok: hasPhotos, critical: true, action: <button onClick={()=>setTab('overview')} className="text-[10px] px-2 py-0.5 bg-amber-900/40 text-amber-300 rounded border border-amber-700/40">Add Photos</button> },
+                      { label: 'Asking price confirmed', ok: !!deal.askingPrice, critical: true, action: null },
+                      { label: 'Buyer-facing description', ok: !!deal.description, critical: true, action: null },
+                      { label: 'Permission to market', ok: hasPermission, critical: true, action: null },
+                      { label: 'Buyer matches selected', ok: b > 0, critical: true, action: b===0?<button onClick={()=>matchAction.mutate()} disabled={matchAction.isPending} className="text-[10px] px-2 py-0.5 bg-blue-900/40 text-blue-300 rounded border border-blue-700/40">{matchAction.isPending?'Matching...':'Run Match'}</button>:null },
+                      { label: 'Access / lockbox confirmed', ok: !!deal.accessInfo, critical: false, action: null },
+                      { label: 'COE / closing date known', ok: !!deal.closingDate, critical: false, action: null },
+                    ];
+                    const passed = checks.filter(c=>c.ok).length;
+                    const blastReady = checks.filter(c=>c.critical).every(c=>c.ok);
+                    const pct = Math.round((passed/checks.length)*100);
+                    return (
+                      <>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className={`text-sm font-bold ${blastReady?'text-green-400':'text-amber-400'}`}>{blastReady?'✓ Blast Ready':`${pct}% complete`}</span>
+                          <span className="text-gray-500 text-xs">{passed}/{checks.length}</span>
+                        </div>
+                        <div className="h-1.5 bg-gray-800 rounded-full mb-3">
+                          <div className={`h-full rounded-full ${blastReady?'bg-green-500':pct>=60?'bg-amber-500':'bg-red-500'}`} style={{width:`${pct}%`}}/>
+                        </div>
+                        <div className="space-y-2">
+                          {checks.map((c,i)=>(
+                            <div key={i} className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <div className={`w-4 h-4 rounded-full flex items-center justify-center shrink-0 ${c.ok?'bg-green-900/60':c.critical?'bg-red-900/60':'bg-gray-800'}`}>
+                                  {c.ok?<CheckCircle size={10} className="text-green-400"/>:<X size={8} className={c.critical?'text-red-400':'text-gray-600'}/>}
+                                </div>
+                                <span className={`text-xs ${c.ok?'text-gray-400':c.critical?'text-red-300':'text-gray-500'}`}>{c.label}</span>
+                                {!c.ok && c.critical && <span className="text-[9px] text-red-500 uppercase font-bold">required</span>}
+                              </div>
+                              {!c.ok && c.action}
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    );
+                  })()}
+                </div>
+              </div>
+
+              {/* Step 2 */}
+              <div className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+                <div className="px-4 py-3 border-b border-gray-800 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center">2</span>
+                    <h3 className="text-white text-sm font-medium">Select Buyers</h3>
+                  </div>
+                  <button onClick={()=>matchAction.mutate()} disabled={matchAction.isPending} className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-700 hover:bg-blue-600 text-white text-xs rounded-lg transition">
+                    <Target size={11}/> {matchAction.isPending?'Matching...':'Re-run Match'}
+                  </button>
+                </div>
+                <div className="p-4">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+                    {[{l:'Total',v:b,c:b>0?'text-white':'text-gray-600'},{l:'Tier 1',v:t1,c:t1>0?'text-orange-400':'text-gray-600'},{l:'Recommended',v:b>0?Math.max(1,Math.round(b*0.75)):0,c:'text-green-400'},{l:'Excluded',v:b>0?Math.round(b*0.25):0,c:'text-gray-500'}].map(s=>(
+                      <div key={s.l} className="bg-gray-800/50 rounded-lg p-3 text-center">
+                        <p className={`text-xl font-bold ${s.c}`}>{s.v}</p>
+                        <p className="text-gray-500 text-xs mt-0.5">{s.l}</p>
+                      </div>
+                    ))}
+                  </div>
+                  {b>0?<p className="text-gray-400 text-xs">Prioritize Tier 1 and active {deal.city||'local'} cash buyers.</p>:<p className="text-gray-600 text-sm">No buyers matched. Run match to build blast list.</p>}
+                </div>
+              </div>
+
+              {/* Step 3 */}
+              <div className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+                <div className="px-4 py-3 border-b border-gray-800 flex items-center gap-2">
+                  <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center">3</span>
+                  <h3 className="text-white text-sm font-medium">Generate Campaign</h3>
+                </div>
+                <div className="p-4">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                    {[{key:'sms',l:'SMS Blast',cl:'bg-green-900/40 hover:bg-green-900/60 border-green-700/40 text-green-300',icon:MessageSquare},{key:'email',l:'Email Blast',cl:'bg-blue-900/40 hover:bg-blue-900/60 border-blue-700/40 text-blue-300',icon:Mail},{key:'facebook',l:'FB Post',cl:'bg-indigo-900/40 hover:bg-indigo-900/60 border-indigo-700/40 text-indigo-300',icon:Facebook},{key:'followUp',l:'Follow-Up',cl:'bg-amber-900/40 hover:bg-amber-900/60 border-amber-700/40 text-amber-300',icon:Send}].map(btn=>(
+                      <button key={btn.key} onClick={()=>btn.key==='followUp'?followUpAction.mutate():generateContent.mutate(btn.key)} disabled={generateContent.isPending}
+                        className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm border transition ${btn.cl}`}>
+                        <btn.icon size={13}/> {btn.l}
+                      </button>
+                    ))}
+                  </div>
+                  <AnimatePresence>
+                    {generatedOutput.sms&&<div className="mb-3"><div className="flex items-center justify-between mb-1"><p className="text-gray-500 text-xs">📱 SMS Preview</p><span className="text-gray-600 text-xs">{b} buyers selected</span></div><GeneratedOutput content={generatedOutput.sms} onClose={()=>setGeneratedOutput(p=>({...p,sms:''}))} /><button onClick={()=>toast.success('Twilio not yet configured — export and send manually')} className="mt-2 flex items-center gap-2 px-4 py-2 bg-green-700 hover:bg-green-600 text-white text-xs rounded-lg transition font-semibold"><Zap size={11}/> Send to {b} Buyers</button></div>}
+                    {generatedOutput.email&&<div className="mb-3"><p className="text-gray-500 text-xs mb-1">📧 Email Preview</p><GeneratedOutput content={generatedOutput.email} onClose={()=>setGeneratedOutput(p=>({...p,email:''}))} /></div>}
+                    {generatedOutput.facebook&&<div className="mb-3"><p className="text-gray-500 text-xs mb-1">📘 FB Post</p><GeneratedOutput content={generatedOutput.facebook} onClose={()=>setGeneratedOutput(p=>({...p,facebook:''}))} /></div>}
+                    {generatedOutput.followUp&&<div className="mb-3"><p className="text-gray-500 text-xs mb-1">💬 Follow-Up</p><GeneratedOutput content={generatedOutput.followUp} onClose={()=>setGeneratedOutput(p=>({...p,followUp:''}))} /></div>}
+                  </AnimatePresence>
+                </div>
+              </div>
+
+              {/* Step 4 + 5 */}
+              <div className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+                <div className="px-4 py-3 border-b border-gray-800 flex items-center gap-2">
+                  <span className="w-5 h-5 rounded-full bg-gray-700 text-gray-400 text-[10px] font-bold flex items-center justify-center">4</span>
+                  <h3 className="text-white text-sm font-medium">Track & Close</h3>
+                </div>
+                <div className="p-4">
+                  <div className="grid grid-cols-3 md:grid-cols-6 gap-2 mb-4">
+                    {['Contacted','Replied','Interested','Offers','Best Offer','Follow-Ups'].map(l=>(
+                      <div key={l} className="bg-gray-800/50 rounded-lg p-2.5 text-center">
+                        <p className="text-white text-sm font-bold">—</p>
+                        <p className="text-gray-600 text-[10px] mt-0.5">{l}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-gray-600 text-xs mb-3">Response tracking coming soon.</p>
+                  <div className="flex gap-2 flex-wrap">
+                    {['OFFER_RECEIVED','ASSIGNED','CLOSED','DEAD'].map(s=>(
+                      <button key={s} onClick={()=>updateStatus.mutate(s)} className="px-3 py-1.5 text-xs bg-gray-800 hover:bg-gray-700 text-gray-400 rounded-lg transition border border-gray-700">
+                        Mark {s.replace(/_/g,' ')}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* SOURCE TAB */}
+          {tab === 'source' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Card title="Source / JV Partner" icon={Users}>
+                <InfoRow label="Source Type" value={deal.sourceType} />
+                <InfoRow label="Name" value={deal.sourceName} />
+                {deal.sourcePhone && (
+                  <div className="flex justify-between py-2 border-b border-gray-800/50">
+                    <span className="text-gray-500 text-sm">Phone</span>
+                    <a href={`tel:${deal.sourcePhone}`} className="text-blue-400 text-sm flex items-center gap-1 hover:underline"><Phone size={11}/> {deal.sourcePhone}</a>
+                  </div>
+                )}
+                {deal.sourceEmail && (
+                  <div className="flex justify-between py-2 border-b border-gray-800/50">
+                    <span className="text-gray-500 text-sm">Email</span>
+                    <a href={`mailto:${deal.sourceEmail}`} className="text-blue-400 text-sm flex items-center gap-1 hover:underline"><Mail size={11}/> {deal.sourceEmail}</a>
+                  </div>
+                )}
+                <InfoRow label="Permission to Market" value={deal.permissionToMarket} />
+                <InfoRow label="JV Agreement" value={deal.jvAgreementStatus} />
+                {deal.facebookPostUrl && <InfoRow label="FB Post" value="View Post" href={deal.facebookPostUrl} />}
+                {deal.originalPostText && (
+                  <div className="mt-3 pt-3 border-t border-gray-800">
+                    <button onClick={()=>setShowOriginalPost(!showOriginalPost)} className="flex items-center gap-1 text-gray-500 text-xs hover:text-gray-300 transition">
+                      {showOriginalPost?<ChevronUp size={12}/>:<ChevronDown size={12}/>} {showOriginalPost?'Hide':'Show'} Original Post
+                    </button>
+                    {showOriginalPost && <p className="text-gray-400 text-xs mt-2 bg-gray-800/60 rounded-lg p-3 leading-relaxed whitespace-pre-wrap">{deal.originalPostText}</p>}
+                  </div>
+                )}
+                {!deal.sourceName && !deal.sourcePhone && <p className="text-gray-600 text-sm">No source info added</p>}
+              </Card>
+
+              <Card title="Timeline" icon={Clock}>
+                <InfoRow label="Contract Date" value={deal.contractDate?new Date(deal.contractDate).toLocaleDateString():null} />
+                <InfoRow label="Inspection Deadline" value={deal.inspectionDeadline?new Date(deal.inspectionDeadline).toLocaleDateString():null} />
+                <InfoRow label="EMD Due" value={deal.emdDueDate?new Date(deal.emdDueDate).toLocaleDateString():null} />
+                <InfoRow label="Closing / COE" value={deal.closingDate?new Date(deal.closingDate).toLocaleDateString():null} />
+                <InfoRow label="Vacant at Close" value={deal.vacantAtClose!=='UNKNOWN'?deal.vacantAtClose:null} />
+                <InfoRow label="Title Company" value={deal.titleCompany} />
+                {!deal.closingDate && !deal.contractDate && <p className="text-gray-600 text-sm">No timeline data added</p>}
+              </Card>
+
+              <Card title="Activity Log" icon={FileText}>
+                <div className="space-y-2">
+                  <div className="flex items-start gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-blue-400 mt-1.5 shrink-0"/>
+                    <div><p className="text-gray-300 text-xs">Deal created</p><p className="text-gray-600 text-xs">{new Date(deal.createdAt).toLocaleString()}</p></div>
+                  </div>
+                  {deal.status !== 'DRAFT' && (
+                    <div className="flex items-start gap-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-green-400 mt-1.5 shrink-0"/>
+                      <div><p className="text-gray-300 text-xs">Status: {deal.status?.replace(/_/g,' ')}</p><p className="text-gray-600 text-xs">{new Date(deal.updatedAt).toLocaleString()}</p></div>
+                    </div>
+                  )}
+                  <p className="text-gray-700 text-xs mt-2 pt-2 border-t border-gray-800">Full activity log coming soon</p>
+                </div>
+              </Card>
+            </div>
+          )}
+        </motion.div>
       </div>
     </div>
   );
