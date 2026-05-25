@@ -213,9 +213,11 @@ function PhotoGallery({ deal, onUpdate, compact = false }: { deal: any; onUpdate
 
   return (
     <div className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden h-full flex flex-col">
-      <div className="relative bg-gray-800 flex-1" style={{minHeight:compact?200:280}}>
+      <div className="relative bg-gray-800 flex-1 group" style={{minHeight:compact?200:280}}>
         <img src={photos[activeIdx]} alt="Property" className="w-full h-full object-cover absolute inset-0"
           onError={e => { (e.target as any).style.display='none'; }} />
+        <button onClick={() => { const u=photos.filter((_,j)=>j!==activeIdx); onUpdate({photos:u}); setActiveIdx(Math.max(0,u.length-1)); }}
+          className="absolute top-2 right-2 w-7 h-7 bg-red-600/80 hover:bg-red-500 text-white rounded-full text-xs items-center justify-center hidden group-hover:flex z-10 transition">✕</button>
         {photos.length > 1 && (
           <>
             <button onClick={() => setActiveIdx(i => (i-1+photos.length)%photos.length)}
@@ -237,8 +239,8 @@ function PhotoGallery({ deal, onUpdate, compact = false }: { deal: any; onUpdate
               <button onClick={() => setActiveIdx(i)} className={`w-10 h-10 rounded-lg overflow-hidden border-2 transition block ${i===activeIdx?'border-blue-500':'border-transparent'}`}>
                 <img src={p} alt="" className="w-full h-full object-cover" />
               </button>
-              <button onClick={() => { const u=photos.filter((_,j)=>j!==i); onUpdate({photos:u}); if(activeIdx>=u.length) setActiveIdx(Math.max(0,u.length-1)); }}
-                className="absolute -top-1 -right-1 w-4 h-4 bg-red-600 hover:bg-red-500 text-white rounded-full text-[9px] items-center justify-center hidden group-hover/thumb:flex">✕</button>
+              <button onClick={() => { const u=photos.filter((_,j)=>j!==i); onUpdate({photos:u}); setActiveIdx(Math.max(0,u.length-1)); }}
+                className="absolute -top-1 -right-1 w-4 h-4 bg-red-600 hover:bg-red-500 text-white rounded-full text-[9px] items-center justify-center hidden group-hover/thumb:flex z-10">✕</button>
             </div>
           ))}
         </div>
@@ -290,6 +292,61 @@ function LocationPanel({ deal, mapsUrl }: any) {
         <a href={streetViewHref} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[10px] px-2 py-1 bg-gray-800 hover:bg-gray-700 text-gray-400 rounded-lg transition"><Eye size={9}/> Street View</a>
         <button onClick={()=>navigator.clipboard.writeText(`${deal.address}, ${deal.city}, ${deal.state} ${deal.zipCode}`)} className="flex items-center gap-1 text-[10px] px-2 py-1 bg-gray-800 hover:bg-gray-700 text-gray-400 rounded-lg transition"><Copy size={9}/> Copy Address</button>
       </div>
+    </div>
+  );
+}
+
+function EditableRow({ label, value, onSave, type = 'text' }: { label: string; value: any; onSave: (v: string) => void; type?: string }) {
+  const [editing, setEditing] = useState(false);
+  const [val, setVal] = useState(value || '');
+  const save = () => { if (val !== value) onSave(val); setEditing(false); };
+  if (editing) {
+    return (
+      <div className="flex justify-between items-center py-2 border-b border-gray-800/50 last:border-0">
+        <span className="text-gray-500 text-sm shrink-0 mr-2">{label}</span>
+        <div className="flex gap-1.5 items-center">
+          <input autoFocus type={type} value={val} onChange={e => setVal(e.target.value)}
+            onKeyDown={e => { if(e.key==='Enter') save(); if(e.key==='Escape') { setVal(value||''); setEditing(false); }}}
+            className="bg-gray-800 text-white text-sm text-right rounded px-2 py-0.5 border border-blue-500 focus:outline-none w-36" />
+          <button onClick={save} className="px-2 py-0.5 bg-blue-600 text-white text-[10px] rounded font-medium">Save</button>
+          <button onClick={() => { setVal(value||''); setEditing(false); }} className="px-1.5 py-0.5 bg-gray-700 text-gray-400 text-[10px] rounded">✕</button>
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className="flex justify-between items-center py-2 border-b border-gray-800/50 last:border-0 cursor-pointer group/er hover:bg-gray-800/30 rounded px-1 -mx-1 transition"
+      onClick={() => { setVal(value||''); setEditing(true); }}>
+      <span className="text-gray-500 text-sm shrink-0 mr-4">{label}</span>
+      <span className="text-white text-sm text-right group-hover/er:text-blue-300 transition">{value || <span className="text-gray-600 italic text-xs">Click to add</span>}</span>
+    </div>
+  );
+}
+
+function EditableTextarea({ value, onSave, placeholder }: { value: string; onSave: (v: string) => void; placeholder?: string }) {
+  const [editing, setEditing] = useState(false);
+  const [val, setVal] = useState(value);
+  const save = () => { if (val !== value) onSave(val); setEditing(false); };
+  if (editing) {
+    return (
+      <div>
+        <textarea autoFocus value={val} onChange={e => setVal(e.target.value)} rows={4}
+          className="w-full bg-gray-800 text-white text-sm rounded-lg px-3 py-2 border border-blue-500 focus:outline-none resize-none" placeholder={placeholder} />
+        <div className="flex gap-2 mt-2">
+          <button onClick={save} className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs rounded-lg font-medium transition">Save</button>
+          <button onClick={() => { setVal(value); setEditing(false); }} className="px-3 py-1.5 bg-gray-700 text-gray-400 text-xs rounded-lg transition">Cancel</button>
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className="cursor-pointer group/eta hover:bg-gray-800/30 rounded-lg p-1 -m-1 transition" onClick={() => { setVal(value); setEditing(true); }}>
+      {value ? (
+        <p className="text-gray-300 text-sm leading-relaxed group-hover/eta:text-blue-300 transition">{value}</p>
+      ) : (
+        <p className="text-gray-600 text-sm italic">{placeholder || 'Click to add...'}</p>
+      )}
+      <p className="text-gray-700 text-[10px] mt-1 group-hover/eta:text-gray-500 transition">✎ Click to edit</p>
     </div>
   );
 }
@@ -863,11 +920,9 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
               </Card>
 
               {/* Description */}
-              {deal.description && (
-                <Card title="Description" icon={FileText}>
-                  <p className="text-gray-300 text-sm leading-relaxed">{deal.description}</p>
-                </Card>
-              )}
+              <Card title="Description" icon={FileText}>
+                <EditableTextarea value={deal.description||''} onSave={v=>updateDeal.mutate({description:v})} placeholder="Add a buyer-facing description..." />
+              </Card>
             </div>
           )}
 
