@@ -154,14 +154,13 @@ export class DealsService {
     await this.findOne(orgId, id);
     await this.prisma.deal.update({ where: { id }, data: { status: DealStatus.DEAD } });
   }
-}
 
   async runArvAnalysis(id: string) {
     const deal = await this.prisma.deal.findUnique({ where: { id } });
     if (!deal) throw new Error('Deal not found');
-
-    const prompt = `You are a Master Appraiser. Estimate the ARV for: ${deal.address}, ${deal.city}, ${deal.state} ${deal.zipCode}. Property: ${deal.beds||'?'}bd/${deal.baths||'?'}ba, ${deal.sqft||'?'} sqft, built ${deal.yearBuilt||'?'}, ${deal.propertyType||'SFR'}. Search for 3-6 closed comps in the same subdivision within 12 months. Be conservative. Return ONLY valid JSON with no other text: {"arvLow":0,"arvMedian":0,"arvHigh":0,"confidence":3,"confidenceReason":"...","comps":[{"address":"...","saleDate":"...","salePrice":0,"sqft":0,"pricePerSqft":0,"notes":"..."}],"recommendation":"...","dataWarnings":"..."}`;
-
+    const addr = [deal.address, deal.city, deal.state, deal.zipCode].filter(Boolean).join(', ');
+    const prop = `${deal.beds||'?'}bd/${deal.baths||'?'}ba, ${deal.sqft||'?'} sqft, built ${deal.yearBuilt||'?'}, ${deal.propertyType||'SFR'}`;
+    const prompt = `You are a Master Appraiser. Estimate ARV for: ${addr}. Property: ${prop}. Find 3-6 closed comps same subdivision last 12 months. Be conservative. Return ONLY valid JSON no other text: {"arvLow":0,"arvMedian":0,"arvHigh":0,"confidence":3,"confidenceReason":"...","comps":[{"address":"...","saleDate":"...","salePrice":0,"sqft":0,"pricePerSqft":0,"notes":"..."}],"recommendation":"...","dataWarnings":"..."}`;
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -177,7 +176,6 @@ export class DealsService {
         messages: [{ role: 'user', content: prompt }],
       }),
     });
-
     const data = await response.json() as any;
     const text = (data.content || []).filter((b: any) => b.type === 'text').map((b: any) => b.text).join('');
     const m = text.match(/\{[\s\S]*\}/);
@@ -188,5 +186,6 @@ export class DealsService {
       }
       return result;
     }
-    return { error: 'Could not parse ARV response', raw: text };
+    return { error: 'Could not parse ARV response', raw: text.substring(0, 500) };
   }
+}

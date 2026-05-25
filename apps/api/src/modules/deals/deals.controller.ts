@@ -173,9 +173,9 @@ export class DealsController {
       },
     });
   }
-}
 
   @Post(':id/arv-analysis')
   async arvAnalysis(@Param('id') id: string) {
     return this.dealsService.runArvAnalysis(id);
   }
+}
