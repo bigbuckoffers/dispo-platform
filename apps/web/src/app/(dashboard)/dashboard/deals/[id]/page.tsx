@@ -367,7 +367,7 @@ function HeaderField({ value, placeholder, onSave, suffix='', width='w-20' }: {
   );
   return (
     <button onClick={()=>setEditing(true)}
-      className="text-xs text-gray-400 hover:text-white hover:bg-gray-800 rounded px-1 py-0.5 transition">
+      className="text-xs text-white hover:bg-gray-800 rounded px-1 py-0.5 transition">
       {value ? `${value}${suffix ? ' '+suffix : ''}` : <span className="text-gray-600 italic">{placeholder}</span>}
     </button>
   );
