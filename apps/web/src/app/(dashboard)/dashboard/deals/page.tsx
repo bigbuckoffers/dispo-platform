@@ -9,11 +9,11 @@ import Link from 'next/link';
 import AddDealModal from '@/components/deal/AddDealModal';
 
 function tier(s: number) {
-  if (s>=85) return {l:'Hot',       t:'text-red-400',    bdr:'border-l-red-500',    hot:true};
+  if (s>=85) return {l:'Hot',       t:'text-red-500',    bdr:'border-l-red-500',    hot:true};
   if (s>=75) return {l:'Strong',    t:'text-orange-400', bdr:'border-l-orange-400', hot:false};
   if (s>=60) return {l:'Workable',  t:'text-yellow-400', bdr:'border-l-yellow-400', hot:false};
-  if (s>=40) return {l:'Needs Info',t:'text-blue-400',   bdr:'border-l-blue-400',   hot:false};
-  return          {l:'Weak',        t:'text-gray-500',   bdr:'border-l-gray-600',   hot:false};
+  if (s>=40) return {l:'Needs Info',t:'text-blue-600',   bdr:'border-l-blue-400',   hot:false};
+  return          {l:'Weak',        t:'text-gray-400',   bdr:'border-l-gray-600',   hot:false};
 }
 
 function readiness(deal: any) {
@@ -32,15 +32,15 @@ function readiness(deal: any) {
     (deal.matchedBuyerCount||0)===0&&'Buyers',
     !deal.accessInfo&&'Access',
   ].find(Boolean) as string|null;
-  return {pct, blocker, bar:pct>=85?'bg-green-500':pct>=65?'bg-amber-500':pct>=45?'bg-orange-500':'bg-red-500', txt:pct>=85?'text-green-400':pct>=65?'text-amber-400':pct>=45?'text-orange-400':'text-red-400'};
+  return {pct, blocker, bar:pct>=85?'bg-green-500':pct>=65?'bg-amber-500':pct>=45?'bg-orange-500':'bg-red-500', txt:pct>=85?'text-green-600':pct>=65?'text-amber-600':pct>=45?'text-orange-400':'text-red-500'};
 }
 
 function demand(b: number) {
-  if (b>=15) return {l:'Strong',   c:'text-green-300',  bg:'bg-green-900/40 border-green-700/40'};
-  if (b>=8)  return {l:'Moderate', c:'text-blue-300',   bg:'bg-blue-900/40 border-blue-700/40'};
-  if (b>=3)  return {l:'Some',     c:'text-amber-300',  bg:'bg-amber-900/40 border-amber-700/40'};
-  if (b>=1)  return {l:'Weak',     c:'text-orange-300', bg:'bg-orange-900/40 border-orange-700/40'};
-  return          {l:'Gap',        c:'text-red-400',    bg:'bg-red-900/30 border-red-800/40'};
+  if (b>=15) return {l:'Strong',   c:'text-green-700',  bg:'bg-green-900/40 border-green-700/40'};
+  if (b>=8)  return {l:'Moderate', c:'text-blue-600',   bg:'bg-blue-50 border-blue-200'};
+  if (b>=3)  return {l:'Some',     c:'text-amber-700',  bg:'bg-amber-900/40 border-amber-700/40'};
+  if (b>=1)  return {l:'Weak',     c:'text-orange-600', bg:'bg-orange-900/40 border-orange-700/40'};
+  return          {l:'Gap',        c:'text-red-500',    bg:'bg-red-900/30 border-red-200'};
 }
 
 function deadline(deal: any) {
@@ -55,11 +55,11 @@ function deadline(deal: any) {
   const s = dates.sort((a,b)=>a.d.getTime()-b.d.getTime())[0];
   const days = Math.ceil((s.d.getTime()-now)/86400000);
   if (days<0)  return {txt:`${s.l} passed`, sub:'',     color:'text-red-500',  urgent:true};
-  if (days===0)return {txt:`${s.l} TODAY`,  sub:'',     color:'text-red-400',  urgent:true};
-  if (days<=3) return {txt:`${days}d left`, sub:s.l,    color:'text-red-400',  urgent:true};
-  if (days<=7) return {txt:`${days}d left`, sub:s.l,    color:'text-amber-400',urgent:true};
+  if (days===0)return {txt:`${s.l} TODAY`,  sub:'',     color:'text-red-500',  urgent:true};
+  if (days<=3) return {txt:`${days}d left`, sub:s.l,    color:'text-red-500',  urgent:true};
+  if (days<=7) return {txt:`${days}d left`, sub:s.l,    color:'text-amber-600',urgent:true};
   if (days<=14)return {txt:`${days}d`,      sub:s.l,    color:'text-yellow-400',urgent:false};
-  return            {txt:`${days}d`,         sub:s.l,    color:'text-gray-500', urgent:false};
+  return            {txt:`${days}d`,         sub:s.l,    color:'text-gray-400', urgent:false};
 }
 
 function nextActions(deal: any) {
@@ -71,17 +71,17 @@ function nextActions(deal: any) {
   const hasPermission = isOwn||!!(deal.dealSource?.permissionToMarket);
   const actions: {l:string;c:string}[] = [];
   if (deal.status==='OFFER_RECEIVED')
-    return [{l:'Review Offer',     c:'bg-orange-500/20 text-orange-300 border border-orange-500/40'}];
+    return [{l:'Review Offer',     c:'bg-orange-500/20 text-orange-600 border border-orange-500/40'}];
   if (deal.status==='CAMPAIGN_ACTIVE')
     return [{l:'Follow Up Buyers', c:'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'}];
   if (b>0&&hasPhotos&&hasValue&&hasPrice&&hasPermission)
-    return [{l:'Send Buyer Blast', c:'bg-green-500/20 text-green-300 border border-green-500/40'}];
-  if (!hasPhotos&&isOwn)   actions.push({l:'Upload Photos',    c:'bg-amber-500/20 text-amber-300 border border-amber-500/40'});
-  if (!hasPhotos&&!isOwn)  actions.push({l:'Request Photos',   c:'bg-amber-500/20 text-amber-300 border border-amber-500/40'});
-  if (!hasPermission&&b>0) actions.push({l:'Confirm JV',       c:'bg-purple-500/20 text-purple-300 border border-purple-500/40'});
-  if (!hasValue)           actions.push({l:'Add Zillow/Redfin',c:'bg-blue-500/20 text-blue-300 border border-blue-500/40'});
-  if (b===0&&(deal.dealPriorityScore||0)>=70) actions.push({l:'Find Buyers',    c:'bg-orange-500/20 text-orange-300 border border-orange-500/40'});
-  if (b===0&&hasPrice)     actions.push({l:'Run Buyer Match',  c:'bg-blue-500/20 text-blue-300 border border-blue-500/40'});
+    return [{l:'Send Buyer Blast', c:'bg-green-500/20 text-green-700 border border-green-500/40'}];
+  if (!hasPhotos&&isOwn)   actions.push({l:'Upload Photos',    c:'bg-amber-500/20 text-amber-700 border border-amber-500/40'});
+  if (!hasPhotos&&!isOwn)  actions.push({l:'Request Photos',   c:'bg-amber-500/20 text-amber-700 border border-amber-500/40'});
+  if (!hasPermission&&b>0) actions.push({l:'Confirm JV',       c:'bg-purple-500/20 text-purple-600 border border-purple-500/40'});
+  if (!hasValue)           actions.push({l:'Add Zillow/Redfin',c:'bg-blue-500/20 text-blue-600 border border-blue-500/40'});
+  if (b===0&&(deal.dealPriorityScore||0)>=70) actions.push({l:'Find Buyers',    c:'bg-orange-500/20 text-orange-600 border border-orange-500/40'});
+  if (b===0&&hasPrice)     actions.push({l:'Run Buyer Match',  c:'bg-blue-500/20 text-blue-600 border border-blue-500/40'});
   if (!hasPrice)           actions.push({l:'Add Asking Price', c:'bg-gray-500/20 text-gray-400 border border-gray-500/40'});
   return actions.length ? actions : [{l:'Fill In Info',         c:'bg-gray-500/20 text-gray-400 border border-gray-500/40'}];
 }
@@ -109,10 +109,10 @@ function shortNeed(n: string): string {
 }
 
 const SC: Record<string,string> = {
-  DRAFT:'bg-gray-700 text-gray-400', NEEDS_INFO:'bg-amber-900/50 text-amber-300',
-  READY_TO_MATCH:'bg-blue-900/50 text-blue-300', MATCHED:'bg-purple-900/50 text-purple-300',
-  READY_TO_BLAST:'bg-green-900/50 text-green-300', CAMPAIGN_ACTIVE:'bg-emerald-900/50 text-emerald-400',
-  OFFER_RECEIVED:'bg-orange-900/50 text-orange-300', ACTIVE:'bg-blue-900/50 text-blue-300',
+  DRAFT:'bg-gray-200 text-gray-400', NEEDS_INFO:'bg-amber-900/50 text-amber-700',
+  READY_TO_MATCH:'bg-blue-900/50 text-blue-600', MATCHED:'bg-purple-900/50 text-purple-600',
+  READY_TO_BLAST:'bg-green-500 text-green-700', CAMPAIGN_ACTIVE:'bg-emerald-900/50 text-emerald-600',
+  OFFER_RECEIVED:'bg-orange-900/50 text-orange-600', ACTIVE:'bg-blue-900/50 text-blue-600',
 };
 
 // 11 columns — status badge inside address, next action at end
@@ -174,30 +174,30 @@ export default function DealsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-white">Deals Pipeline</h1>
-          <p className="text-gray-500 text-xs mt-0.5">Ranked by opportunity score — scan fast, click to work a deal</p>
+          <h1 className="text-xl font-bold text-gray-900">Deals Pipeline</h1>
+          <p className="text-gray-400 text-xs mt-0.5">Ranked by opportunity score — scan fast, click to work a deal</p>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={()=>refetch()} className="p-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-400"><RefreshCw size={14}/></button>
-          <button onClick={()=>setShowFilters(!showFilters)} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs ${showFilters?'bg-blue-600 text-white':'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}><Filter size={12}/> Sort</button>
-          <button onClick={()=>setShowAddDeal(true)} className="flex items-center gap-1.5 px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs rounded-lg font-medium"><Plus size={14}/> Add Deal</button>
+          <button onClick={()=>refetch()} className="p-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-400"><RefreshCw size={14}/></button>
+          <button onClick={()=>setShowFilters(!showFilters)} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs ${showFilters?'bg-blue-600 text-gray-900':'bg-gray-100 text-gray-400 hover:bg-gray-200'}`}><Filter size={12}/> Sort</button>
+          <button onClick={()=>setShowAddDeal(true)} className="flex items-center gap-1.5 px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-gray-900 text-xs rounded-lg font-medium"><Plus size={14}/> Add Deal</button>
         </div>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
         {[
-          {label:'Active',        value:stats.total,        icon:Building2,  color:'text-white'},
-          {label:'Hot / Sellable',value:stats.hot||'—',     icon:TrendingUp, color:'text-red-400'},
-          {label:'Ready to Blast',value:stats.blast||'—',   icon:Zap,        color:'text-green-400'},
-          {label:'Has Buyers',    value:stats.buyers||'—',  icon:Users,      color:'text-blue-400'},
-          {label:'Need Photos',   value:stats.noPhoto||'—', icon:Camera,     color:'text-amber-400'},
+          {label:'Active',        value:stats.total,        icon:Building2,  color:'text-gray-900'},
+          {label:'Hot / Sellable',value:stats.hot||'—',     icon:TrendingUp, color:'text-red-500'},
+          {label:'Ready to Blast',value:stats.blast||'—',   icon:Zap,        color:'text-green-600'},
+          {label:'Has Buyers',    value:stats.buyers||'—',  icon:Users,      color:'text-blue-600'},
+          {label:'Need Photos',   value:stats.noPhoto||'—', icon:Camera,     color:'text-amber-600'},
           {label:'Deadline Soon', value:stats.urgent||'—',  icon:Clock,      color:'text-orange-400'},
         ].map(s=>(
-          <div key={s.label} className="bg-gray-900 rounded-xl p-3 border border-gray-800">
+          <div key={s.label} className="bg-white rounded-xl p-3 border border-gray-200">
             <s.icon size={12} className={`${s.color} mb-1.5`}/>
             <p className={`text-xl font-bold ${s.color}`}>{s.value}</p>
-            <p className="text-gray-500 text-xs">{s.label}</p>
+            <p className="text-gray-400 text-xs">{s.label}</p>
           </div>
         ))}
       </div>
@@ -206,17 +206,17 @@ export default function DealsPage() {
       {buyerGapDeals.length>0&&(
         <div className="bg-amber-900/10 border border-amber-800/30 rounded-xl px-4 py-3">
           <div className="flex items-center gap-2 mb-2">
-            <Target size={13} className="text-amber-400 shrink-0"/>
-            <span className="text-amber-300 font-semibold text-xs">Buyer Gap Opportunity</span>
-            <span className="text-gray-500 text-xs">— {buyerGapDeals.length} strong deal{buyerGapDeals.length!==1?'s':''} with no matched buyers. Find buyers, JV out, or blast to outside networks.</span>
+            <Target size={13} className="text-amber-600 shrink-0"/>
+            <span className="text-amber-700 font-semibold text-xs">Buyer Gap Opportunity</span>
+            <span className="text-gray-400 text-xs">— {buyerGapDeals.length} strong deal{buyerGapDeals.length!==1?'s':''} with no matched buyers. Find buyers, JV out, or blast to outside networks.</span>
           </div>
           <div className="flex flex-wrap gap-2">
             {buyerGapDeals.map((d:any)=>(
-              <Link key={d.id} href={`/dashboard/deals/${d.id}`} className="flex items-center gap-2 bg-gray-900/60 rounded-lg px-3 py-1.5 hover:bg-gray-800 transition text-xs border border-gray-800">
-                <span className="text-amber-400 font-bold">{d.dealPriorityScore}</span>
-                <span className="text-white font-medium">{d.address}</span>
-                <span className="text-gray-500">{d.city}, {d.state}</span>
-                <ChevronRight size={11} className="text-gray-600"/>
+              <Link key={d.id} href={`/dashboard/deals/${d.id}`} className="flex items-center gap-2 bg-white/60 rounded-lg px-3 py-1.5 hover:bg-gray-100 transition text-xs border border-gray-200">
+                <span className="text-amber-600 font-bold">{d.dealPriorityScore}</span>
+                <span className="text-gray-900 font-medium">{d.address}</span>
+                <span className="text-gray-400">{d.city}, {d.state}</span>
+                <ChevronRight size={11} className="text-gray-400"/>
               </Link>
             ))}
           </div>
@@ -227,8 +227,8 @@ export default function DealsPage() {
       {marketCoverage.length>0&&(
         <div className="border border-amber-800/25 rounded-xl overflow-hidden" style={{background:'rgba(120,80,0,0.04)'}}>
           <button onClick={()=>setShowGaps(!showGaps)} className="w-full px-4 py-2.5 flex items-center gap-2 text-left hover:bg-amber-900/8 transition">
-            <BarChart3 size={12} className="text-amber-400 shrink-0"/>
-            <span className="text-amber-300 text-xs font-medium shrink-0">
+            <BarChart3 size={12} className="text-amber-600 shrink-0"/>
+            <span className="text-amber-700 text-xs font-medium shrink-0">
               Buyer Coverage Gaps: {gapMarkets.length} market{gapMarkets.length!==1?'s':''} need buyers
             </span>
             <span className="text-amber-600/70 text-xs truncate flex-1 hidden sm:block">
@@ -242,20 +242,20 @@ export default function DealsPage() {
               {marketCoverage.map((m:any,i:number)=>{
                 const hasGap = m.buyers===0;
                 const cov = m.buyers>=10?'Strong':m.buyers>=5?'Moderate':m.buyers>=1?'Weak':'Gap';
-                const cc = cov==='Strong'?'text-green-400':cov==='Moderate'?'text-blue-400':cov==='Weak'?'text-amber-400':'text-red-400';
+                const cc = cov==='Strong'?'text-green-600':cov==='Moderate'?'text-blue-600':cov==='Weak'?'text-amber-600':'text-red-500';
                 return (
-                  <div key={i} className={`rounded-lg p-3 border text-xs ${hasGap?'bg-red-900/15 border-red-800/30':'bg-gray-900/60 border-gray-800/50'}`}>
+                  <div key={i} className={`rounded-lg p-3 border text-xs ${hasGap?'bg-red-900/15 border-red-800/30':'bg-white/60 border-gray-100'}`}>
                     <div className="flex items-start justify-between mb-1.5">
-                      <p className="text-white font-semibold text-sm">{m.market}</p>
+                      <p className="text-gray-900 font-semibold text-sm">{m.market}</p>
                       <span className={`font-medium ${cc}`}>{cov}</span>
                     </div>
                     <div className="grid grid-cols-2 gap-x-2 gap-y-1 mb-1.5">
-                      <div><span className="text-gray-500">Deals</span><span className="text-white ml-1 font-medium">{m.deals}</span></div>
-                      <div><span className="text-gray-500">Top Score</span><span className="text-white ml-1 font-medium">{m.topScore}</span></div>
-                      <div><span className="text-gray-500">Buyers</span><span className={`ml-1 font-medium ${m.buyers===0?'text-red-400':'text-white'}`}>{m.buyers}</span></div>
-                      <div><span className="text-gray-500">Tier 1</span><span className={`ml-1 font-medium ${m.tier1===0?'text-red-400':'text-white'}`}>{m.tier1}</span></div>
+                      <div><span className="text-gray-400">Deals</span><span className="text-gray-900 ml-1 font-medium">{m.deals}</span></div>
+                      <div><span className="text-gray-400">Top Score</span><span className="text-gray-900 ml-1 font-medium">{m.topScore}</span></div>
+                      <div><span className="text-gray-400">Buyers</span><span className={`ml-1 font-medium ${m.buyers===0?'text-red-500':'text-gray-900'}`}>{m.buyers}</span></div>
+                      <div><span className="text-gray-400">Tier 1</span><span className={`ml-1 font-medium ${m.tier1===0?'text-red-500':'text-gray-900'}`}>{m.tier1}</span></div>
                     </div>
-                    {hasGap&&m.need&&<p className="text-amber-400/70 leading-snug">{shortNeed(m.need)}</p>}
+                    {hasGap&&m.need&&<p className="text-amber-600/70 leading-snug">{shortNeed(m.need)}</p>}
                     {!hasGap&&<p className={`${cc} opacity-70`}>Coverage OK</p>}
                   </div>
                 );
@@ -268,11 +268,11 @@ export default function DealsPage() {
       {/* Sort */}
       <AnimatePresence>
         {showFilters&&(
-          <motion.div initial={{opacity:0,height:0}} animate={{opacity:1,height:'auto'}} exit={{opacity:0,height:0}} className="bg-gray-900 rounded-xl px-4 py-3 border border-gray-800">
+          <motion.div initial={{opacity:0,height:0}} animate={{opacity:1,height:'auto'}} exit={{opacity:0,height:0}} className="bg-white rounded-xl px-4 py-3 border border-gray-200">
             <div className="flex items-center gap-2 flex-wrap">
-              <label className="text-gray-500 text-xs font-medium">Sort by</label>
+              <label className="text-gray-400 text-xs font-medium">Sort by</label>
               {[['dealPriorityScore','Priority Score'],['matchedBuyerCount','Buyer Count'],['closingDate','Closing Date'],['createdAt','Newest First']].map(([v,l])=>(
-                <button key={v} onClick={()=>setSortBy(v)} className={`px-3 py-1 rounded-lg text-xs transition ${sortBy===v?'bg-blue-600 text-white':'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}>{l}</button>
+                <button key={v} onClick={()=>setSortBy(v)} className={`px-3 py-1 rounded-lg text-xs transition ${sortBy===v?'bg-blue-600 text-gray-900':'bg-gray-100 text-gray-400 hover:bg-gray-200'}`}>{l}</button>
               ))}
             </div>
           </motion.div>
@@ -280,21 +280,21 @@ export default function DealsPage() {
       </AnimatePresence>
 
       {/* Pipeline Table */}
-      <div className="bg-gray-900 rounded-xl border border-gray-800 overflow-x-auto w-full">
+      <div className="bg-white rounded-xl border border-gray-200 overflow-x-auto w-full">
         <div style={{minWidth:'1200px'}}>
 
           {/* Column headers */}
-          <div className="grid border-b border-gray-700 bg-gray-800/60 text-gray-500 text-xs font-semibold uppercase tracking-wide" style={{gridTemplateColumns:COLS, width:"fit-content", minWidth:"100%"}}>
+          <div className="grid border-b border-gray-200 bg-gray-50 text-gray-400 text-xs font-semibold uppercase tracking-wide" style={{gridTemplateColumns:COLS, width:"fit-content", minWidth:"100%"}}>
             {HDRS.map((h,i)=><div key={h} className={`px-2 py-3 whitespace-nowrap ${i===1?'text-left':'text-center'}`}>{h}</div>)}
           </div>
 
           {isLoading ? (
-            <div className="p-12 text-center text-gray-500 text-sm">Loading deals...</div>
+            <div className="p-12 text-center text-gray-400 text-sm">Loading deals...</div>
           ) : deals.length===0 ? (
             <div className="p-12 text-center">
-              <Building2 size={28} className="text-gray-700 mx-auto mb-3"/>
+              <Building2 size={28} className="text-gray-300 mx-auto mb-3"/>
               <p className="text-gray-400 text-sm font-medium">No deals yet</p>
-              <button onClick={()=>setShowAddDeal(true)} className="mt-3 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs rounded-lg">+ Add Deal</button>
+              <button onClick={()=>setShowAddDeal(true)} className="mt-3 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-gray-900 text-xs rounded-lg">+ Add Deal</button>
             </div>
           ) : (
             <div className="divide-y divide-gray-800/50">
@@ -317,7 +317,7 @@ export default function DealsPage() {
                 const t3count = t1>0 ? Math.max(0,Math.round((b-t1)*0.4)) : Math.round(b*0.4);
                 return (
                   <motion.div key={deal.id} initial={{opacity:0}} animate={{opacity:1}} transition={{delay:i*0.02}}
-                    className={`group transition-colors ${t.hot?'border-l-[3px] border-orange-500/80 bg-orange-950/10 hover:bg-orange-950/20':'border-l-[3px] border-transparent hover:bg-gray-800/30'}`}>
+                    className={`group transition-colors ${t.hot?'border-l-[3px] border-orange-500/80 bg-orange-950/10 hover:bg-orange-950/20':'border-l-[3px] border-transparent hover:bg-gray-100/30'}`}>
                     <div className="grid items-center min-h-[44px]" style={{gridTemplateColumns:COLS, width:"fit-content", minWidth:"100%"}}>
 
                       {/* Score */}
@@ -330,49 +330,49 @@ export default function DealsPage() {
 
                       {/* Address */}
                       <Link href={`/dashboard/deals/${deal.id}`} className="px-2 flex flex-col justify-center group/row min-w-0">
-                        <p className="text-white font-semibold text-xs group-hover/row:text-blue-300 transition truncate leading-tight">{deal.address||'No address'}</p>
-                        <p className="text-gray-500 text-[10px] truncate leading-tight">{[deal.city,deal.state,deal.zipCode].filter(Boolean).join(', ')}</p>
+                        <p className="text-gray-900 font-semibold text-xs group-hover/row:text-blue-600 transition truncate leading-tight">{deal.address||'No address'}</p>
+                        <p className="text-gray-400 text-[10px] truncate leading-tight">{[deal.city,deal.state,deal.zipCode].filter(Boolean).join(', ')}</p>
                       </Link>
 
 
                       {/* Beds/Baths */}
                       <div className="px-2 flex items-center">
-                        {deal.beds ? <span className="text-gray-300 text-xs">{deal.beds}bd/{deal.baths}ba</span> : <span className="text-gray-700 text-xs">—</span>}
+                        {deal.beds ? <span className="text-gray-400 text-xs">{deal.beds}bd/{deal.baths}ba</span> : <span className="text-gray-300 text-xs">—</span>}
                       </div>
 
                       {/* Sqft */}
                       <div className="px-2 flex items-center">
-                        {deal.sqft ? <span className="text-gray-300 text-xs">{deal.sqft.toLocaleString()}</span> : <span className="text-gray-700 text-xs">—</span>}
+                        {deal.sqft ? <span className="text-gray-400 text-xs">{deal.sqft.toLocaleString()}</span> : <span className="text-gray-300 text-xs">—</span>}
                       </div>
 
                       {/* Ask */}
                       <div className="px-2 flex items-center justify-center">
-                        <span className="text-white font-bold text-xs">{deal.askingPrice?formatCurrency(deal.askingPrice):'—'}</span>
+                        <span className="text-gray-900 font-bold text-xs">{deal.askingPrice?formatCurrency(deal.askingPrice):'—'}</span>
                       </div>
 
                       {/* 70% */}
                       <div className="px-2 flex flex-col items-end justify-center">
                         {p70 ? (
                           <>
-                            <span className={`font-bold text-xs ${under?'text-green-400':'text-amber-400'}`}>{formatCurrency(p70)}</span>
+                            <span className={`font-bold text-xs ${under?'text-green-600':'text-amber-600'}`}>{formatCurrency(p70)}</span>
                             <span className={`text-[10px] leading-tight ${under?'text-green-600':'text-amber-600'}`}>{under?'✓ Under':'Over'}</span>
                           </>
-                        ) : <span className="text-gray-700 text-xs">—</span>}
+                        ) : <span className="text-gray-300 text-xs">—</span>}
                       </div>
 
                       {/* Public Val */}
                       <div className="px-2 flex flex-col items-end justify-center">
                         {avgP ? (
                           <>
-                            <span className="text-blue-300 text-xs font-medium">{formatCurrency(avgP)}</span>
-                            <span className="text-gray-600 text-[10px]">{ests.length} est.</span>
+                            <span className="text-blue-600 text-xs font-medium">{formatCurrency(avgP)}</span>
+                            <span className="text-gray-400 text-[10px]">{ests.length} est.</span>
                           </>
-                        ) : <Link href={`/dashboard/deals/${deal.id}`} className="text-gray-700 text-[10px] hover:text-blue-400 transition">+ Add</Link>}
+                        ) : <Link href={`/dashboard/deals/${deal.id}`} className="text-gray-300 text-[10px] hover:text-blue-600 transition">+ Add</Link>}
                       </div>
 
                       {/* ARV */}
                       <div className="px-2 flex items-center justify-end">
-                        {deal.arv>0 ? <span className="text-teal-300 text-xs font-medium">{formatCurrency(deal.arv)}</span> : <span className="text-gray-700 text-xs">—</span>}
+                        {deal.arv>0 ? <span className="text-teal-600 text-xs font-medium">{formatCurrency(deal.arv)}</span> : <span className="text-gray-300 text-xs">—</span>}
                       </div>
 
                       {/* Deadline */}
@@ -382,7 +382,7 @@ export default function DealsPage() {
                             <span className={`text-xs font-bold leading-tight ${dl.color}`}>{dl.txt}</span>
                             {dl.urgent&&<span className="text-[10px] text-red-500 leading-tight">⚠ urgent</span>}
                           </>
-                        ) : <Link href={`/dashboard/deals/${deal.id}`} className="text-gray-700 text-[10px] hover:text-amber-400 transition">+ COE</Link>}
+                        ) : <Link href={`/dashboard/deals/${deal.id}`} className="text-gray-300 text-[10px] hover:text-amber-600 transition">+ COE</Link>}
                       </div>
 
                       {/* Buyers */}
@@ -390,10 +390,10 @@ export default function DealsPage() {
                         {b>0 ? (
                           <>
                             <span className={`text-sm font-bold cursor-default ${dm.c}`}>{b}</span>
-                            <div className="absolute left-8 top-1/2 -translate-y-1/2 z-50 hidden group-hover/buyers:flex flex-col gap-1 bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 shadow-xl min-w-[90px]">
-                              {t1>0&&<div className="flex items-center justify-between gap-3"><span className="text-[10px] text-purple-400">Tier 1</span><span className="text-purple-300 text-xs font-bold">{t1}</span></div>}
-                              <div className="flex items-center justify-between gap-3"><span className="text-[10px] text-blue-400">Tier 2</span><span className="text-blue-300 text-xs font-bold">{t2count}</span></div>
-                              <div className="flex items-center justify-between gap-3"><span className="text-[10px] text-gray-500">Tier 3</span><span className="text-gray-400 text-xs font-bold">{t3count}</span></div>
+                            <div className="absolute left-8 top-1/2 -translate-y-1/2 z-50 hidden group-hover/buyers:flex flex-col gap-1 bg-white border border-gray-200 rounded-lg px-3 py-2 shadow-xl min-w-[90px]">
+                              {t1>0&&<div className="flex items-center justify-between gap-3"><span className="text-[10px] text-purple-600">Tier 1</span><span className="text-purple-600 text-xs font-bold">{t1}</span></div>}
+                              <div className="flex items-center justify-between gap-3"><span className="text-[10px] text-blue-600">Tier 2</span><span className="text-blue-600 text-xs font-bold">{t2count}</span></div>
+                              <div className="flex items-center justify-between gap-3"><span className="text-[10px] text-gray-400">Tier 3</span><span className="text-gray-400 text-xs font-bold">{t3count}</span></div>
                             </div>
                           </>
                         ) : <span className="text-red-500 text-sm font-bold">0</span>}
@@ -410,10 +410,10 @@ export default function DealsPage() {
                           {na.l} <ChevronRight size={9}/>
                         </Link>
                         {nas.length>1&&(
-                          <span className="text-[9px] bg-gray-700 text-gray-400 rounded-full px-1.5 py-0.5 cursor-default font-semibold">+{nas.length-1}</span>
+                          <span className="text-[9px] bg-gray-200 text-gray-400 rounded-full px-1.5 py-0.5 cursor-default font-semibold">+{nas.length-1}</span>
                         )}
                         {nas.length>1&&(
-                          <div className="absolute left-0 top-6 z-50 hidden group-hover/na:flex flex-col gap-1 bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 shadow-xl min-w-[160px]">
+                          <div className="absolute left-0 top-6 z-50 hidden group-hover/na:flex flex-col gap-1 bg-white border border-gray-200 rounded-lg px-3 py-2 shadow-xl min-w-[160px]">
                             {nas.slice(1).map((a,i)=>(
                               <span key={i} className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap ${a.c}`}>{a.l}</span>
                             ))}
