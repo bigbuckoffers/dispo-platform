@@ -9,6 +9,8 @@ export class DealsAiAnalyzeService {
   constructor(private prisma: PrismaService) {}
 
   async analyzeDeal(dealId: string) {
+    console.log('Analyzing deal:', dealId);
+    console.log('OpenAI key set:', !!process.env.OPENAI_API_KEY);
     const deal = await this.prisma.deal.findUnique({ where: { id: dealId } });
     if (!deal) throw new Error('Deal not found');
 
@@ -61,7 +63,9 @@ dealScoreBonus: integer -25 to +25`;
       max_tokens: 1000,
     });
 
-    const result = JSON.parse(response.choices[0].message.content || '{}');
+    const raw = response.choices[0].message.content || '{}';
+    console.log('AI raw response:', raw.substring(0, 200));
+    const result = JSON.parse(raw);
 
     await this.prisma.deal.update({
       where: { id: dealId },
