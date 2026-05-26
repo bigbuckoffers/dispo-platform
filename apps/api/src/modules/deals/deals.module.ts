@@ -10,7 +10,7 @@ import { AiModule } from '../ai/ai.module';
 @Module({
   imports: [MatchingModule, AiModule],
   controllers: [DealsController],
-  providers: [DealsService, DealsScoringService, DealsAiParserService],
+  providers: [DealsService, DealsScoringService, DealsAiParserService, DealsAiAnalyzeService],
   exports: [DealsService, DealsScoringService],
 })
 export class DealsModule {}
