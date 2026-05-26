@@ -1033,9 +1033,9 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
                   <div className="space-y-0">
                     <EditableRow label="Overall Condition" value={deal.overallCondition?.replace(/_/g,' ')||''} onSave={v=>updateDeal.mutate({overallCondition:v.toUpperCase().replace(/ /g,'_')})} />
                     <EditableRow label="Roof Condition" value={deal.roofCondition||''} onSave={v=>updateDeal.mutate({roofCondition:v})} />
-                    <EditableRow label="Roof Age" value={deal.roofAge||''} onSave={v=>updateDeal.mutate({roofAge:v})} placeholder="e.g. 5 years" />
+                    <EditableRow label="Roof Age" value={deal.roofAge||''} onSave={v=>updateDeal.mutate({roofAge:v})} />
                     <EditableRow label="HVAC Condition" value={deal.hvacCondition||''} onSave={v=>updateDeal.mutate({hvacCondition:v})} />
-                    <EditableRow label="HVAC Age" value={deal.hvacAge||''} onSave={v=>updateDeal.mutate({hvacAge:v})} placeholder="e.g. 3 years" />
+                    <EditableRow label="HVAC Age" value={deal.hvacAge||''} onSave={v=>updateDeal.mutate({hvacAge:v})} />
                     <EditableRow label="Water Heater" value={deal.waterHeaterCondition||''} onSave={v=>updateDeal.mutate({waterHeaterCondition:v})} />
                     <EditableRow label="Water Heater Age" value={deal.waterHeaterAge||''} onSave={v=>updateDeal.mutate({waterHeaterAge:v})} />
                     <EditableRow label="Foundation" value={deal.foundationCondition||''} onSave={v=>updateDeal.mutate({foundationCondition:v})} />
@@ -1056,7 +1056,7 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
                         {deal.titleStatus==='CLEAR'?'CLEAR':'HAS ISSUES'}
                       </button>
                     </div>
-                    <EditableRow label="Title Notes" value={deal.titleIssuesNotes||''} onSave={v=>updateDeal.mutate({titleIssuesNotes:v})} placeholder="Describe any title issues..." />
+                    <EditableRow label="Title Notes" value={deal.titleIssuesNotes||''} onSave={v=>updateDeal.mutate({titleIssuesNotes:v})} />
                     <div className="flex justify-between items-center py-2 border-b border-gray-800/50">
                       <span className="text-gray-500 text-xs">Code Violations</span>
                       <button onClick={()=>updateDeal.mutate({codeIssues:!deal.codeIssues})}
@@ -1065,7 +1065,7 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
                       </button>
                     </div>
                     {deal.codeIssues && <EditableRow label="Violation Details" value={deal.codeViolationDetails||''} onSave={v=>updateDeal.mutate({codeViolationDetails:v})} />}
-                    <EditableRow label="Unpermitted Additions" value={deal.unpermittedAdditions||''} onSave={v=>updateDeal.mutate({unpermittedAdditions:v})} placeholder="Describe any unpermitted work..." />
+                    <EditableRow label="Unpermitted Additions" value={deal.unpermittedAdditions||''} onSave={v=>updateDeal.mutate({unpermittedAdditions:v})} />
                     <div className="flex justify-between items-center py-2 border-b border-gray-800/50">
                       <span className="text-gray-500 text-xs">HOA</span>
                       <button onClick={()=>updateDeal.mutate({hoaStatus:deal.hoaStatus==='YES'?'NO':'YES'})}
@@ -1079,7 +1079,7 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
 
                 {/* Description */}
                 <Card title="Buyer-Facing Description" icon={FileText}>
-                  <EditableTextarea value={deal.description||''} onSave={v=>updateDeal.mutate({description:v})} placeholder="Add a buyer-facing description..." />
+                  <EditableTextarea value={deal.description||''} onSave={v=>updateDeal.mutate({description:v})} />
                 </Card>
               </div>
             </div>
