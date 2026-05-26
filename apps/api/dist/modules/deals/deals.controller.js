@@ -106,6 +106,9 @@ let DealsController = class DealsController {
     async update(id, dto) {
         return this.prisma.deal.update({ where: { id }, data: dto });
     }
+    async remove(id) {
+        return this.prisma.deal.delete({ where: { id } });
+    }
     async analyzeDeal(id) {
         return this.aiAnalyze.analyzeDeal(id);
     }
@@ -220,6 +223,14 @@ __decorate([
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], DealsController.prototype, "update", null);
+__decorate([
+    (0, common_1.Delete)(':id'),
+    (0, swagger_1.ApiOperation)({ summary: 'Delete deal' }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], DealsController.prototype, "remove", null);
 __decorate([
     (0, common_1.Post)(':id/analyze'),
     (0, swagger_1.ApiOperation)({ summary: 'AI analyze deal' }),

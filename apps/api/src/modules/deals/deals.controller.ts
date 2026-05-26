@@ -120,6 +120,12 @@ export class DealsController {
     return this.prisma.deal.update({ where: { id }, data: dto });
   }
 
+  @Delete(':id')
+  @ApiOperation({ summary: 'Delete deal' })
+  async remove(@Param('id', ParseUUIDPipe) id: string) {
+    return this.prisma.deal.delete({ where: { id } });
+  }
+
   @Post(':id/analyze')
   @ApiOperation({ summary: 'AI analyze deal' })
   async analyzeDeal(@Param('id', ParseUUIDPipe) id: string) {
