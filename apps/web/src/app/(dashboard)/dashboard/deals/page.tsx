@@ -421,6 +421,18 @@ export default function DealsPage() {
                         )}
                       </div>
 
+                      {/* Delete */}
+                      <div className="px-2 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
+                        <button onClick={async(e)=>{
+                          e.preventDefault();
+                          if(!confirm('Delete this deal?')) return;
+                          await fetch(`${process.env.NEXT_PUBLIC_API_URL}/deals/${deal.id}`,{method:'DELETE'});
+                          window.location.reload();
+                        }} className="p-1 hover:bg-red-900/40 text-red-500 hover:text-red-400 rounded transition">
+                          <Trash2 size={12}/>
+                        </button>
+                      </div>
+
                     </div>
                   </motion.div>
                 );

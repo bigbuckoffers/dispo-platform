@@ -573,6 +573,13 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
             <div className="flex items-center gap-2 shrink-0">
               <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[deal.status] || 'bg-gray-800 text-gray-400'}`}>{(deal.status||'DRAFT').replace(/_/g,' ')}</span>
               {deal.dealType && <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-900/60 text-indigo-300 border border-indigo-700/40">{deal.dealType}</span>}
+              <button onClick={async () => {
+                if (!confirm('Delete this deal? This cannot be undone.')) return;
+                await fetch(`${process.env.NEXT_PUBLIC_API_URL}/deals/${deal.id}`, { method: 'DELETE' });
+                window.location.href = '/dashboard/deals';
+              }} className="flex items-center gap-1 px-2 py-1 bg-red-900/30 hover:bg-red-900/60 text-red-400 text-[10px] rounded-lg border border-red-800/40 transition">
+                <Trash2 size={10}/> Delete
+              </button>
             </div>
           </div>
           {/* Row 2: property fields left, county+type right */}
