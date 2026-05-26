@@ -82,31 +82,14 @@ let ArvEngineService = class ArvEngineService {
     }
     async scrapeRedfin(fullAddr, zip, city, state) {
         const today = new Date().toISOString().split('T')[0];
-        const prompt = `You are a real estate data extraction agent. Search Redfin, Zillow, and Realtor.com for REAL recently sold homes near ${fullAddr} within the last 12 months.
+        const prompt = `Search for recently sold single family homes near ${fullAddr} sold in the last 12 months. Today is ${today}.
 
-Search these URLs and extract actual sold listings:
-- https://www.redfin.com/zipcode/${zip}/filter/property-type=house,status=sold
-- https://www.zillow.com/homes/recently_sold/${zip}_rb/
-- https://www.realtor.com/realestateandhomes-search/${city}_${state}/show-recently-sold/
+Find 3-6 sold homes and return their details as a JSON array. Search Redfin, Zillow, or Realtor.com.
 
-Today is ${today}. Only include sales from the last 12 months.
+Return ONLY a valid JSON array, nothing else:
+[{"address":"full street address","saleDate":"YYYY-MM-DD","salePrice":200000,"sqft":1500,"beds":3,"baths":2,"yearBuilt":1990,"propertyType":"Single Family","renovationEvidence":"updated kitchen, new roof","sourcePortal":"Redfin","sourceUrl":"https://redfin.com/..."}]
 
-For each sold home found, extract EXACTLY this data from the actual listing page:
-- address (full street address)
-- saleDate (YYYY-MM-DD format)
-- salePrice (number, no $ sign)
-- sqft (living area number)
-- beds (number)
-- baths (number)
-- yearBuilt (number if available)
-- propertyType (house/condo/townhouse)
-- renovationEvidence (any notes about condition, updates, renovations from listing)
-- sourcePortal (Redfin/Zillow/Realtor)
-- sourceUrl (actual URL of the listing)
-
-Return ONLY a JSON array of real comps you actually found. If you cannot find real data, return an empty array []. Do NOT invent or estimate any values.
-
-Format: [{"address":"...","saleDate":"...","salePrice":0,"sqft":0,"beds":0,"baths":0,"yearBuilt":0,"propertyType":"...","renovationEvidence":"...","sourcePortal":"...","sourceUrl":"..."}]`;
+If fewer than 2 sold homes found, return empty array [].`;
         try {
             const response = await fetch('https://api.anthropic.com/v1/messages', {
                 method: 'POST',
