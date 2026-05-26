@@ -39,7 +39,12 @@ let PlacesController = class PlacesController {
     async details(placeId) {
         try {
             const res = await axios_1.default.get(`https://places.googleapis.com/v1/places/${placeId}?key=${GKEY}&fields=addressComponents`);
-            return { result: { address_components: res.data.addressComponents } };
+            const components = (res.data.addressComponents || []).map((comp) => ({
+                long_name: comp.longText,
+                short_name: comp.shortText,
+                types: comp.types,
+            }));
+            return { result: { address_components: components } };
         }
         catch (e) {
             return { result: null, error: e.response?.data || e.message };
