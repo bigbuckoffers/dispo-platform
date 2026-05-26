@@ -63,7 +63,8 @@ export class ArvEngineService {
     };
 
     // STEP 1: Scrape Redfin sold comps
-    const rawComps = await this.scrapeRedfin(addr, deal.zipCode || '', deal.city || '', deal.state || '');
+    const rawComps = const propDetails = `${deal.beds||"?"}bd/${deal.baths||"?"}ba, ${deal.sqft||"?"} sqft, built ${deal.yearBuilt||"?"}, ${deal.propertyType||"SFR"}`;
+      const rawComps = await this.scrapeRedfin(addr, deal.zipCode || '', deal.city || '', deal.state || '', propDetails);
     
     // STEP 2: Normalize
     const normalized = this.normalizeComps(rawComps);
@@ -124,14 +125,13 @@ export class ArvEngineService {
     };
   }
 
-  private async scrapeRedfin(fullAddr: string, zip: string, city: string, state: string): Promise<any[]> {
+  private async scrapeRedfin(fullAddr: string, zip: string, city: string, state: string, propDetails: string): Promise<any[]> {
     // Use Anthropic API with web search to find real sold comps
     const today = new Date().toISOString().split('T')[0];
-    const prop = `${deal.beds||"?"}bd/${deal.baths||"?"}ba, ${deal.sqft||"?"} sqft, built ${deal.yearBuilt||"?"}, ${deal.propertyType||"SFR"}`;
     const prompt = `You are a certified Master Appraiser and underwriting grade valuation analyst. Estimate the ARV for the subject property using only current public data from the last 12 months and the same subdivision. Be conservative.
 
 Subject property: ${fullAddr}
-Property details: ${prop}
+Property details: ${propDetails}
 Today: ${today}
 
 Valuation goal: ARV if fully renovated, market ready, financed buyer eligible.

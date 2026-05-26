@@ -35,7 +35,9 @@ let ArvEngineService = class ArvEngineService {
             city: deal.city,
             state: deal.state,
         };
-        const rawComps = await this.scrapeRedfin(addr, deal.zipCode || '', deal.city || '', deal.state || '');
+        const rawComps = ;
+        const propDetails = `${deal.beds || "?"}bd/${deal.baths || "?"}ba, ${deal.sqft || "?"} sqft, built ${deal.yearBuilt || "?"}, ${deal.propertyType || "SFR"}`;
+        const rawComps = await this.scrapeRedfin(addr, deal.zipCode || '', deal.city || '', deal.state || '', propDetails);
         const normalized = this.normalizeComps(rawComps);
         const conflicts = this.detectSubjectConflicts(deal, normalized);
         if (conflicts.length > 0) {
@@ -80,13 +82,12 @@ let ArvEngineService = class ArvEngineService {
             scrapedAt: new Date().toISOString(),
         };
     }
-    async scrapeRedfin(fullAddr, zip, city, state) {
+    async scrapeRedfin(fullAddr, zip, city, state, propDetails) {
         const today = new Date().toISOString().split('T')[0];
-        const prop = `${deal.beds || "?"}bd/${deal.baths || "?"}ba, ${deal.sqft || "?"} sqft, built ${deal.yearBuilt || "?"}, ${deal.propertyType || "SFR"}`;
         const prompt = `You are a certified Master Appraiser and underwriting grade valuation analyst. Estimate the ARV for the subject property using only current public data from the last 12 months and the same subdivision. Be conservative.
 
 Subject property: ${fullAddr}
-Property details: ${prop}
+Property details: ${propDetails}
 Today: ${today}
 
 Valuation goal: ARV if fully renovated, market ready, financed buyer eligible.
