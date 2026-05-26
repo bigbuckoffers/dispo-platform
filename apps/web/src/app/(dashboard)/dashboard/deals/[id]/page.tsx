@@ -9,7 +9,7 @@ import {
   Copy, CheckCircle, ChevronDown, ChevronUp, Camera, FolderOpen,
   Globe, Eye, Facebook, MessageSquare, Edit3, X,
   ChevronLeft, ChevronRight, Upload, Link, Plus, ArrowLeft
-} from 'lucide-react';
+, Trash2 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { formatCurrency } from '@/lib/format';
 import toast from 'react-hot-toast';
