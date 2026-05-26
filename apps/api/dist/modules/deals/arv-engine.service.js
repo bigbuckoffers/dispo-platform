@@ -116,9 +116,9 @@ Format: [{"address":"...","saleDate":"...","salePrice":0,"sqft":0,"beds":0,"bath
                     'anthropic-version': '2023-06-01',
                 },
                 body: JSON.stringify({
-                    model: 'claude-sonnet-4-20250514',
+                    model: 'claude-sonnet-4-5-20251022',
                     max_tokens: 4000,
-                    tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+                    tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 5 }],
                     messages: [{ role: 'user', content: prompt }],
                 }),
             });
