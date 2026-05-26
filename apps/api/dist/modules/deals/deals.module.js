@@ -9,6 +9,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.DealsModule = void 0;
 const common_1 = require("@nestjs/common");
 const deals_controller_1 = require("./deals.controller");
+const arv_engine_service_1 = require("./arv-engine.service");
 const deals_service_1 = require("./deals.service");
 const deals_scoring_service_1 = require("./deals-scoring.service");
 const deals_ai_analyze_service_1 = require("./deals-ai-analyze.service");
@@ -22,7 +23,9 @@ exports.DealsModule = DealsModule = __decorate([
     (0, common_1.Module)({
         imports: [matching_module_1.MatchingModule, ai_module_1.AiModule],
         controllers: [deals_controller_1.DealsController],
-        providers: [deals_service_1.DealsService, deals_scoring_service_1.DealsScoringService, deals_ai_parser_service_1.DealsAiParserService, deals_ai_analyze_service_1.DealsAiAnalyzeService],
+        providers: [
+            arv_engine_service_1.ArvEngineService, deals_service_1.DealsService, deals_scoring_service_1.DealsScoringService, deals_ai_parser_service_1.DealsAiParserService, deals_ai_analyze_service_1.DealsAiAnalyzeService
+        ],
         exports: [deals_service_1.DealsService, deals_scoring_service_1.DealsScoringService],
     })
 ], DealsModule);

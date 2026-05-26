@@ -16,18 +16,20 @@ exports.DealsController = void 0;
 const common_1 = require("@nestjs/common");
 const swagger_1 = require("@nestjs/swagger");
 const decorators_1 = require("../../shared/decorators");
+const arv_engine_service_1 = require("./arv-engine.service");
 const deals_service_1 = require("./deals.service");
 const deals_scoring_service_1 = require("./deals-scoring.service");
 const deals_ai_analyze_service_1 = require("./deals-ai-analyze.service");
 const deals_ai_parser_service_1 = require("./deals-ai-parser.service");
 const prisma_service_1 = require("../../shared/prisma/prisma.service");
 let DealsController = class DealsController {
-    constructor(dealsService, scoringService, aiParser, aiAnalyze, prisma) {
+    constructor(dealsService, scoringService, aiParser, aiAnalyze, prisma, arvEngine) {
         this.dealsService = dealsService;
         this.scoringService = scoringService;
         this.aiParser = aiParser;
         this.aiAnalyze = aiAnalyze;
         this.prisma = prisma;
+        this.arvEngine = arvEngine;
     }
     async findAll(orgId, query) {
         return this.dealsService.findAll(orgId || await this.dealsService.getDefaultOrgId(), query);
@@ -165,8 +167,8 @@ let DealsController = class DealsController {
             },
         });
     }
-    async arvAnalysis(id) {
-        return this.dealsService.runArvAnalysis(id);
+    async arvAnalysis(id, body) {
+        return this.arvEngine.runArvEngine(id, body?.manualApprovals);
     }
     async fetchZestimate(id) {
         return this.dealsService.fetchZestimate(id);
@@ -274,8 +276,9 @@ __decorate([
 __decorate([
     (0, common_1.Post)(':id/arv-analysis'),
     __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], DealsController.prototype, "arvAnalysis", null);
 __decorate([
@@ -293,6 +296,7 @@ exports.DealsController = DealsController = __decorate([
         deals_scoring_service_1.DealsScoringService,
         deals_ai_parser_service_1.DealsAiParserService,
         deals_ai_analyze_service_1.DealsAiAnalyzeService,
-        prisma_service_1.PrismaService])
+        prisma_service_1.PrismaService,
+        arv_engine_service_1.ArvEngineService])
 ], DealsController);
 //# sourceMappingURL=deals.controller.js.map

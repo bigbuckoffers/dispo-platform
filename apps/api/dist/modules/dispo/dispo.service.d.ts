@@ -26,9 +26,9 @@ export declare class DispoService {
         organizationId: string;
         dealId: string;
         status: import(".prisma/client").$Enums.CampaignStatus;
+        subject: string | null;
         channel: import(".prisma/client").$Enums.CampaignChannel;
         targetTier: import(".prisma/client").$Enums.BuyerTier;
-        subject: string | null;
         body: string;
         scheduledAt: Date | null;
         sentAt: Date | null;
@@ -47,9 +47,9 @@ export declare class DispoService {
         organizationId: string;
         dealId: string;
         status: import(".prisma/client").$Enums.CampaignStatus;
+        subject: string | null;
         channel: import(".prisma/client").$Enums.CampaignChannel;
         targetTier: import(".prisma/client").$Enums.BuyerTier;
-        subject: string | null;
         body: string;
         scheduledAt: Date | null;
         sentAt: Date | null;

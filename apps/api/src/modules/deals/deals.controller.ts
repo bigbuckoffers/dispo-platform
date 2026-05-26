@@ -6,6 +6,7 @@ import {
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { TeamRole } from '@prisma/client';
 import { Roles, CurrentUser, OrgId } from '../../shared/decorators';
+import { ArvEngineService } from './arv-engine.service';
 import { DealsService } from './deals.service';
 import { DealsScoringService } from './deals-scoring.service';
 import { DealsAiAnalyzeService } from './deals-ai-analyze.service';
@@ -23,6 +24,7 @@ export class DealsController {
     private readonly aiParser: DealsAiParserService,
     private readonly aiAnalyze: DealsAiAnalyzeService,
     private readonly prisma: PrismaService,
+    private readonly arvEngine: ArvEngineService,
   ) {}
 
   @Get()
@@ -189,8 +191,8 @@ export class DealsController {
   }
 
   @Post(':id/arv-analysis')
-  async arvAnalysis(@Param('id') id: string) {
-    return this.dealsService.runArvAnalysis(id);
+  async arvAnalysis(@Param('id') id: string, @Body() body?: any) {
+    return this.arvEngine.runArvEngine(id, body?.manualApprovals);
   }
 
   @Post(':id/fetch-zestimate')
