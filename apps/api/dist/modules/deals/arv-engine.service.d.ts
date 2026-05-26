@@ -76,7 +76,6 @@ export declare class ArvEngineService {
         conflicts?: undefined;
     }>;
     private scrapeRedfin;
-    private scrapeZillowSold;
     private normalizeComps;
     private detectSubjectConflicts;
     private validateAndScoreComps;

@@ -125,102 +125,73 @@ export class ArvEngineService {
   }
 
   private async scrapeRedfin(fullAddr: string, zip: string, city: string, state: string): Promise<any[]> {
+    // Use Anthropic API with web search to find real sold comps
+    const today = new Date().toISOString().split('T')[0];
+    const prompt = `You are a real estate data extraction agent. Search Redfin, Zillow, and Realtor.com for REAL recently sold homes near ${fullAddr} within the last 12 months.
+
+Search these URLs and extract actual sold listings:
+- https://www.redfin.com/zipcode/${zip}/filter/property-type=house,status=sold
+- https://www.zillow.com/homes/recently_sold/${zip}_rb/
+- https://www.realtor.com/realestateandhomes-search/${city}_${state}/show-recently-sold/
+
+Today is ${today}. Only include sales from the last 12 months.
+
+For each sold home found, extract EXACTLY this data from the actual listing page:
+- address (full street address)
+- saleDate (YYYY-MM-DD format)
+- salePrice (number, no $ sign)
+- sqft (living area number)
+- beds (number)
+- baths (number)
+- yearBuilt (number if available)
+- propertyType (house/condo/townhouse)
+- renovationEvidence (any notes about condition, updates, renovations from listing)
+- sourcePortal (Redfin/Zillow/Realtor)
+- sourceUrl (actual URL of the listing)
+
+Return ONLY a JSON array of real comps you actually found. If you cannot find real data, return an empty array []. Do NOT invent or estimate any values.
+
+Format: [{"address":"...","saleDate":"...","salePrice":0,"sqft":0,"beds":0,"baths":0,"yearBuilt":0,"propertyType":"...","renovationEvidence":"...","sourcePortal":"...","sourceUrl":"..."}]`;
+
     try {
-      // Search Redfin sold homes
-      const searchUrl = `https://www.redfin.com/city/${city.toLowerCase().replace(/\s+/g, '-')}/${state}/filter/property-type=house,status=sold,min-listing-price=1`;
-      const scraperUrl = `http://api.scraperapi.com?api_key=${SCRAPER_KEY}&url=${encodeURIComponent(searchUrl)}&render=true`;
-      
-      console.log('Scraping Redfin for comps near:', fullAddr);
-      
-      const res = await fetch(scraperUrl, { signal: AbortSignal.timeout(25000) });
-      const html = await res.text();
-      
-      // Extract sold listings from HTML
-      const comps: any[] = [];
-      
-      // Parse Redfin script data (they embed JSON in script tags)
-      const scriptMatch = html.match(/window\.__reactServerState\s*=\s*(\{[\s\S]*?\});\s*<\/script>/);
-      if (scriptMatch) {
-        try {
-          const data = JSON.parse(scriptMatch[1]);
-          // Extract homes from React state
-          const homes = data?.SearchPageStateData?.homes || [];
-          for (const home of homes.slice(0, 20)) {
-            if (home.soldDate && home.price?.value) {
-              comps.push({
-                address: `${home.streetLine?.value || ''}, ${home.city?.value || city}, ${home.state?.value || state} ${home.zip?.value || zip}`,
-                saleDate: home.soldDate,
-                salePrice: home.price.value,
-                sqft: home.sqFt?.value,
-                beds: home.beds?.value,
-                baths: home.baths?.value,
-                yearBuilt: home.yearBuilt?.value,
-                propertyType: home.propertyType,
-                sourcePortal: 'Redfin',
-                sourceUrl: `https://www.redfin.com${home.url || ''}`,
-                scrapedAt: new Date().toISOString(),
-              });
-            }
-          }
-        } catch(e) {
-          console.log('Redfin JSON parse failed, trying regex fallback');
-        }
-      }
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': process.env.ANTHROPIC_API_KEY || '',
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 4000,
+          tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+          messages: [{ role: 'user', content: prompt }],
+        }),
+      });
 
-      // Fallback: try Zillow if Redfin returns nothing
-      if (comps.length === 0) {
-        return await this.scrapeZillowSold(fullAddr, zip, city, state);
-      }
+      const data = await response.json() as any;
+      console.log('Anthropic ARV search status:', response.status, 'stop_reason:', data.stop_reason);
 
-      return comps;
+      // Extract text from response
+      const textBlocks = (data.content || []).filter((b: any) => b.type === 'text');
+      const fullText = textBlocks.map((b: any) => b.text).join('');
+      console.log('ARV search response preview:', fullText.substring(0, 300));
+
+      // Parse JSON array from response
+      const jsonMatch = fullText.match(/\[[\s\S]*\]/);
+      if (jsonMatch) {
+        const comps = JSON.parse(jsonMatch[0]);
+        console.log(`Found ${comps.length} raw comps via web search`);
+        return Array.isArray(comps) ? comps : [];
+      }
+      return [];
     } catch(e: any) {
-      console.log('Redfin scrape error:', e.message);
-      return await this.scrapeZillowSold(fullAddr, zip, city, state);
-    }
-  }
-
-  private async scrapeZillowSold(fullAddr: string, zip: string, city: string, state: string): Promise<any[]> {
-    try {
-      const zillowUrl = `https://www.zillow.com/homes/recently_sold/${zip}_rb/`;
-      const scraperUrl = `http://api.scraperapi.com?api_key=${SCRAPER_KEY}&url=${encodeURIComponent(zillowUrl)}&render=true`;
-      
-      const res = await fetch(scraperUrl, { signal: AbortSignal.timeout(25000) });
-      const html = await res.text();
-      
-      const comps: any[] = [];
-      
-      // Extract from Zillow's embedded JSON
-      const matches = html.matchAll(/"hdpData":\{"homeInfo":\{([^}]+)\}/g);
-      for (const match of matches) {
-        try {
-          const info = JSON.parse(`{${match[1]}}`);
-          if (info.dateSold && info.price) {
-            comps.push({
-              address: `${info.streetAddress || ''}, ${info.city || city}, ${info.state || state} ${info.zipcode || zip}`,
-              saleDate: new Date(info.dateSold).toISOString().split('T')[0],
-              salePrice: info.price,
-              sqft: info.livingArea,
-              beds: info.bedrooms,
-              baths: info.bathrooms,
-              yearBuilt: info.yearBuilt,
-              propertyType: info.homeType,
-              sourcePortal: 'Zillow',
-              sourceUrl: info.hdpUrl ? `https://www.zillow.com${info.hdpUrl}` : '',
-              scrapedAt: new Date().toISOString(),
-            });
-          }
-        } catch(e) {}
-      }
-      
-      console.log(`Zillow fallback found ${comps.length} raw comps`);
-      return comps;
-    } catch(e: any) {
-      console.log('Zillow scrape error:', e.message);
+      console.log('Anthropic web search error:', e.message);
       return [];
     }
   }
 
-  private normalizeComps(raw: any[]): RawComp[] {
+    private normalizeComps(raw: any[]): RawComp[] {
     return raw.map(c => ({
       address: (c.address || '').trim(),
       saleDate: c.saleDate || '',
