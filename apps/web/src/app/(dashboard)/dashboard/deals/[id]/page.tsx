@@ -934,7 +934,7 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
                           const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/deals/${deal.id}/analyze`, { method: 'POST' });
                           const data = await res.json();
                           setAiResult(data);
-                          queryClient.invalidateQueries({ queryKey: ['deal', deal.id] });
+                          refetch();
                         } catch(e) { toast('AI analysis failed'); }
                         finally { setAiAnalyzing(false); }
                       }}
