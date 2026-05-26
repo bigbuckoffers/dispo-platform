@@ -51,63 +51,83 @@ function AddressAutocomplete({ value, onChange }: {
   value: string;
   onChange: (address: string, components?: { city?: string; state?: string; zip?: string; county?: string }) => void;
 }) {
-  const inputRef = useRef<HTMLInputElement>(null);
-  const autocompleteRef = useRef<any>(null);
+  const [inputVal, setInputVal] = useState(value);
+  const [suggestions, setSuggestions] = useState<any[]>([]);
+  const sessionToken = useRef<string>(Math.random().toString(36));
 
   useEffect(() => {
-    const loadGoogleMaps = () => {
-      if ((window as any).google?.maps?.places) {
-        initAutocomplete();
-        return;
-      }
-      if (document.getElementById('google-maps-script')) return;
-      const script = document.createElement('script');
-      script.id = 'google-maps-script';
-      script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyCcCi23uCqY8teR3eET_fZuybvhJ8lb1_s&libraries=places`;
-      script.async = true;
-      script.onload = initAutocomplete;
-      document.head.appendChild(script);
-    };
-
-    const initAutocomplete = () => {
-      if (!inputRef.current || !(window as any).google?.maps?.places) return;
-      autocompleteRef.current = new (window as any).google.maps.places.Autocomplete(inputRef.current, {
-        types: ['address'],
-        componentRestrictions: { country: 'us' },
-      });
-      autocompleteRef.current.addListener('place_changed', () => {
-        const place = autocompleteRef.current.getPlace();
-        if (!place.address_components) return;
-        let streetNumber = '', route = '', city = '', state = '', zip = '', county = '';
-        for (const comp of place.address_components) {
-          if (comp.types.includes('street_number')) streetNumber = comp.long_name;
-          if (comp.types.includes('route')) route = comp.long_name;
-          if (comp.types.includes('locality')) city = comp.long_name;
-          if (comp.types.includes('administrative_area_level_1')) state = comp.short_name;
-          if (comp.types.includes('postal_code')) zip = comp.long_name;
-          if (comp.types.includes('administrative_area_level_2')) county = comp.long_name.replace(' County', '');
-        }
-        const address = `${streetNumber} ${route}`.trim();
-        onChange(address, { city, state, zip, county });
-      });
-    };
-
-    loadGoogleMaps();
+    if (document.getElementById('gmap-script')) return;
+    const s = document.createElement('script');
+    s.id = 'gmap-script';
+    s.src = 'https://maps.googleapis.com/maps/api/js?key=AIzaSyCcCi23uCqY8teR3eET_fZuybvhJ8lb1_s&libraries=places&callback=Function.prototype';
+    s.async = true; s.defer = true;
+    document.head.appendChild(s);
   }, []);
 
+  const search = async (val: string) => {
+    setInputVal(val);
+    onChange(val);
+    if (val.length < 3) { setSuggestions([]); return; }
+    try {
+      const res = await fetch(
+        `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(val)}&types=address&components=country:us&key=AIzaSyCcCi23uCqY8teR3eET_fZuybvhJ8lb1_s&sessiontoken=${sessionToken.current}`
+      );
+      const data = await res.json();
+      setSuggestions(data.predictions || []);
+    } catch { setSuggestions([]); }
+  };
+
+  const pick = async (placeId: string, desc: string) => {
+    setSuggestions([]);
+    try {
+      const res = await fetch(
+        `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=address_components&key=AIzaSyCcCi23uCqY8teR3eET_fZuybvhJ8lb1_s&sessiontoken=${sessionToken.current}`
+      );
+      sessionToken.current = Math.random().toString(36);
+      const data = await res.json();
+      const comps = data.result?.address_components || [];
+      let num='',route='',city='',state='',zip='',county='';
+      for (const c of comps) {
+        if (c.types.includes('street_number')) num = c.long_name;
+        if (c.types.includes('route')) route = c.long_name;
+        if (c.types.includes('locality')) city = c.long_name;
+        if (c.types.includes('administrative_area_level_1')) state = c.short_name;
+        if (c.types.includes('postal_code')) zip = c.long_name;
+        if (c.types.includes('administrative_area_level_2')) county = c.long_name.replace(' County','');
+      }
+      const addr = `${num} ${route}`.trim() || desc.split(',')[0];
+      setInputVal(addr);
+      onChange(addr, { city, state, zip, county });
+    } catch {
+      setInputVal(desc.split(',')[0]);
+      onChange(desc.split(',')[0]);
+    }
+  };
+
   return (
-    <div>
+    <div className="relative">
       <label className="block text-xs text-gray-400 mb-1">Address</label>
-      <input
-        ref={inputRef}
-        type="text"
-        defaultValue={value}
+      <input type="text" value={inputVal} autoComplete="off"
+        onChange={e => search(e.target.value)}
         placeholder="Start typing address..."
         className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-blue-500"
       />
+      {suggestions.length > 0 && (
+        <div className="absolute z-[9999] w-full mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-xl overflow-hidden">
+          {suggestions.map((s: any) => (
+            <button key={s.place_id} type="button"
+              onMouseDown={() => pick(s.place_id, s.description)}
+              className="w-full text-left px-3 py-2.5 hover:bg-gray-700 border-b border-gray-700/50 last:border-0">
+              <p className="text-white text-sm">{s.structured_formatting?.main_text}</p>
+              <p className="text-gray-500 text-xs">{s.structured_formatting?.secondary_text}</p>
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
+
 
 export default function AddDealModal({ onClose, onSuccess }: AddDealModalProps) {
   const qc = useQueryClient();
