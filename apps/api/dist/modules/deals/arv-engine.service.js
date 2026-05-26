@@ -128,11 +128,23 @@ If fewer than 2 valid comps, return [].`;
             const textBlocks = (data.content || []).filter((b) => b.type === 'text');
             const fullText = textBlocks.map((b) => b.text).join('');
             console.log('ARV search response preview:', fullText.substring(0, 300));
-            const jsonMatch = fullText.match(/\[[\s\S]*\]/);
-            if (jsonMatch) {
-                const comps = JSON.parse(jsonMatch[0]);
-                console.log(`Found ${comps.length} raw comps via web search`);
-                return Array.isArray(comps) ? comps : [];
+            this._lastArvNarrative = fullText;
+            const patterns = [/[\{[\s\S]*?\}\]/g, /[[\s\S]*?]/g];
+            for (const pattern of patterns) {
+                const matches = fullText.match(pattern) || [];
+                for (const match of matches) {
+                    try {
+                        const comps = JSON.parse(match);
+                        if (Array.isArray(comps) && comps.length > 0 && comps[0].address) {
+                            console.log(`Found ${comps.length} raw comps via web search`);
+                            return comps;
+                        }
+                    }
+                    catch (e) { }
+                }
+            }
+            if (fullText.length > 200) {
+                return [{ _narrative: fullText, address: '', salePrice: 0, saleDate: '', sqft: 0, beds: 0, baths: 0, sourcePortal: 'Claude', sourceUrl: '' }];
             }
             return [];
         }
