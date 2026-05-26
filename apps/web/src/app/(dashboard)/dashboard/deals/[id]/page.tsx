@@ -104,8 +104,6 @@ function PhotoGallery({ deal, onUpdate, compact = false }: { deal: any; onUpdate
   const [driveInput, setDriveInput] = useState('');
   const [urlInput, setUrlInput] = useState('');
   const [dragging, setDragging] = useState(false);
-  const [aiAnalyzing, setAiAnalyzing] = useState(false);
-  const [aiResult, setAiResult] = useState<any>(null);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const photos: string[] = deal.photos?.filter(Boolean) || [];
@@ -401,6 +399,8 @@ function HeaderField({ value, placeholder, onSave, suffix='', width='w-20' }: {
 export default function DealDetailPage({ params }: { params: { id: string } }) {
   const { id } = params;
   const qc = useQueryClient();
+  const [aiAnalyzing, setAiAnalyzing] = useState(false);
+  const [aiResult, setAiResult] = useState<any>(null);
   const [tab, setTab] = useState<Tab>('overview');
   const [showOriginalPost, setShowOriginalPost] = useState(false);
   const [generatedOutput, setGeneratedOutput] = useState<Record<string, string>>({});
