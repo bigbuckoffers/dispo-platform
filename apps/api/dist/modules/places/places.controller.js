@@ -15,18 +15,19 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.PlacesController = void 0;
 const common_1 = require("@nestjs/common");
 const axios_1 = require("axios");
+const GKEY = 'AIzaSyCcCi23uCqY8teR3eET_fZuybvhJ8lb1_s';
 let PlacesController = class PlacesController {
     async autocomplete(input) {
         if (!input || input.length < 3)
             return { predictions: [] };
         const res = await axios_1.default.get('https://maps.googleapis.com/maps/api/place/autocomplete/json', {
-            params: { input, types: 'address', components: 'country:us', key: process.env.GOOGLE_MAPS_KEY || 'AIzaSyCcCi23uCqY8teR3eET_fZuybvhJ8lb1_s' }
+            params: { input, types: 'address', components: 'country:us', key: GKEY }
         });
         return res.data;
     }
     async details(placeId) {
         const res = await axios_1.default.get('https://maps.googleapis.com/maps/api/place/details/json', {
-            params: { place_id: placeId, fields: 'address_components', key: process.env.GOOGLE_MAPS_KEY || 'AIzaSyCcCi23uCqY8teR3eET_fZuybvhJ8lb1_s' }
+            params: { place_id: placeId, fields: 'address_components', key: GKEY }
         });
         return res.data;
     }
