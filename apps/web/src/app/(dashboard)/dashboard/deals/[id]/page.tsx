@@ -400,6 +400,7 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
   const { id } = params;
   const qc = useQueryClient();
   const [aiAnalyzing, setAiAnalyzing] = useState(false);
+  const [arvResult, setArvResult] = useState<any>(null);
   const [aiResult, setAiResult] = useState<any>(null);
   const [tab, setTab] = useState<Tab>('overview');
   const [showOriginalPost, setShowOriginalPost] = useState(false);
@@ -905,17 +906,21 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
                         onClick={async () => {
                           setAiAnalyzing(true);
                           try {
-                            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/deals/${deal.id}/analyze`, { method: 'POST' });
+                            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://dispo-platform-production.up.railway.app/api/v1';
+                            const res = await fetch(`${apiUrl}/deals/${deal.id}/arv-analysis`, { method: 'POST' });
                             const data = await res.json();
-                            setAiResult(data);
-                          } catch(e) { alert('AI analysis failed'); }
+                            setArvResult(data);
+                            if (data.arvMedian) {
+                              updateDeal.mutate({ arv: data.arvMedian });
+                            }
+                          } catch(e) { alert('ARV analysis failed'); }
                           finally { setAiAnalyzing(false); }
                         }}
                         disabled={aiAnalyzing}
                         className={`w-full flex items-center justify-center gap-2 px-3 py-2 disabled:opacity-50 text-white text-xs rounded-lg font-semibold transition ${dqColor==="#22c55e"?"bg-green-700 hover:bg-green-600":dqColor==="#f59e0b"?"bg-yellow-700 hover:bg-yellow-600":"bg-red-700 hover:bg-red-600"}`}
                       >
                         <Sparkles size={12}/>
-                        {aiAnalyzing ? 'Analyzing...' : 'Run AI Analysis'}
+                        {aiAnalyzing ? 'Getting Comps...' : 'Get ARV Comps'}
                       </button>
                       {deal.aiAnalyzedAt && <p className="text-gray-700 text-[10px] text-center mt-1">Last analyzed {new Date(deal.aiAnalyzedAt).toLocaleDateString()}</p>}
                     </div>
