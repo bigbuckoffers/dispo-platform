@@ -69,9 +69,7 @@ function AddressAutocomplete({ value, onChange }: {
     onChange(val);
     if (val.length < 3) { setSuggestions([]); return; }
     try {
-      const res = await fetch(
-        `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(val)}&types=address&components=country:us&key=AIzaSyCcCi23uCqY8teR3eET_fZuybvhJ8lb1_s&sessiontoken=${sessionToken.current}`
-      );
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/places/autocomplete?input=${encodeURIComponent(val)}`);
       const data = await res.json();
       setSuggestions(data.predictions || []);
     } catch { setSuggestions([]); }
@@ -80,9 +78,7 @@ function AddressAutocomplete({ value, onChange }: {
   const pick = async (placeId: string, desc: string) => {
     setSuggestions([]);
     try {
-      const res = await fetch(
-        `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=address_components&key=AIzaSyCcCi23uCqY8teR3eET_fZuybvhJ8lb1_s&sessiontoken=${sessionToken.current}`
-      );
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/places/details?place_id=${placeId}`);
       sessionToken.current = Math.random().toString(36);
       const data = await res.json();
       const comps = data.result?.address_components || [];
