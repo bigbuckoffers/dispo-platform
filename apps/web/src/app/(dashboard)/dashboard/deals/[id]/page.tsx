@@ -696,7 +696,7 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
               {(() => {
                 const flags: string[] = [];
                 if (deal.yearBuilt && deal.yearBuilt < 1978) flags.push('Built pre-1978 — possible lead paint');
-                if (deal.occupancy === 'VACANT') flags.push('Vacant — holding cost risk');
+                
                 if ((deal.overallCondition||'').includes('HEAVY')) flags.push('Heavy rehab — fewer cash buyer candidates');
                 if (deal.dealType === 'SUBTO' || deal.dealType === 'CREATIVE') flags.push('Creative finance — requires buyer education');
                 if (!flags.length) return null;
