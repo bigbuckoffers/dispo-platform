@@ -8,16 +8,15 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-var _a;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DealsAiAnalyzeService = void 0;
 const common_1 = require("@nestjs/common");
-const prisma_service_1 = require("../../prisma/prisma.service");
-const sdk_1 = require("@anthropic-ai/sdk");
+const prisma_service_1 = require("../../shared/prisma/prisma.service");
+const openai_1 = require("openai");
 let DealsAiAnalyzeService = class DealsAiAnalyzeService {
     constructor(prisma) {
         this.prisma = prisma;
-        this.anthropic = new sdk_1.default({ apiKey: process.env.ANTHROPIC_API_KEY });
+        this.openai = new openai_1.default({ apiKey: process.env.OPENAI_API_KEY });
     }
     async analyzeDeal(dealId) {
         const deal = await this.prisma.deal.findUnique({ where: { id: dealId } });
@@ -45,30 +44,33 @@ HOA: ${deal.hoaStatus || 'unknown'} ${deal.hoaMonthly ? '($' + deal.hoaMonthly +
 Title Issues: ${deal.titleIssuesNotes || 'none noted'}
 Code Violations: ${deal.codeIssues ? (deal.codeViolationDetails || 'yes') : 'none'}
 Unpermitted Additions: ${deal.unpermittedAdditions || 'none noted'}
-Condition Notes / Deal Notes: ${deal.conditionNotes || 'none'}
+Deal Notes: ${deal.conditionNotes || 'none'}
 Description: ${deal.description || 'none'}
 
-Return this exact JSON structure:
+Return this exact JSON:
 {
-  "verdict": "STRONG" | "POSSIBLE" | "RISKY" | "PASS",
+  "verdict": "STRONG",
   "verdictReason": "one sentence why",
   "strengths": ["strength 1", "strength 2", "strength 3"],
-  "redFlags": ["flag 1", "flag 2"],
-  "buyerProfile": "one sentence describing the ideal buyer for this deal",
-  "pitch": "2-3 sentence buyer-facing pitch for this deal",
-  "dispoScoreBonus": number between -20 and +20 (positive if easy to sell, negative if hard),
-  "dealScoreBonus": number between -25 and +25 (positive if strong numbers, negative if weak),
-  "sellabilityNotes": "one sentence on how fast/easy this will move"
-}`;
-        const response = await this.anthropic.messages.create({
-            model: 'claude-haiku-4-5',
-            max_tokens: 1000,
+  "redFlags": ["flag 1"],
+  "buyerProfile": "one sentence describing ideal buyer",
+  "pitch": "2-3 sentence buyer-facing pitch",
+  "dispoScoreBonus": 10,
+  "dealScoreBonus": 15,
+  "sellabilityNotes": "one sentence on how fast this will move"
+}
+
+verdict must be one of: STRONG, POSSIBLE, RISKY, PASS
+dispoScoreBonus: integer -20 to +20
+dealScoreBonus: integer -25 to +25`;
+        const response = await this.openai.chat.completions.create({
+            model: 'gpt-4o-mini',
             messages: [{ role: 'user', content: prompt }],
+            response_format: { type: 'json_object' },
+            max_tokens: 1000,
         });
-        const text = response.content[0].type === 'text' ? response.content[0].text : '';
-        const clean = text.replace(/```json|```/g, '').trim();
-        const result = JSON.parse(clean);
-        const updated = await this.prisma.deal.update({
+        const result = JSON.parse(response.choices[0].message.content || '{}');
+        await this.prisma.deal.update({
             where: { id: dealId },
             data: {
                 aiVerdict: result.verdict,
@@ -88,6 +90,6 @@ Return this exact JSON structure:
 exports.DealsAiAnalyzeService = DealsAiAnalyzeService;
 exports.DealsAiAnalyzeService = DealsAiAnalyzeService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [typeof (_a = typeof prisma_service_1.PrismaService !== "undefined" && prisma_service_1.PrismaService) === "function" ? _a : Object])
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
 ], DealsAiAnalyzeService);
 //# sourceMappingURL=deals-ai-analyze.service.js.map

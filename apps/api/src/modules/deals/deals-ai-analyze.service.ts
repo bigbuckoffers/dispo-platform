@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service';
-import Anthropic from '@anthropic-ai/sdk';
+import { PrismaService } from '../../shared/prisma/prisma.service';
+import OpenAI from 'openai';
 
 @Injectable()
 export class DealsAiAnalyzeService {
-  private anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  private openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
   constructor(private prisma: PrismaService) {}
 
@@ -29,39 +29,41 @@ Overall Condition: ${deal.overallCondition || 'unknown'}
 Roof: ${deal.roofCondition || 'unknown'} ${deal.roofAge ? '('+deal.roofAge+')' : ''}
 HVAC: ${deal.hvacCondition || 'unknown'} ${deal.hvacAge ? '('+deal.hvacAge+')' : ''}
 Foundation: ${deal.foundationCondition || 'unknown'}
-Water Heater: ${deal.waterHeaterCondition || 'unknown'} ${deal.waterHeaterAge ? '('+deal.waterHeaterAge+')' : ''}
+Water Heater: ${(deal as any).waterHeaterCondition || 'unknown'} ${(deal as any).waterHeaterAge ? '('+(deal as any).waterHeaterAge+')' : ''}
 HOA: ${deal.hoaStatus || 'unknown'} ${deal.hoaMonthly ? '($'+deal.hoaMonthly+'/mo)' : ''}
-Title Issues: ${deal.titleIssuesNotes || 'none noted'}
-Code Violations: ${deal.codeIssues ? (deal.codeViolationDetails || 'yes') : 'none'}
-Unpermitted Additions: ${deal.unpermittedAdditions || 'none noted'}
-Condition Notes / Deal Notes: ${deal.conditionNotes || 'none'}
+Title Issues: ${(deal as any).titleIssuesNotes || 'none noted'}
+Code Violations: ${deal.codeIssues ? ((deal as any).codeViolationDetails || 'yes') : 'none'}
+Unpermitted Additions: ${(deal as any).unpermittedAdditions || 'none noted'}
+Deal Notes: ${deal.conditionNotes || 'none'}
 Description: ${deal.description || 'none'}
 
-Return this exact JSON structure:
+Return this exact JSON:
 {
-  "verdict": "STRONG" | "POSSIBLE" | "RISKY" | "PASS",
+  "verdict": "STRONG",
   "verdictReason": "one sentence why",
   "strengths": ["strength 1", "strength 2", "strength 3"],
-  "redFlags": ["flag 1", "flag 2"],
-  "buyerProfile": "one sentence describing the ideal buyer for this deal",
-  "pitch": "2-3 sentence buyer-facing pitch for this deal",
-  "dispoScoreBonus": number between -20 and +20 (positive if easy to sell, negative if hard),
-  "dealScoreBonus": number between -25 and +25 (positive if strong numbers, negative if weak),
-  "sellabilityNotes": "one sentence on how fast/easy this will move"
-}`;
+  "redFlags": ["flag 1"],
+  "buyerProfile": "one sentence describing ideal buyer",
+  "pitch": "2-3 sentence buyer-facing pitch",
+  "dispoScoreBonus": 10,
+  "dealScoreBonus": 15,
+  "sellabilityNotes": "one sentence on how fast this will move"
+}
 
-    const response = await this.anthropic.messages.create({
-      model: 'claude-haiku-4-5',
-      max_tokens: 1000,
+verdict must be one of: STRONG, POSSIBLE, RISKY, PASS
+dispoScoreBonus: integer -20 to +20
+dealScoreBonus: integer -25 to +25`;
+
+    const response = await this.openai.chat.completions.create({
+      model: 'gpt-4o-mini',
       messages: [{ role: 'user', content: prompt }],
+      response_format: { type: 'json_object' },
+      max_tokens: 1000,
     });
 
-    const text = response.content[0].type === 'text' ? response.content[0].text : '';
-    const clean = text.replace(/```json|```/g, '').trim();
-    const result = JSON.parse(clean);
+    const result = JSON.parse(response.choices[0].message.content || '{}');
 
-    // Save to deal
-    const updated = await this.prisma.deal.update({
+    await this.prisma.deal.update({
       where: { id: dealId },
       data: {
         aiVerdict: result.verdict,
@@ -73,7 +75,7 @@ Return this exact JSON structure:
         aiDealScoreBonus: result.dealScoreBonus || 0,
         aiAnalyzedAt: new Date(),
         aiAnalysis: result,
-      },
+      } as any,
     });
 
     return { ...result, dealId };
