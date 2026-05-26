@@ -82,7 +82,14 @@ let ArvEngineService = class ArvEngineService {
     }
     async scrapeRedfin(fullAddr, zip, city, state) {
         const today = new Date().toISOString().split('T')[0];
-        const prompt = `Search for recently sold single family homes near ${fullAddr} sold in the last 12 months. Today is ${today}.
+        const prompt = `Search Redfin and Zillow for recently sold single family homes near ${fullAddr} sold in the last 12 months. Today is ${today}.
+
+ONLY include comps meeting ALL criteria:
+1. Sale price above $100,000 (exclude distressed/auction/cash flips)
+2. Renovation evidence OR described as updated/move-in ready
+3. Single family only, prefer 1,100-2,000 sqft
+Exclude foreclosures, auctions, REO, estate sales, any sale under $100k.
+
 
 Find 3-6 sold homes and return their details as a JSON array. Search Redfin, Zillow, or Realtor.com.
 
