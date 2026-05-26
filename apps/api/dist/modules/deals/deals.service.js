@@ -145,39 +145,82 @@ let DealsService = DealsService_1 = class DealsService {
         if (!deal)
             throw new Error('Deal not found');
         const addr = [deal.address, deal.city, deal.state, deal.zipCode].filter(Boolean).join(', ');
-        const prop = `${deal.beds || '?'}bd/${deal.baths || '?'}ba, ${deal.sqft || '?'} sqft, built ${deal.yearBuilt || '?'}, ${deal.propertyType || 'SFR'}`;
-        const prompt = `You are a Master Appraiser. Estimate ARV for: ${addr}. Property: ${prop}. Find 3-6 closed comps same subdivision last 12 months. Be conservative. Return ONLY valid JSON no other text: {"arvLow":0,"arvMedian":0,"arvHigh":0,"confidence":3,"confidenceReason":"...","comps":[{"address":"...","saleDate":"...","salePrice":0,"sqft":0,"pricePerSqft":0,"notes":"..."}],"recommendation":"...","dataWarnings":"..."}`;
-        const response = await fetch('https://api.anthropic.com/v1/messages', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'x-api-key': process.env.ANTHROPIC_API_KEY || '',
-                'anthropic-version': '2023-06-01',
-            },
-            body: JSON.stringify({
-                model: 'claude-haiku-4-5-20251001',
-                max_tokens: 2000,
-                messages: [{ role: 'user', content: prompt }],
-            }),
+        const prop = `${deal.beds || '?'}bd/${deal.baths || '?'}ba, ${deal.sqft || '?'} sqft, built ${deal.yearBuilt || '?'}, ${deal.propertyType || 'SFR'}, lot: ${deal.lotSize || 'unknown'}`;
+        const systemPrompt = `You are a certified Master Appraiser and underwriting grade valuation analyst. Your job is to estimate the After Repair Value (ARV) for the subject property using only current public data from the last 12 months and the same subdivision. You must be conservative.
+
+Hard rules:
+1. Data sources allowed: Zillow, Realtor.com, Trulia, Redfin, Opendoor, county appraisal district, county deed records, MLS public pages if accessible.
+2. Recency: Do not use any sale older than 12 months from today.
+3. Location match: Stay in the same subdivision. If you cannot prove same subdivision, do not use the comp.
+4. Property type match: Same property type as the subject.
+5. Condition: ARV assumes renovated condition. Use comps that appear renovated or market ready.
+6. Conservative bias: When in doubt, choose the lower supported value.
+
+Comp selection: Pull 3-6 closed sales in same subdivision within last 12 months matching property type, closest living area match first.
+
+You MUST return ONLY valid JSON, no other text, no markdown, no explanation outside the JSON:
+{
+  "arvLow": 0,
+  "arvMedian": 0,
+  "arvHigh": 0,
+  "confidence": 3,
+  "confidenceReason": "...",
+  "subdivisionName": "...",
+  "comps": [
+    {
+      "address": "...",
+      "saleDate": "...",
+      "salePrice": 0,
+      "sqft": 0,
+      "beds": 0,
+      "baths": 0,
+      "pricePerSqft": 0,
+      "renovationEvidence": "...",
+      "source": "...",
+      "adjustedValue": 0,
+      "adjustmentNotes": "..."
+    }
+  ],
+  "psfAnalysis": "...",
+  "recommendation": "...",
+  "dataWarnings": "...",
+  "assumptionLog": "...",
+  "qualityChecks": {
+    "recencyCheck": "pass/fail",
+    "subdivisionCheck": "pass/fail",
+    "typeCheck": "pass/fail",
+    "outlierCheck": "..."
+  }
+}`;
+        const userPrompt = `Subject property: ${addr}
+Property details: ${prop}
+Valuation goal: Estimate ARV if fully renovated, market ready, and financed buyer eligible.
+Today's date: ${new Date().toISOString().split('T')[0]}
+
+Find comps now and return the JSON.`;
+        const OpenAI = require('openai').default;
+        const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+        const response = await openai.chat.completions.create({
+            model: 'gpt-4o',
+            messages: [
+                { role: 'system', content: systemPrompt },
+                { role: 'user', content: userPrompt }
+            ],
+            response_format: { type: 'json_object' },
+            max_tokens: 3000,
         });
-        const data = await response.json();
-        console.log('ARV API response stop_reason:', data.stop_reason, 'content blocks:', data.content?.length);
-        const text = (data.content || []).filter((b) => b.type === 'text').map((b) => b.text).join('');
-        console.log('ARV text response:', text.substring(0, 300));
-        const jsonMatch = text.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-            try {
-                const result = JSON.parse(jsonMatch[0]);
-                if (result.arvMedian) {
-                    await this.prisma.deal.update({ where: { id }, data: { arv: result.arvMedian } });
-                }
-                return result;
+        const raw = response.choices[0].message.content || '{}';
+        console.log('ARV response preview:', raw.substring(0, 200));
+        try {
+            const result = JSON.parse(raw);
+            if (result.arvMedian && result.arvMedian > 0) {
+                await this.prisma.deal.update({ where: { id }, data: { arv: result.arvMedian } });
             }
-            catch (e) {
-                return { error: 'JSON parse failed', raw: text.substring(0, 500) };
-            }
+            return result;
         }
-        return { error: 'Could not parse ARV response', raw: text.substring(0, 500) };
+        catch (e) {
+            return { error: 'Could not parse ARV response', raw: raw.substring(0, 500) };
+        }
     }
     async fetchZestimate(id) {
         const deal = await this.prisma.deal.findUnique({ where: { id } });
