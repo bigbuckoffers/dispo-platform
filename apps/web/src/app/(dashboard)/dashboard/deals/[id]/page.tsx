@@ -478,6 +478,7 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
         confidence: d.avgConfidenceScore ? Math.round(d.avgConfidenceScore/20) : 2,
         confidenceReason: `${d.validatedCompCount} validated comps · State: ${d.outputState}`,
         dataWarnings: d.outputState === 'MANUAL_REVIEW_REQUIRED' ? 'High price variance detected — manual review recommended before using ARV.' : d.outputState === 'INSUFFICIENT_DATA' ? 'Insufficient verified comp data found.' : '',
+        claudeNarrative: d.claudeNarrative || null,
         assumptionLog: d.validationLog ? `Scraped: ${d.validationLog.totalScraped}, Validated: ${d.validationLog.totalValidated}, Rejected: ${d.validationLog.rejectedCount}` : '',
       });
       if(d.arvMedian) qc.invalidateQueries({ queryKey: ['deal', id] });
@@ -1237,6 +1238,17 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
                       )}
                       {arvAnalysis.dataWarnings && <p className="text-amber-500 text-xs bg-amber-900/20 rounded-lg p-2">⚠ {arvAnalysis.dataWarnings}</p>}
                       {arvAnalysis.assumptionLog && <p className="text-gray-600 text-[10px] italic px-1">Assumptions: {arvAnalysis.assumptionLog}</p>}
+                      {arvAnalysis.claudeNarrative && (
+                        <div className="mt-3 border border-purple-800/30 rounded-lg overflow-hidden">
+                          <div className="bg-purple-900/20 px-3 py-2 flex items-center gap-2">
+                            <Sparkles size={11} className="text-purple-400"/>
+                            <span className="text-purple-300 text-xs font-medium">Claude's Research Notes</span>
+                          </div>
+                          <div className="px-3 py-2 max-h-48 overflow-y-auto">
+                            <p className="text-gray-400 text-xs whitespace-pre-wrap leading-relaxed">{arvAnalysis.claudeNarrative}</p>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                   {arvAnalysis?.error && <p className="text-red-400 text-xs">{arvAnalysis.error}</p>}
