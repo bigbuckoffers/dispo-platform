@@ -127,13 +127,20 @@ export class ArvEngineService {
   private async scrapeRedfin(fullAddr: string, zip: string, city: string, state: string): Promise<any[]> {
     // Use Anthropic API with web search to find real sold comps
     const today = new Date().toISOString().split('T')[0];
-    const prompt = `Search Redfin and Zillow for recently sold single family homes near ${fullAddr} sold in the last 12 months. Today is ${today}.
+    const prompt = `You are a certified Master Appraiser and underwriting grade valuation analyst. Subject property: ${fullAddr}. Property details: ${subject.beds}bd/${subject.baths}ba, ${subject.sqft} sqft, built ${subject.yearBuilt}, ${subject.propertyType}. Today is ${today}.
 
-ONLY include comps meeting ALL criteria:
-1. Sale price above $100,000 (exclude distressed/auction/cash flips)
-2. Renovation evidence OR described as updated/move-in ready
-3. Single family only, prefer 1,100-2,000 sqft
-Exclude foreclosures, auctions, REO, estate sales, any sale under $100k.
+Search Redfin, Zillow, and Realtor.com for REAL recently sold homes. Hard rules:
+1. Only sales within last 12 months
+2. Same zip code required
+3. Same property type (single family)
+4. No distressed/auction/foreclosure/REO sales
+5. Prefer renovated or updated condition comps
+6. Conservative bias - when in doubt exclude the comp
+
+Find 3-6 qualifying comps. Return ONLY a valid JSON array:
+[{"address":"full address","saleDate":"YYYY-MM-DD","salePrice":200000,"sqft":1500,"beds":3,"baths":2,"yearBuilt":1990,"propertyType":"Single Family","renovationEvidence":"updated kitchen, new roof","sourcePortal":"Redfin","sourceUrl":"https://redfin.com/..."}]
+
+If fewer than 2 valid comps found, return empty array [].
 
 
 Find 3-6 sold homes and return their details as a JSON array. Search Redfin, Zillow, or Realtor.com.
