@@ -191,7 +191,7 @@ export class DealsController {
   }
 
   @Post(':id/arv-analysis')
-  async arvAnalysis(@Param('id') id: string, @Body() body?: any) {
+  async arvAnalysis(@Param('id') id: string, @Body() body?: any): Promise<any> {
     return this.arvEngine.runArvEngine(id, body?.manualApprovals);
   }
 
