@@ -676,16 +676,21 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
                 const estClose = t1 >= 3 ? '3–5 days' : t1 >= 1 ? '5–10 days' : total >= 3 ? '10–21 days' : null;
                 return (
                   <div className="grid grid-cols-2 gap-2 mb-2 auto-rows-auto">
-                    <div className="bg-gray-800/50 rounded-lg px-2.5 py-2">
-                      <p className="text-gray-600 text-[10px] font-semibold uppercase tracking-wide mb-0.5">Est. to Sell</p>
-                      <p className="text-white font-bold text-sm">{estClose || '—'}</p>
-                      <p className="text-gray-600 text-[10px]">from today</p>
-                    </div>
                     <div className={`rounded-lg px-2.5 py-2 ${inspDays !== null && inspDays <= 5 ? 'bg-red-900/30 border border-red-800/40' : inspDays !== null && inspDays <= 10 ? 'bg-yellow-900/20 border border-yellow-800/30' : 'bg-gray-800/50'}`}>
-                      <p className="text-gray-600 text-[10px] font-semibold uppercase tracking-wide mb-0.5">Insp. Ends</p>
+                      <p className="text-gray-600 text-[10px] font-semibold uppercase tracking-wide mb-0.5">Insp. Deadline</p>
                       {inspDays !== null ? <>
                         <p className={`font-bold text-sm ${inspDays <= 5 ? 'text-red-400' : inspDays <= 10 ? 'text-yellow-400' : 'text-white'}`}>{inspDays}d left</p>
                         <p className="text-gray-600 text-[10px]">{inspDate!.toLocaleDateString()}</p>
+                      </> : <>
+                        <p className="text-gray-600 text-sm font-bold">—</p>
+                        <p className="text-gray-700 text-[10px]">not set</p>
+                      </>}
+                    </div>
+                    <div className={`rounded-lg px-2.5 py-2 ${closeDays !== null && closeDays <= 7 ? 'bg-red-900/30 border border-red-800/40' : closeDays !== null && closeDays <= 14 ? 'bg-yellow-900/20 border border-yellow-800/30' : 'bg-gray-800/50'}`}>
+                      <p className="text-gray-600 text-[10px] font-semibold uppercase tracking-wide mb-0.5">COE Deadline</p>
+                      {closeDays !== null ? <>
+                        <p className={`font-bold text-sm ${closeDays <= 7 ? 'text-red-400' : closeDays <= 14 ? 'text-yellow-400' : 'text-white'}`}>{closeDays}d left</p>
+                        <p className="text-gray-600 text-[10px]">{closeDate!.toLocaleDateString()}</p>
                       </> : <>
                         <p className="text-gray-600 text-sm font-bold">—</p>
                         <p className="text-gray-700 text-[10px]">not set</p>
