@@ -27,6 +27,7 @@ const billing_module_1 = require("./modules/billing/billing.module");
 const teams_module_1 = require("./modules/teams/teams.module");
 const rentcast_module_1 = require("./modules/rentcast/rentcast.module");
 const deal_sources_module_1 = require("./modules/deal-sources/deal-sources.module");
+const places_module_1 = require("./modules/places/places.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -85,6 +86,7 @@ exports.AppModule = AppModule = __decorate([
             teams_module_1.TeamsModule,
             rentcast_module_1.RentCastModule,
             deal_sources_module_1.DealSourcesModule,
+            places_module_1.PlacesModule,
         ],
     })
 ], AppModule);

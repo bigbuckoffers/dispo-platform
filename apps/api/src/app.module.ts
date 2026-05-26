@@ -18,6 +18,7 @@ import { BillingModule } from './modules/billing/billing.module';
 import { TeamsModule } from './modules/teams/teams.module';
 import { RentCastModule } from './modules/rentcast/rentcast.module';
 import { DealSourcesModule } from './modules/deal-sources/deal-sources.module';
+import { PlacesModule } from './modules/places/places.module';
 
 @Module({
   imports: [
@@ -78,6 +79,7 @@ import { DealSourcesModule } from './modules/deal-sources/deal-sources.module';
     TeamsModule,
     RentCastModule,
     DealSourcesModule,
+    PlacesModule,
   ],
 })
 export class AppModule {}
