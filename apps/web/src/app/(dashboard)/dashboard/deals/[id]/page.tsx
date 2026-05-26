@@ -601,7 +601,7 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
       <div className="max-w-7xl mx-auto px-4 py-4">
 
         {/* ── Above-the-fold Command Center ─────────────────────── */}
-        <div className="grid grid-cols-12 gap-3 mb-3" style={{maxHeight:460}}>
+        <div className="grid grid-cols-12 gap-3 mb-3" style={{maxHeight:520}}>
 
           {/* LEFT: Photos (5 cols) */}
           <div className="col-span-12 md:col-span-5" style={{height:420}}>
@@ -769,7 +769,7 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
           </div>
 
           {/* RIGHT: Deal Quality Score (3 cols) */}
-          <div className="col-span-12 md:col-span-3" style={{height:420}}>
+          <div className="col-span-12 md:col-span-3" style={{height:480}}>
             {(() => {
               let dqs = 0;
               if (refValue > 0) dqs += 15;
