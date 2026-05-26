@@ -490,6 +490,7 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
   const sellReasons: string[] = [];
   const sellBlockers: string[] = [];
   let sellScore = 0;
+  // AI bonus applied below
   if (b > 0)                  { sellScore += 25; sellReasons.push(`${b} buyer${b>1?'s':''} matched`); }
   else                          { sellBlockers.push('No buyer matches yet'); }
   if (t1 > 0)                 { sellScore += 15; sellReasons.push(`${t1} Tier 1 buyer${t1>1?'s':''}`); }
@@ -770,7 +771,8 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
               if (deal.arv) dqs += 20;
               if (deal.repairEstimate) dqs += 15;
               if (deal.askingPrice) dqs += 10;
-              dqs = Math.min(100, dqs);
+              dqs += (deal.aiDealScoreBonus || 0);
+              dqs = Math.min(100, Math.max(0, dqs));
               const mao = deal.arv ? (deal.arv * 0.7) - (deal.repairEstimate || 0) : null;
               const arvThreshold = deal.arv ? deal.arv * 0.7 : null;
               const askVsArv = mao && deal.askingPrice ? deal.askingPrice - mao : null;
@@ -911,17 +913,104 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
           {/* OVERVIEW TAB */}
           {tab === 'overview' && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              
 
+              {/* LEFT: Deal Notes (AI) + Map */}
               <div className="space-y-4">
-                <Card title="Condition" icon={Shield}>
-                  <InfoRow label="Overall" value={deal.overallCondition?.replace(/_/g,' ')} />
-                  {deal.roofCondition && <InfoRow label="Roof" value={`${deal.roofCondition}${deal.roofAge?' · '+deal.roofAge:''}`} />}
-                  {deal.hvacCondition && <InfoRow label="HVAC" value={`${deal.hvacCondition}${deal.hvacAge?' · '+deal.hvacAge:''}`} />}
-                  <InfoRow label="Foundation" value={deal.foundationCondition} />
-                  {deal.moldOrWaterDamage && <p className="text-red-400 text-xs mt-2">⚠ Mold / Water Damage</p>}
-                  {deal.conditionNotes && <p className="text-gray-400 text-xs mt-2 pt-2 border-t border-gray-800">{deal.conditionNotes}</p>}
+
+                {/* Deal Notes + AI Analyzer */}
+                <Card title="Deal Notes & AI Analysis" icon={Sparkles}>
+                  <EditableTextarea
+                    value={deal.conditionNotes||''}
+                    onSave={v=>updateDeal.mutate({conditionNotes:v})}
+                    placeholder="Dump everything you know about this deal — access issues, title situation, seller motivation, neighborhood notes, tenant details, anything good or bad. The AI will use this to analyze sellability."
+                  />
+                  <div className="mt-3">
+                    <button
+                      onClick={async () => {
+                        setAiAnalyzing(true);
+                        try {
+                          const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/deals/${deal.id}/analyze`, { method: 'POST' });
+                          const data = await res.json();
+                          setAiResult(data);
+                          queryClient.invalidateQueries({ queryKey: ['deal', deal.id] });
+                        } catch(e) { toast('AI analysis failed'); }
+                        finally { setAiAnalyzing(false); }
+                      }}
+                      disabled={aiAnalyzing}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm rounded-lg font-semibold transition"
+                    >
+                      <Sparkles size={14}/>
+                      {aiAnalyzing ? 'Analyzing with AI...' : 'Analyze This Deal with AI'}
+                    </button>
+                  </div>
+
+                  {/* AI Results */}
+                  {(aiResult || deal.aiVerdict) && (() => {
+                    const r = aiResult || (deal.aiAnalysis as any);
+                    if (!r) return null;
+                    const verdictColor = r.verdict==='STRONG'?'text-green-400 bg-green-900/30 border-green-800/40':r.verdict==='POSSIBLE'?'text-yellow-400 bg-yellow-900/20 border-yellow-800/30':r.verdict==='RISKY'?'text-orange-400 bg-orange-900/20 border-orange-800/30':'text-red-400 bg-red-900/20 border-red-800/30';
+                    return (
+                      <div className="mt-3 space-y-3">
+                        {/* Verdict */}
+                        <div className={`rounded-lg p-3 border ${verdictColor}`}>
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="font-bold text-sm">{r.verdict} DEAL</span>
+                            {deal.aiAnalyzedAt && <span className="text-[10px] opacity-60">Analyzed {new Date(deal.aiAnalyzedAt).toLocaleDateString()}</span>}
+                          </div>
+                          <p className="text-xs opacity-80">{r.verdictReason}</p>
+                        </div>
+                        {/* Strengths */}
+                        {r.strengths?.length > 0 && (
+                          <div>
+                            <p className="text-gray-500 text-[10px] font-bold uppercase tracking-wide mb-1.5">Strengths</p>
+                            <div className="space-y-1">
+                              {r.strengths.map((s: string, i: number) => (
+                                <div key={i} className="flex items-start gap-1.5 text-xs text-gray-300">
+                                  <CheckCircle size={10} className="text-green-400 shrink-0 mt-0.5"/>
+                                  {s}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {/* Red Flags */}
+                        {r.redFlags?.length > 0 && (
+                          <div>
+                            <p className="text-gray-500 text-[10px] font-bold uppercase tracking-wide mb-1.5">Red Flags</p>
+                            <div className="space-y-1">
+                              {r.redFlags.map((f: string, i: number) => (
+                                <div key={i} className="flex items-start gap-1.5 text-xs text-orange-300 bg-orange-900/10 rounded px-2 py-1">
+                                  <AlertCircle size={10} className="text-orange-400 shrink-0 mt-0.5"/>
+                                  {f}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {/* Buyer Profile + Pitch */}
+                        {r.buyerProfile && (
+                          <div className="bg-gray-800/50 rounded-lg p-2.5">
+                            <p className="text-gray-500 text-[10px] font-bold uppercase tracking-wide mb-1">Ideal Buyer</p>
+                            <p className="text-gray-300 text-xs">{r.buyerProfile}</p>
+                          </div>
+                        )}
+                        {r.pitch && (
+                          <div className="bg-indigo-900/20 border border-indigo-800/30 rounded-lg p-2.5">
+                            <div className="flex items-center justify-between mb-1">
+                              <p className="text-indigo-400 text-[10px] font-bold uppercase tracking-wide">AI-Generated Pitch</p>
+                              <button onClick={()=>navigator.clipboard.writeText(r.pitch)} className="text-[10px] text-indigo-400 hover:text-indigo-300 flex items-center gap-0.5"><Copy size={8}/> Copy</button>
+                            </div>
+                            <p className="text-gray-300 text-xs leading-relaxed">{r.pitch}</p>
+                          </div>
+                        )}
+                        {r.sellabilityNotes && (
+                          <p className="text-gray-500 text-[10px] italic px-1">{r.sellabilityNotes}</p>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </Card>
+
                 <Card title="Location Map" icon={MapPin}>
                   <div className="rounded-lg overflow-hidden" style={{height:200}}>
                     <iframe
@@ -936,59 +1025,61 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
                 </Card>
               </div>
 
-              {/* Public Value Estimates */}
-              <Card title="Public Value Estimates" icon={TrendingUp}
-                action={
-                  <button onClick={fetchZestimate} disabled={zestimateFetching}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-900/40 hover:bg-blue-900/60 text-blue-300 text-xs rounded-lg transition border border-blue-700/40 disabled:opacity-50">
-                    {zestimateFetching ? <><RefreshCw size={9} className="animate-spin"/>Fetching...</> : <><Sparkles size={9}/>Fetch Zestimate</>}
-                  </button>
-                }>
-                {(deal.zillowEstimate || deal.zillowUrl) && (
-                  <div className="mb-3 p-2.5 bg-blue-900/20 border border-blue-800/30 rounded-lg flex items-center justify-between">
-                    <div>
-                      <div className="flex items-center gap-2 mb-0.5">
-                        <p className="text-blue-300 text-xs font-semibold">Zillow Zestimate</p>
-                        {deal.zillowUrl && <a href={deal.zillowUrl} target="_blank" rel="noopener noreferrer" className="text-[10px] px-1.5 py-0.5 bg-blue-800/50 hover:bg-blue-700/50 text-blue-300 rounded flex items-center gap-0.5 transition"><ExternalLink size={8}/> Zillow</a>}
-                      </div>
-                      <p className="text-white text-lg font-bold">{deal.zillowEstimate ? formatCurrency(deal.zillowEstimate) : '—'}</p>
+              {/* RIGHT: Property Condition */}
+              <div className="space-y-4">
+                <Card title="Property Condition" icon={Shield}>
+                  <div className="space-y-0">
+                    <EditableRow label="Overall Condition" value={deal.overallCondition?.replace(/_/g,' ')||''} onSave={v=>updateDeal.mutate({overallCondition:v.toUpperCase().replace(/ /g,'_')})} />
+                    <EditableRow label="Roof Condition" value={deal.roofCondition||''} onSave={v=>updateDeal.mutate({roofCondition:v})} />
+                    <EditableRow label="Roof Age" value={deal.roofAge||''} onSave={v=>updateDeal.mutate({roofAge:v})} placeholder="e.g. 5 years" />
+                    <EditableRow label="HVAC Condition" value={deal.hvacCondition||''} onSave={v=>updateDeal.mutate({hvacCondition:v})} />
+                    <EditableRow label="HVAC Age" value={deal.hvacAge||''} onSave={v=>updateDeal.mutate({hvacAge:v})} placeholder="e.g. 3 years" />
+                    <EditableRow label="Water Heater" value={deal.waterHeaterCondition||''} onSave={v=>updateDeal.mutate({waterHeaterCondition:v})} />
+                    <EditableRow label="Water Heater Age" value={deal.waterHeaterAge||''} onSave={v=>updateDeal.mutate({waterHeaterAge:v})} />
+                    <EditableRow label="Foundation" value={deal.foundationCondition||''} onSave={v=>updateDeal.mutate({foundationCondition:v})} />
+                    <div className="flex justify-between items-center py-2 border-b border-gray-800/50">
+                      <span className="text-gray-500 text-xs">Mold / Water Damage</span>
+                      <button onClick={()=>updateDeal.mutate({moldOrWaterDamage:!deal.moldOrWaterDamage})}
+                        className={`text-xs px-2 py-0.5 rounded font-semibold ${deal.moldOrWaterDamage?'bg-red-900/40 text-red-400':'bg-gray-800 text-gray-500'}`}>
+                        {deal.moldOrWaterDamage?'YES':'NO'}
+                      </button>
                     </div>
-                    {deal.zillowEstimate && <div className="text-right"><p className="text-gray-500 text-xs">70% of Zestimate</p><p className="text-yellow-400 text-sm font-semibold">{formatCurrency(deal.zillowEstimate*0.70)}</p></div>}
                   </div>
-                )}
-                <div className="flex gap-2 mb-3 flex-wrap">
-                  {[
-                    { name: 'Zillow', url: deal.zillowUrl || `https://www.zillow.com/homes/${encodeURIComponent(`${deal.address}, ${deal.city}, ${deal.state}`)}` },
-                    { name: 'Realtor', url: deal.realtorUrl || `https://www.realtor.com/realestateandhomes-search/${(deal.city||'').replace(' ','-')}_${deal.state}` },
-                    { name: 'Redfin', url: deal.redfinUrl || `https://www.redfin.com/city/${(deal.city||'').replace(' ','-')}/${deal.state}` },
-                  ].map(s => (
-                    <a key={s.name} href={s.url} target="_blank" rel="noopener noreferrer"
-                      className="text-xs px-2.5 py-1 bg-gray-800 hover:bg-gray-700 text-gray-400 rounded-lg border border-gray-700 transition flex items-center gap-1">
-                      <ExternalLink size={10}/> {s.name}
-                    </a>
-                  ))}
-                </div>
-                {avgPub > 0 ? (
-                  <div className="bg-gray-800/60 rounded-lg p-3 space-y-1.5">
-                    <div className="flex justify-between text-sm"><span className="text-gray-400">Avg Public Estimate</span><span className="text-white font-medium">{formatCurrency(avgPub)}</span></div>
-                    <div className="flex justify-between text-sm"><span className="text-gray-400">70% of Average</span><span className="text-yellow-400">{formatCurrency(avgPub*0.70)}</span></div>
-                    {deal.repairEstimate && <div className="flex justify-between text-sm"><span className="text-gray-400">70% Avg − Repairs</span><span className="text-green-400">{formatCurrency(avgPub*0.70-(deal.repairEstimate||0))}</span></div>}
-                    {deal.askingPrice && avgPub > 0 && (
-                      <div className={`text-xs font-semibold mt-2 pt-2 border-t border-gray-700 ${gap>0?'text-green-400':'text-red-400'}`}>
-                        Ask is {gap>0?formatCurrency(Math.abs(gap))+' under':formatCurrency(Math.abs(gap))+' over'} 70% of public value
-                      </div>
-                    )}
-                    <p className="text-gray-600 text-[10px] italic">Public estimates are quick references only — verify ARV with comps.</p>
+                  <div className="mt-3 pt-3 border-t border-gray-800 space-y-0">
+                    <p className="text-gray-600 text-[10px] font-bold uppercase tracking-wide mb-2">Legal & HOA</p>
+                    <div className="flex justify-between items-center py-2 border-b border-gray-800/50">
+                      <span className="text-gray-500 text-xs">Title Issues</span>
+                      <button onClick={()=>updateDeal.mutate({titleStatus:deal.titleStatus==='CLEAR'?'ISSUES':'CLEAR'})}
+                        className={`text-xs px-2 py-0.5 rounded font-semibold ${deal.titleStatus!=='CLEAR'?'bg-red-900/40 text-red-400':'bg-green-900/30 text-green-400'}`}>
+                        {deal.titleStatus==='CLEAR'?'CLEAR':'HAS ISSUES'}
+                      </button>
+                    </div>
+                    <EditableRow label="Title Notes" value={deal.titleIssuesNotes||''} onSave={v=>updateDeal.mutate({titleIssuesNotes:v})} placeholder="Describe any title issues..." />
+                    <div className="flex justify-between items-center py-2 border-b border-gray-800/50">
+                      <span className="text-gray-500 text-xs">Code Violations</span>
+                      <button onClick={()=>updateDeal.mutate({codeIssues:!deal.codeIssues})}
+                        className={`text-xs px-2 py-0.5 rounded font-semibold ${deal.codeIssues?'bg-red-900/40 text-red-400':'bg-gray-800 text-gray-500'}`}>
+                        {deal.codeIssues?'YES':'NO'}
+                      </button>
+                    </div>
+                    {deal.codeIssues && <EditableRow label="Violation Details" value={deal.codeViolationDetails||''} onSave={v=>updateDeal.mutate({codeViolationDetails:v})} />}
+                    <EditableRow label="Unpermitted Additions" value={deal.unpermittedAdditions||''} onSave={v=>updateDeal.mutate({unpermittedAdditions:v})} placeholder="Describe any unpermitted work..." />
+                    <div className="flex justify-between items-center py-2 border-b border-gray-800/50">
+                      <span className="text-gray-500 text-xs">HOA</span>
+                      <button onClick={()=>updateDeal.mutate({hoaStatus:deal.hoaStatus==='YES'?'NO':'YES'})}
+                        className={`text-xs px-2 py-0.5 rounded font-semibold ${deal.hoaStatus==='YES'?'bg-yellow-900/30 text-yellow-400':'bg-gray-800 text-gray-500'}`}>
+                        {deal.hoaStatus==='YES'?'YES':'NO'}
+                      </button>
+                    </div>
+                    {deal.hoaStatus==='YES' && <EditableRow label="HOA Monthly" value={deal.hoaMonthly?String(deal.hoaMonthly):''} onSave={v=>updateDeal.mutate({hoaMonthly:parseFloat(v)||null})} type="number" />}
                   </div>
-                ) : (
-                  <p className="text-gray-600 text-sm">No public estimates added yet. Fetch Zestimate or add links manually.</p>
-                )}
-              </Card>
+                </Card>
 
-              {/* Description */}
-              <Card title="Description" icon={FileText}>
-                <EditableTextarea value={deal.description||''} onSave={v=>updateDeal.mutate({description:v})} placeholder="Add a buyer-facing description..." />
-              </Card>
+                {/* Description */}
+                <Card title="Buyer-Facing Description" icon={FileText}>
+                  <EditableTextarea value={deal.description||''} onSave={v=>updateDeal.mutate({description:v})} placeholder="Add a buyer-facing description..." />
+                </Card>
+              </div>
             </div>
           )}
 

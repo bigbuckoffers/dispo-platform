@@ -1,0 +1,94 @@
+import { DealSourcesService } from './deal-sources.service';
+export declare class DealSourcesController {
+    private readonly svc;
+    constructor(svc: DealSourcesService);
+    findAll(orgId: string): Promise<({
+        _count: {
+            deals: number;
+        };
+    } & {
+        id: string;
+        email: string | null;
+        phone: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        organizationId: string;
+        company: string | null;
+        reliabilityScore: number;
+        isVerified: boolean;
+        sourceType: string;
+        sourceName: string | null;
+        facebookProfileUrl: string | null;
+        facebookGroupName: string | null;
+        sourceNotes: string | null;
+        reliabilityLabel: string;
+        totalDealsSubmitted: number;
+        activeDeals: number;
+        deadDeals: number;
+        dealsThatGotInterest: number;
+        dealsThatGotOffers: number;
+        dealsAssigned: number;
+        dealsClosed: number;
+        badInfoCount: number;
+        missingInfoFrequency: number;
+        hadContractConfirmed: boolean;
+        permissionToMarket: boolean;
+        averageResponseTimeMin: number | null;
+        sendsPhotosQuickly: boolean;
+        providesAccessQuickly: boolean;
+        answersQuestionsClearly: boolean;
+        goesGhostCount: number;
+        closedRevenueGenerated: number;
+        isBlacklisted: boolean;
+        lastDealSubmittedAt: Date | null;
+    })[]>;
+    findOne(id: string): Promise<{
+        deals: {
+            id: string;
+            createdAt: Date;
+            status: import(".prisma/client").$Enums.DealStatus;
+            address: string;
+            city: string;
+            state: string;
+            dealPriorityScore: number;
+        }[];
+    } & {
+        id: string;
+        email: string | null;
+        phone: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        organizationId: string;
+        company: string | null;
+        reliabilityScore: number;
+        isVerified: boolean;
+        sourceType: string;
+        sourceName: string | null;
+        facebookProfileUrl: string | null;
+        facebookGroupName: string | null;
+        sourceNotes: string | null;
+        reliabilityLabel: string;
+        totalDealsSubmitted: number;
+        activeDeals: number;
+        deadDeals: number;
+        dealsThatGotInterest: number;
+        dealsThatGotOffers: number;
+        dealsAssigned: number;
+        dealsClosed: number;
+        badInfoCount: number;
+        missingInfoFrequency: number;
+        hadContractConfirmed: boolean;
+        permissionToMarket: boolean;
+        averageResponseTimeMin: number | null;
+        sendsPhotosQuickly: boolean;
+        providesAccessQuickly: boolean;
+        answersQuestionsClearly: boolean;
+        goesGhostCount: number;
+        closedRevenueGenerated: number;
+        isBlacklisted: boolean;
+        lastDealSubmittedAt: Date | null;
+    }>;
+    create(body: any): Promise<any>;
+    update(id: string, body: any): Promise<any>;
+    recalculate(id: string): Promise<any>;
+}

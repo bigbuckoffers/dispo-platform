@@ -8,6 +8,7 @@ import { TeamRole } from '@prisma/client';
 import { Roles, CurrentUser, OrgId } from '../../shared/decorators';
 import { DealsService } from './deals.service';
 import { DealsScoringService } from './deals-scoring.service';
+import { DealsAiAnalyzeService } from './deals-ai-analyze.service';
 import { DealsAiParserService } from './deals-ai-parser.service';
 import { PrismaService } from '../../shared/prisma/prisma.service';
 import { CreateDealDto } from './dto/create-deal.dto';
@@ -20,6 +21,7 @@ export class DealsController {
     private readonly dealsService: DealsService,
     private readonly scoringService: DealsScoringService,
     private readonly aiParser: DealsAiParserService,
+    private readonly aiAnalyze: DealsAiAnalyzeService,
     private readonly prisma: PrismaService,
   ) {}
 
@@ -116,6 +118,12 @@ export class DealsController {
   @ApiOperation({ summary: 'Update deal' })
   async update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: any) {
     return this.prisma.deal.update({ where: { id }, data: dto });
+  }
+
+  @Post(':id/analyze')
+  @ApiOperation({ summary: 'AI analyze deal' })
+  async analyzeDeal(@Param('id', ParseUUIDPipe) id: string) {
+    return this.aiAnalyze.analyzeDeal(id);
   }
 
   @Post(':id/parse')

@@ -1,13 +1,15 @@
 import { DealsService } from './deals.service';
 import { DealsScoringService } from './deals-scoring.service';
+import { DealsAiAnalyzeService } from './deals-ai-analyze.service';
 import { DealsAiParserService } from './deals-ai-parser.service';
 import { PrismaService } from '../../shared/prisma/prisma.service';
 export declare class DealsController {
     private readonly dealsService;
     private readonly scoringService;
     private readonly aiParser;
+    private readonly aiAnalyze;
     private readonly prisma;
-    constructor(dealsService: DealsService, scoringService: DealsScoringService, aiParser: DealsAiParserService, prisma: PrismaService);
+    constructor(dealsService: DealsService, scoringService: DealsScoringService, aiParser: DealsAiParserService, aiAnalyze: DealsAiAnalyzeService, prisma: PrismaService);
     findAll(orgId: string, query: any): Promise<{
         data: any;
         meta: {
@@ -118,6 +120,19 @@ export declare class DealsController {
         moldOrWaterDamage: boolean;
         fireDamage: boolean;
         codeIssues: boolean;
+        waterHeaterAge: string | null;
+        waterHeaterCondition: string | null;
+        unpermittedAdditions: string | null;
+        titleIssuesNotes: string | null;
+        codeViolationDetails: string | null;
+        aiVerdict: string | null;
+        aiStrengths: import("@prisma/client/runtime/library").JsonValue | null;
+        aiRedFlags: import("@prisma/client/runtime/library").JsonValue | null;
+        aiBuyerProfile: string | null;
+        aiPitch: string | null;
+        aiDispoScoreBonus: number | null;
+        aiDealScoreBonus: number | null;
+        aiAnalyzedAt: Date | null;
         conditionNotes: string | null;
         contractDate: Date | null;
         inspectionDeadline: Date | null;
@@ -142,6 +157,7 @@ export declare class DealsController {
         streetViewUrl: string | null;
         photosUrl: string | null;
         googleDriveUrl: string | null;
+        dealSourceId: string | null;
         inspectionReportUrl: string | null;
         repairQuoteUrl: string | null;
         otherDocumentUrls: string[];
@@ -278,6 +294,19 @@ export declare class DealsController {
         moldOrWaterDamage: boolean;
         fireDamage: boolean;
         codeIssues: boolean;
+        waterHeaterAge: string | null;
+        waterHeaterCondition: string | null;
+        unpermittedAdditions: string | null;
+        titleIssuesNotes: string | null;
+        codeViolationDetails: string | null;
+        aiVerdict: string | null;
+        aiStrengths: import("@prisma/client/runtime/library").JsonValue | null;
+        aiRedFlags: import("@prisma/client/runtime/library").JsonValue | null;
+        aiBuyerProfile: string | null;
+        aiPitch: string | null;
+        aiDispoScoreBonus: number | null;
+        aiDealScoreBonus: number | null;
+        aiAnalyzedAt: Date | null;
         conditionNotes: string | null;
         contractDate: Date | null;
         inspectionDeadline: Date | null;
@@ -302,6 +331,7 @@ export declare class DealsController {
         streetViewUrl: string | null;
         photosUrl: string | null;
         googleDriveUrl: string | null;
+        dealSourceId: string | null;
         inspectionReportUrl: string | null;
         repairQuoteUrl: string | null;
         otherDocumentUrls: string[];
@@ -410,6 +440,19 @@ export declare class DealsController {
         moldOrWaterDamage: boolean;
         fireDamage: boolean;
         codeIssues: boolean;
+        waterHeaterAge: string | null;
+        waterHeaterCondition: string | null;
+        unpermittedAdditions: string | null;
+        titleIssuesNotes: string | null;
+        codeViolationDetails: string | null;
+        aiVerdict: string | null;
+        aiStrengths: import("@prisma/client/runtime/library").JsonValue | null;
+        aiRedFlags: import("@prisma/client/runtime/library").JsonValue | null;
+        aiBuyerProfile: string | null;
+        aiPitch: string | null;
+        aiDispoScoreBonus: number | null;
+        aiDealScoreBonus: number | null;
+        aiAnalyzedAt: Date | null;
         conditionNotes: string | null;
         contractDate: Date | null;
         inspectionDeadline: Date | null;
@@ -434,6 +477,7 @@ export declare class DealsController {
         streetViewUrl: string | null;
         photosUrl: string | null;
         googleDriveUrl: string | null;
+        dealSourceId: string | null;
         inspectionReportUrl: string | null;
         repairQuoteUrl: string | null;
         otherDocumentUrls: string[];
@@ -456,6 +500,7 @@ export declare class DealsController {
         marketDemandScore: number;
         marketBuyerNeedRecommendation: string | null;
     }>;
+    analyzeDeal(id: string): Promise<any>;
     parseDeal(id: string): Promise<{
         id: string;
         createdAt: Date;
@@ -542,6 +587,19 @@ export declare class DealsController {
         moldOrWaterDamage: boolean;
         fireDamage: boolean;
         codeIssues: boolean;
+        waterHeaterAge: string | null;
+        waterHeaterCondition: string | null;
+        unpermittedAdditions: string | null;
+        titleIssuesNotes: string | null;
+        codeViolationDetails: string | null;
+        aiVerdict: string | null;
+        aiStrengths: import("@prisma/client/runtime/library").JsonValue | null;
+        aiRedFlags: import("@prisma/client/runtime/library").JsonValue | null;
+        aiBuyerProfile: string | null;
+        aiPitch: string | null;
+        aiDispoScoreBonus: number | null;
+        aiDealScoreBonus: number | null;
+        aiAnalyzedAt: Date | null;
         conditionNotes: string | null;
         contractDate: Date | null;
         inspectionDeadline: Date | null;
@@ -566,6 +624,7 @@ export declare class DealsController {
         streetViewUrl: string | null;
         photosUrl: string | null;
         googleDriveUrl: string | null;
+        dealSourceId: string | null;
         inspectionReportUrl: string | null;
         repairQuoteUrl: string | null;
         otherDocumentUrls: string[];
@@ -676,6 +735,19 @@ export declare class DealsController {
         moldOrWaterDamage: boolean;
         fireDamage: boolean;
         codeIssues: boolean;
+        waterHeaterAge: string | null;
+        waterHeaterCondition: string | null;
+        unpermittedAdditions: string | null;
+        titleIssuesNotes: string | null;
+        codeViolationDetails: string | null;
+        aiVerdict: string | null;
+        aiStrengths: import("@prisma/client/runtime/library").JsonValue | null;
+        aiRedFlags: import("@prisma/client/runtime/library").JsonValue | null;
+        aiBuyerProfile: string | null;
+        aiPitch: string | null;
+        aiDispoScoreBonus: number | null;
+        aiDealScoreBonus: number | null;
+        aiAnalyzedAt: Date | null;
         conditionNotes: string | null;
         contractDate: Date | null;
         inspectionDeadline: Date | null;
@@ -700,6 +772,7 @@ export declare class DealsController {
         streetViewUrl: string | null;
         photosUrl: string | null;
         googleDriveUrl: string | null;
+        dealSourceId: string | null;
         inspectionReportUrl: string | null;
         repairQuoteUrl: string | null;
         otherDocumentUrls: string[];
@@ -819,6 +892,19 @@ export declare class DealsController {
         moldOrWaterDamage: boolean;
         fireDamage: boolean;
         codeIssues: boolean;
+        waterHeaterAge: string | null;
+        waterHeaterCondition: string | null;
+        unpermittedAdditions: string | null;
+        titleIssuesNotes: string | null;
+        codeViolationDetails: string | null;
+        aiVerdict: string | null;
+        aiStrengths: import("@prisma/client/runtime/library").JsonValue | null;
+        aiRedFlags: import("@prisma/client/runtime/library").JsonValue | null;
+        aiBuyerProfile: string | null;
+        aiPitch: string | null;
+        aiDispoScoreBonus: number | null;
+        aiDealScoreBonus: number | null;
+        aiAnalyzedAt: Date | null;
         conditionNotes: string | null;
         contractDate: Date | null;
         inspectionDeadline: Date | null;
@@ -843,6 +929,7 @@ export declare class DealsController {
         streetViewUrl: string | null;
         photosUrl: string | null;
         googleDriveUrl: string | null;
+        dealSourceId: string | null;
         inspectionReportUrl: string | null;
         repairQuoteUrl: string | null;
         otherDocumentUrls: string[];
@@ -866,5 +953,19 @@ export declare class DealsController {
         marketBuyerNeedRecommendation: string | null;
     } | {
         error: string;
+    }>;
+    arvAnalysis(id: string): Promise<any>;
+    fetchZestimate(id: string): Promise<{
+        success: boolean;
+        zestimate: number;
+        zillowUrl: string;
+        source: string;
+        message?: undefined;
+    } | {
+        success: boolean;
+        message: any;
+        zillowUrl: string;
+        zestimate?: undefined;
+        source?: undefined;
     }>;
 }

@@ -25,6 +25,8 @@ const notifications_module_1 = require("./modules/notifications/notifications.mo
 const ai_module_1 = require("./modules/ai/ai.module");
 const billing_module_1 = require("./modules/billing/billing.module");
 const teams_module_1 = require("./modules/teams/teams.module");
+const rentcast_module_1 = require("./modules/rentcast/rentcast.module");
+const deal_sources_module_1 = require("./modules/deal-sources/deal-sources.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -81,6 +83,8 @@ exports.AppModule = AppModule = __decorate([
             ai_module_1.AiModule,
             billing_module_1.BillingModule,
             teams_module_1.TeamsModule,
+            rentcast_module_1.RentCastModule,
+            deal_sources_module_1.DealSourcesModule,
         ],
     })
 ], AppModule);

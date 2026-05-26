@@ -389,6 +389,19 @@ model Deal {
   moldOrWaterDamage             Boolean   @default(false)
   fireDamage                    Boolean   @default(false)
   codeIssues                    Boolean   @default(false)
+  waterHeaterAge                String?
+  waterHeaterCondition          String?
+  unpermittedAdditions          String?
+  titleIssuesNotes              String?
+  codeViolationDetails          String?
+  aiVerdict                     String?
+  aiStrengths                   Json?
+  aiRedFlags                    Json?
+  aiBuyerProfile                String?
+  aiPitch                       String?
+  aiDispoScoreBonus             Int?      @default(0)
+  aiDealScoreBonus              Int?      @default(0)
+  aiAnalyzedAt                  DateTime?
   conditionNotes                String?
 
   // Extended timeline

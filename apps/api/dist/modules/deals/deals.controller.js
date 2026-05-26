@@ -18,17 +18,19 @@ const swagger_1 = require("@nestjs/swagger");
 const decorators_1 = require("../../shared/decorators");
 const deals_service_1 = require("./deals.service");
 const deals_scoring_service_1 = require("./deals-scoring.service");
+const deals_ai_analyze_service_1 = require("./deals-ai-analyze.service");
 const deals_ai_parser_service_1 = require("./deals-ai-parser.service");
 const prisma_service_1 = require("../../shared/prisma/prisma.service");
 let DealsController = class DealsController {
-    constructor(dealsService, scoringService, aiParser, prisma) {
+    constructor(dealsService, scoringService, aiParser, aiAnalyze, prisma) {
         this.dealsService = dealsService;
         this.scoringService = scoringService;
         this.aiParser = aiParser;
+        this.aiAnalyze = aiAnalyze;
         this.prisma = prisma;
     }
-    findAll(orgId, query) {
-        return this.dealsService.findAll(orgId || 'a296974d-74f4-4c8b-b6f4-5a57b9f36758', query);
+    async findAll(orgId, query) {
+        return this.dealsService.findAll(orgId || await this.dealsService.getDefaultOrgId(), query);
     }
     async getMarketIntelligence() {
         const deals = await this.prisma.deal.findMany({
@@ -89,7 +91,7 @@ let DealsController = class DealsController {
                 ...metrics,
                 marketKey,
                 id: undefined,
-                organizationId: orgId || 'a296974d-74f4-4c8b-b6f4-5a57b9f36758',
+                organizationId: orgId || await this.dealsService.getDefaultOrgId(),
                 address: dto.address || 'TBD',
                 city: dto.city || '',
                 state: dto.state || '',
@@ -98,11 +100,14 @@ let DealsController = class DealsController {
             },
         });
     }
-    findOne(orgId, id) {
-        return this.dealsService.findOne(orgId || 'a296974d-74f4-4c8b-b6f4-5a57b9f36758', id);
+    async findOne(orgId, id) {
+        return this.dealsService.findOne(orgId || await this.dealsService.getDefaultOrgId(), id);
     }
     async update(id, dto) {
         return this.prisma.deal.update({ where: { id }, data: dto });
+    }
+    async analyzeDeal(id) {
+        return this.aiAnalyze.analyzeDeal(id);
     }
     async parseDeal(id) {
         const deal = await this.prisma.deal.findUnique({ where: { id } });
@@ -157,6 +162,12 @@ let DealsController = class DealsController {
             },
         });
     }
+    async arvAnalysis(id) {
+        return this.dealsService.runArvAnalysis(id);
+    }
+    async fetchZestimate(id) {
+        return this.dealsService.fetchZestimate(id);
+    }
 };
 exports.DealsController = DealsController;
 __decorate([
@@ -165,7 +176,7 @@ __decorate([
     __param(1, (0, common_1.Query)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, Object]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], DealsController.prototype, "findAll", null);
 __decorate([
     (0, common_1.Get)('market-intelligence'),
@@ -198,7 +209,7 @@ __decorate([
     __param(1, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, String]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], DealsController.prototype, "findOne", null);
 __decorate([
     (0, common_1.Patch)(':id'),
@@ -209,6 +220,14 @@ __decorate([
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], DealsController.prototype, "update", null);
+__decorate([
+    (0, common_1.Post)(':id/analyze'),
+    (0, swagger_1.ApiOperation)({ summary: 'AI analyze deal' }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], DealsController.prototype, "analyzeDeal", null);
 __decorate([
     (0, common_1.Post)(':id/parse'),
     (0, swagger_1.ApiOperation)({ summary: 'Re-parse deal from raw text' }),
@@ -241,6 +260,20 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], DealsController.prototype, "matchBuyers", null);
+__decorate([
+    (0, common_1.Post)(':id/arv-analysis'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], DealsController.prototype, "arvAnalysis", null);
+__decorate([
+    (0, common_1.Post)(':id/fetch-zestimate'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], DealsController.prototype, "fetchZestimate", null);
 exports.DealsController = DealsController = __decorate([
     (0, swagger_1.ApiTags)('deals'),
     (0, swagger_1.ApiBearerAuth)(),
@@ -248,6 +281,7 @@ exports.DealsController = DealsController = __decorate([
     __metadata("design:paramtypes", [deals_service_1.DealsService,
         deals_scoring_service_1.DealsScoringService,
         deals_ai_parser_service_1.DealsAiParserService,
+        deals_ai_analyze_service_1.DealsAiAnalyzeService,
         prisma_service_1.PrismaService])
 ], DealsController);
 //# sourceMappingURL=deals.controller.js.map
