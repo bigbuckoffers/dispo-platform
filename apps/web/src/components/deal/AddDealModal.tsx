@@ -197,7 +197,7 @@ export default function AddDealModal({ onClose, onSuccess }: AddDealModalProps) 
   const saveMutation = useMutation({
     mutationFn: (data: any) => api.post('/deals', data).then(r => r.data),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['deals'] }); toast.success('Deal saved!'); onSuccess(); onClose(); },
-    onError: () => toast.error('Failed to save deal'),
+    onError: (e:any) => toast.error('Failed to save: ' + (e?.response?.data?.message || e?.message || 'unknown error')),
   });
   const handleSave = (status = 'DRAFT') => { saveMutation.mutate({ ...formRef.current, status, sourceType }); };
   const f = formDisplay;
