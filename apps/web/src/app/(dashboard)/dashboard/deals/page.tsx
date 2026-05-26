@@ -406,6 +406,15 @@ export default function DealsPage() {
 
                       {/* Next Action */}
                       <div className="px-2 flex items-center gap-1.5 relative group/na">
+                        <button onClick={async(e)=>{
+                          e.stopPropagation(); e.preventDefault();
+                          if(!confirm('Delete this deal?')) return;
+                          const apiUrl = process.env.NEXT_PUBLIC_API_URL||'https://dispo-platform-production.up.railway.app/api/v1';
+                          await fetch(`${apiUrl}/deals/${deal.id}`,{method:'DELETE'});
+                          window.location.reload();
+                        }} className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-900/40 text-red-600 hover:text-red-400 rounded transition shrink-0">
+                          <Trash2 size={11}/>
+                        </button>
                         <Link href={`/dashboard/deals/${deal.id}`} className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold transition whitespace-nowrap ${na.c}`}>
                           {na.l} <ChevronRight size={9}/>
                         </Link>
@@ -419,18 +428,6 @@ export default function DealsPage() {
                             ))}
                           </div>
                         )}
-                      </div>
-
-                      {/* Delete */}
-                      <div className="px-2 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
-                        <button onClick={async(e)=>{
-                          e.preventDefault();
-                          if(!confirm('Delete this deal?')) return;
-                          await fetch(`${process.env.NEXT_PUBLIC_API_URL}/deals/${deal.id}`,{method:'DELETE'});
-                          window.location.reload();
-                        }} className="p-1 hover:bg-red-900/40 text-red-500 hover:text-red-400 rounded transition">
-                          <Trash2 size={12}/>
-                        </button>
                       </div>
 
                     </div>
