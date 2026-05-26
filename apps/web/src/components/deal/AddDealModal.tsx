@@ -1,5 +1,5 @@
 'use client';
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { X, Sparkles, PenLine, MessageSquare, Loader2, ChevronRight, ChevronLeft, Check, Zap, AlertCircle } from 'lucide-react';
@@ -46,6 +46,69 @@ function TextArea({ label, id, placeholder, value, onChange, rows = 3 }: any) {
     </div>
   );
 }
+
+function AddressAutocomplete({ value, onChange }: {
+  value: string;
+  onChange: (address: string, components?: { city?: string; state?: string; zip?: string; county?: string }) => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const autocompleteRef = useRef<any>(null);
+
+  useEffect(() => {
+    const loadGoogleMaps = () => {
+      if ((window as any).google?.maps?.places) {
+        initAutocomplete();
+        return;
+      }
+      if (document.getElementById('google-maps-script')) return;
+      const script = document.createElement('script');
+      script.id = 'google-maps-script';
+      script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyCcCi23uCqY8teR3eET_fZuybvhJ8lb1_s&libraries=places`;
+      script.async = true;
+      script.onload = initAutocomplete;
+      document.head.appendChild(script);
+    };
+
+    const initAutocomplete = () => {
+      if (!inputRef.current || !(window as any).google?.maps?.places) return;
+      autocompleteRef.current = new (window as any).google.maps.places.Autocomplete(inputRef.current, {
+        types: ['address'],
+        componentRestrictions: { country: 'us' },
+      });
+      autocompleteRef.current.addListener('place_changed', () => {
+        const place = autocompleteRef.current.getPlace();
+        if (!place.address_components) return;
+        let streetNumber = '', route = '', city = '', state = '', zip = '', county = '';
+        for (const comp of place.address_components) {
+          if (comp.types.includes('street_number')) streetNumber = comp.long_name;
+          if (comp.types.includes('route')) route = comp.long_name;
+          if (comp.types.includes('locality')) city = comp.long_name;
+          if (comp.types.includes('administrative_area_level_1')) state = comp.short_name;
+          if (comp.types.includes('postal_code')) zip = comp.long_name;
+          if (comp.types.includes('administrative_area_level_2')) county = comp.long_name.replace(' County', '');
+        }
+        const address = `${streetNumber} ${route}`.trim();
+        onChange(address, { city, state, zip, county });
+      });
+    };
+
+    loadGoogleMaps();
+  }, []);
+
+  return (
+    <div>
+      <label className="block text-xs text-gray-400 mb-1">Address</label>
+      <input
+        ref={inputRef}
+        type="text"
+        defaultValue={value}
+        placeholder="Start typing address..."
+        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-blue-500"
+      />
+    </div>
+  );
+}
+
 export default function AddDealModal({ onClose, onSuccess }: AddDealModalProps) {
   const qc = useQueryClient();
   const [mode, setMode] = useState<IntakeMode>('choose');
@@ -245,7 +308,20 @@ export default function AddDealModal({ onClose, onSuccess }: AddDealModalProps) 
               )}
               {step === 2 && (
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="col-span-2"><Field label="Address" id="address" placeholder="123 Main St" value={f.address} onChange={setField} /></div>
+                  <div className="col-span-2">
+                    <AddressAutocomplete
+                      value={f.address||''} 
+                      onChange={(addr, components) => {
+                        setField('address', addr);
+                        if (components) {
+                          if (components.city) setField('city', components.city);
+                          if (components.state) setField('state', components.state);
+                          if (components.zip) setField('zipCode', components.zip);
+                          if (components.county) setField('county', components.county);
+                        }
+                      }}
+                    />
+                  </div>
                   <Field label="City" id="city" value={f.city} onChange={setField} />
                   <Field label="State" id="state" placeholder="FL" value={f.state} onChange={setField} />
                   <Field label="ZIP Code" id="zipCode" value={f.zipCode} onChange={setField} />
