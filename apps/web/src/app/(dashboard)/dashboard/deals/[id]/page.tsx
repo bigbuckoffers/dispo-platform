@@ -688,9 +688,6 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
                         <p className="text-gray-700 text-[10px]">not set</p>
                       </>}
                     </div>
-                    </p>
-                      </div>
-                    )}
                   </div>
                 );
               })()}
