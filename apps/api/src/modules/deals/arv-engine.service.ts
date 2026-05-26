@@ -63,8 +63,8 @@ export class ArvEngineService {
     };
 
     // STEP 1: Scrape Redfin sold comps
-    const rawComps = const propDetails = `${deal.beds||"?"}bd/${deal.baths||"?"}ba, ${deal.sqft||"?"} sqft, built ${deal.yearBuilt||"?"}, ${deal.propertyType||"SFR"}`;
-      const rawComps = await this.scrapeRedfin(addr, deal.zipCode || '', deal.city || '', deal.state || '', propDetails);
+    const propDetails = `${deal.beds||"?"}bd/${deal.baths||"?"}ba, ${deal.sqft||"?"} sqft, built ${deal.yearBuilt||"?"}, ${deal.propertyType||"SFR"}`;
+    const rawComps = await this.scrapeRedfin(addr, deal.zipCode || '', deal.city || '', deal.state || '', propDetails);
     
     // STEP 2: Normalize
     const normalized = this.normalizeComps(rawComps);
