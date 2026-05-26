@@ -132,32 +132,12 @@ export class ArvEngineService {
   private async scrapeRedfin(fullAddr: string, zip: string, city: string, state: string, propDetails: string): Promise<any[]> {
     // Use Anthropic API with web search to find real sold comps
     const today = new Date().toISOString().split('T')[0];
-    const prompt = `You are a certified Master Appraiser and underwriting grade valuation analyst. Estimate the ARV for the subject property using only current public data from the last 12 months and the same subdivision. Be conservative.
+    const prompt = `Search for recently sold single family homes near ${fullAddr} in the last 12 months. Today is ${today}. Same zip code preferred. No foreclosures or auction sales.
 
-Subject property: ${fullAddr}
-Property details: ${propDetails}
-Today: ${today}
+Return ONLY a valid JSON array, no other text:
+[{"address":"123 Main St, Birmingham AL 35206","saleDate":"2025-06-01","salePrice":185000,"sqft":1450,"beds":3,"baths":2,"renovationEvidence":"updated kitchen, new roof","subdivisionProof":"MLS shows East Lake subdivision","sourcePortal":"Redfin","sourceUrl":"https://redfin.com/..."}]
 
-Valuation goal: ARV if fully renovated, market ready, financed buyer eligible.
-
-Hard rules:
-1. Sources: Zillow, Realtor.com, Redfin, Trulia, county records only
-2. Recency: No sales older than 12 months
-3. Location: Same subdivision required. Prove via MLS subdivision field, legal description, or county records. If cannot prove same subdivision, do not use the comp.
-4. Property type: Single family only
-5. Condition: Renovated comps preferred. Unknown condition = treat as average, adjust down conservatively
-6. Conservative bias always
-7. No speculation or gap-filling
-
-Find 3-6 closed sales in the same subdivision within last 12 months. Filter by sqft match first, then beds/baths, then lot size.
-
-If fewer than 2 same-subdivision sales exist, state insufficient data and suggest adjacent subdivision comps labeled as outside the rule.
-
-Return ONLY a valid JSON array:
-[{"address":"full address","saleDate":"YYYY-MM-DD","salePrice":200000,"sqft":1500,"beds":3,"baths":2,"lotSize":7500,"yearBuilt":1920,"propertyType":"Single Family","renovationEvidence":"fully remodeled, new HVAC, granite","subdivisionProof":"MLS shows East Lake subdivision","sourcePortal":"Redfin","sourceUrl":"https://redfin.com/..."}]
-
-If fewer than 2 valid comps, return [].`
-
+If fewer than 2 homes found, return []`
     try {
       const response = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
