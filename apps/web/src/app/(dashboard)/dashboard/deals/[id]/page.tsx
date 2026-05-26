@@ -352,6 +352,29 @@ function EditableTextarea({ value, onSave, placeholder }: { value: string; onSav
 }
 
 
+
+function DateField({ value, placeholder, onSave }: {
+  value: string; placeholder: string; onSave: (v:string)=>void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [val, setVal] = useState(value);
+  useEffect(() => { setVal(value); }, [value]);
+  if (editing) return (
+    <input autoFocus type="date" value={val}
+      onChange={e=>setVal(e.target.value)}
+      onBlur={()=>{ setEditing(false); if(val!==value) onSave(val); }}
+      onKeyDown={e=>{ if(e.key==='Escape') setEditing(false); }}
+      className="bg-gray-800 border border-blue-500 rounded px-1 text-xs text-white outline-none w-32" />
+  );
+  const display = value ? new Date(value+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'2-digit'}) : null;
+  return (
+    <button onClick={()=>setEditing(true)}
+      className="text-xs text-white hover:bg-gray-800 rounded px-1 py-0.5 transition">
+      {display || <span className="text-gray-600 italic">{placeholder}</span>}
+    </button>
+  );
+}
+
 function HeaderField({ value, placeholder, onSave, suffix='', width='w-20' }: {
   value: string; placeholder: string; onSave: (v:string)=>void; suffix?: string; width?: string;
 }) {
@@ -559,7 +582,9 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
               <span><span className="text-gray-500">Occupancy:</span> <HeaderField value={deal.occupancy?.replace(/_/g,' ')||''} placeholder="—" onSave={v=>updateDeal.mutate({occupancy:v.toUpperCase().replace(/ /g,'_')})} width="w-16" /></span>
               <span><span className="text-gray-500">Access:</span> <HeaderField value={deal.accessInfo||''} placeholder="—" onSave={v=>updateDeal.mutate({accessInfo:v})} width="w-24" /></span>
               <span className="text-gray-700 text-xs mx-0.5">·</span>
-              <span><span className="text-gray-500">Insp. Deadline:</span> <HeaderField value={deal.inspectionDeadline?new Date(deal.inspectionDeadline).toLocaleDateString():''} placeholder="—" onSave={v=>updateDeal.mutate({inspectionDeadline:v?new Date(v).toISOString():null})} width="w-24" /></span>
+              <span><span className="text-gray-500">Insp. Deadline:</span> <DateField value={deal.inspectionDeadline?new Date(deal.inspectionDeadline).toISOString().split('T')[0]:''} placeholder="—" onSave={v=>updateDeal.mutate({inspectionDeadline:v?new Date(v).toISOString():null})} /></span>
+              <span className="text-gray-700 text-xs mx-0.5">·</span>
+              <span><span className="text-gray-500">Closing Date:</span> <DateField value={deal.closingDate?new Date(deal.closingDate).toISOString().split('T')[0]:''} placeholder="—" onSave={v=>updateDeal.mutate({closingDate:v?new Date(v).toISOString():null})} /></span>
             </div>
             <div className="flex items-center gap-4 text-xs shrink-0">
               <span className="text-gray-500">County: <span className="text-white">{deal.county||'—'}</span></span>
@@ -615,22 +640,29 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
                 const total = deal.matchedBuyerCount || 0;
                 const estClose = t1 >= 3 ? '3–5 days' : t1 >= 1 ? '5–10 days' : total >= 3 ? '10–21 days' : null;
                 return (
-                  <div className="grid grid-cols-2 gap-2 mb-2">
+                  <div className="grid grid-cols-2 gap-2 mb-2 auto-rows-auto">
                     <div className="bg-gray-800/50 rounded-lg px-2.5 py-2">
                       <p className="text-gray-600 text-[10px] font-semibold uppercase tracking-wide mb-0.5">Est. Close</p>
                       <p className="text-white font-bold text-sm">{estClose || '—'}</p>
                       <p className="text-gray-600 text-[10px]">from today</p>
                     </div>
                     <div className={`rounded-lg px-2.5 py-2 ${inspDays !== null && inspDays <= 5 ? 'bg-red-900/30 border border-red-800/40' : inspDays !== null && inspDays <= 10 ? 'bg-yellow-900/20 border border-yellow-800/30' : 'bg-gray-800/50'}`}>
-                      <p className="text-gray-600 text-[10px] font-semibold uppercase tracking-wide mb-0.5">Insp. Deadline</p>
+                      <p className="text-gray-600 text-[10px] font-semibold uppercase tracking-wide mb-0.5">Insp. Ends</p>
                       {inspDays !== null ? <>
                         <p className={`font-bold text-sm ${inspDays <= 5 ? 'text-red-400' : inspDays <= 10 ? 'text-yellow-400' : 'text-white'}`}>{inspDays}d left</p>
                         <p className="text-gray-600 text-[10px]">{inspDate!.toLocaleDateString()}</p>
                       </> : <>
-                        <p className="text-gray-600 text-sm">—</p>
+                        <p className="text-gray-600 text-sm font-bold">—</p>
                         <p className="text-gray-700 text-[10px]">not set</p>
                       </>}
                     </div>
+                    {closeDays !== null && (
+                      <div className={`rounded-lg px-2.5 py-2 col-span-2 ${closeDays <= 7 ? 'bg-red-900/30 border border-red-800/40' : closeDays <= 14 ? 'bg-yellow-900/20 border border-yellow-800/30' : 'bg-gray-800/50'}`}>
+                        <p className="text-gray-600 text-[10px] font-semibold uppercase tracking-wide mb-0.5">COE</p>
+                        <p className={`font-bold text-sm ${closeDays <= 7 ? 'text-red-400' : closeDays <= 14 ? 'text-yellow-400' : 'text-white'}`}>{closeDays}d to close</p>
+                        <p className="text-gray-600 text-[10px]">{closeDate!.toLocaleDateString()}</p>
+                      </div>
+                    )}
                   </div>
                 );
               })()}
