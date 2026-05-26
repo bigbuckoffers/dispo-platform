@@ -629,6 +629,38 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
                 </div>
               </div>
 
+              {/* Buyer Demand */}
+              {(() => {
+                const t1 = deal.tier1MatchCount || 0;
+                const t2 = deal.matchedBuyerCount ? Math.max(0, deal.matchedBuyerCount - t1) : 0;
+                const total = deal.matchedBuyerCount || 0;
+                const demandLabel = total === 0 ? null : t1 >= 3 ? 'High Demand' : t1 >= 1 ? 'Moderate Demand' : 'Low Demand';
+                const demandColor = t1 >= 3 ? 'text-green-400' : t1 >= 1 ? 'text-yellow-400' : 'text-gray-500';
+                if (total === 0) return (
+                  <div className="bg-gray-800/40 rounded-lg px-3 py-2 mb-2">
+                    <p className="text-gray-600 text-xs">No buyers matched yet</p>
+                  </div>
+                );
+                return (
+                  <div className="bg-gray-800/40 rounded-lg px-3 py-2 mb-2">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-gray-500 text-[10px] font-semibold uppercase tracking-wide">Buyer Demand</span>
+                      <span className={`text-[10px] font-bold ${demandColor}`}>{demandLabel}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-white font-bold text-sm">{total}</span>
+                      <span className="text-gray-500 text-xs">buyers matched</span>
+                      <div className="flex items-center gap-1 ml-auto">
+                        {t1 > 0 && <span className="flex items-center gap-0.5 text-[10px] font-semibold text-orange-400"><span className="w-2 h-2 rounded-full bg-orange-400 inline-block"/>{t1} T1</span>}
+                        {t2 > 0 && <span className="flex items-center gap-0.5 text-[10px] font-semibold text-purple-400 ml-1"><span className="w-2 h-2 rounded-full bg-purple-400 inline-block"/>{t2} T2</span>}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
+
+
               {/* Inspection + Close countdown */}
               {(() => {
                 const inspDate = deal.inspectionDeadline ? new Date(deal.inspectionDeadline) : null;
@@ -666,38 +698,6 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
                   </div>
                 );
               })()}
-
-              {/* Buyer Demand */}
-              {(() => {
-                const t1 = deal.tier1MatchCount || 0;
-                const t2 = deal.matchedBuyerCount ? Math.max(0, deal.matchedBuyerCount - t1) : 0;
-                const total = deal.matchedBuyerCount || 0;
-                const demandLabel = total === 0 ? null : t1 >= 3 ? 'High Demand' : t1 >= 1 ? 'Moderate Demand' : 'Low Demand';
-                const demandColor = t1 >= 3 ? 'text-green-400' : t1 >= 1 ? 'text-yellow-400' : 'text-gray-500';
-                if (total === 0) return (
-                  <div className="bg-gray-800/40 rounded-lg px-3 py-2 mb-2">
-                    <p className="text-gray-600 text-xs">No buyers matched yet</p>
-                  </div>
-                );
-                return (
-                  <div className="bg-gray-800/40 rounded-lg px-3 py-2 mb-2">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-gray-500 text-[10px] font-semibold uppercase tracking-wide">Buyer Demand</span>
-                      <span className={`text-[10px] font-bold ${demandColor}`}>{demandLabel}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-white font-bold text-sm">{total}</span>
-                      <span className="text-gray-500 text-xs">buyers matched</span>
-                      <div className="flex items-center gap-1 ml-auto">
-                        {t1 > 0 && <span className="flex items-center gap-0.5 text-[10px] font-semibold text-orange-400"><span className="w-2 h-2 rounded-full bg-orange-400 inline-block"/>{t1} T1</span>}
-                        {t2 > 0 && <span className="flex items-center gap-0.5 text-[10px] font-semibold text-purple-400 ml-1"><span className="w-2 h-2 rounded-full bg-purple-400 inline-block"/>{t2} T2</span>}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })()}
-
-
 
               {/* Risk Flags */}
               {(() => {
