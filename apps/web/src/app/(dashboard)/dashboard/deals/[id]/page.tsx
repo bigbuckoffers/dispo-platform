@@ -578,11 +578,12 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
             <PhotoGallery deal={deal} onUpdate={(data) => updateDeal.mutate(data)} />
           </div>
 
-                    {/* CENTER: Dispo Score + Blockers (4 cols) */}
+                              {/* CENTER: Dispo Score + Blockers (4 cols) */}
           <div className="col-span-12 md:col-span-4 flex flex-col gap-2 overflow-y-auto" style={{height:420}}>
             <div className={`rounded-xl border p-3 h-full flex flex-col ${scoreBg}`}>
+
               {/* Score header */}
-              <div className="flex items-start justify-between mb-3">
+              <div className="flex items-start justify-between mb-2">
                 <div>
                   <div className="flex items-baseline gap-2 mb-0.5">
                     <span className={`text-3xl font-black leading-none ${scoreColor}`}>{sellScore}</span>
@@ -600,8 +601,9 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
                   </svg>
                 </div>
               </div>
+
               {/* Green reasons */}
-              <div className="space-y-1 mb-3">
+              <div className="space-y-1 mb-2">
                 {sellReasons.slice(0,3).map((r,i) => (
                   <div key={i} className="flex items-start gap-1.5 text-xs text-gray-300">
                     <CheckCircle size={11} className="text-green-400 shrink-0 mt-0.5"/>
@@ -609,9 +611,89 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
                   </div>
                 ))}
               </div>
+
+              {/* Buyer Demand */}
+              {(() => {
+                const t1 = deal.tier1MatchCount || 0;
+                const t2 = deal.matchedBuyerCount ? Math.max(0, deal.matchedBuyerCount - t1) : 0;
+                const total = deal.matchedBuyerCount || 0;
+                const demandLabel = total === 0 ? null : t1 >= 3 ? 'High Demand' : t1 >= 1 ? 'Moderate Demand' : 'Low Demand';
+                const demandColor = t1 >= 3 ? 'text-green-400' : t1 >= 1 ? 'text-yellow-400' : 'text-gray-500';
+                if (total === 0) return (
+                  <div className="bg-gray-800/40 rounded-lg px-3 py-2 mb-2">
+                    <p className="text-gray-600 text-xs">No buyers matched yet</p>
+                  </div>
+                );
+                return (
+                  <div className="bg-gray-800/40 rounded-lg px-3 py-2 mb-2">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-gray-500 text-[10px] font-semibold uppercase tracking-wide">Buyer Demand</span>
+                      <span className={`text-[10px] font-bold ${demandColor}`}>{demandLabel}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-white font-bold text-sm">{total}</span>
+                      <span className="text-gray-500 text-xs">buyers matched</span>
+                      <div className="flex items-center gap-1 ml-auto">
+                        {t1 > 0 && <span className="flex items-center gap-0.5 text-[10px] font-semibold text-orange-400"><span className="w-2 h-2 rounded-full bg-orange-400 inline-block"/>{t1} T1</span>}
+                        {t2 > 0 && <span className="flex items-center gap-0.5 text-[10px] font-semibold text-purple-400 ml-1"><span className="w-2 h-2 rounded-full bg-purple-400 inline-block"/>{t2} T2</span>}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Days estimate */}
+              {(() => {
+                const t1 = deal.tier1MatchCount || 0;
+                const total = deal.matchedBuyerCount || 0;
+                const daysEst = t1 >= 3 ? '3–5 days' : t1 >= 1 ? '5–10 days' : total >= 3 ? '10–21 days' : null;
+                const deadline = deal.closingDate ? new Date(deal.closingDate) : null;
+                const daysLeft = deadline ? Math.ceil((deadline.getTime() - Date.now()) / 86400000) : null;
+                if (!daysEst && !daysLeft) return null;
+                return (
+                  <div className="flex items-center gap-2 mb-2 px-1">
+                    {daysEst && (
+                      <div className="flex items-center gap-1.5 text-xs text-gray-400">
+                        <Clock size={11} className="text-blue-400 shrink-0"/>
+                        <span>Est. close: <span className="text-white font-semibold">{daysEst}</span></span>
+                      </div>
+                    )}
+                    {daysLeft !== null && (
+                      <div className={`flex items-center gap-1.5 text-xs ml-auto ${daysLeft <= 7 ? 'text-red-400' : 'text-gray-400'}`}>
+                        <AlertCircle size={11} className="shrink-0"/>
+                        <span><span className="font-semibold">{daysLeft}d</span> left on deal</span>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {/* Risk Flags */}
+              {(() => {
+                const flags: string[] = [];
+                if (deal.yearBuilt && deal.yearBuilt < 1978) flags.push('Built pre-1978 — possible lead paint');
+                if (deal.occupancy === 'VACANT') flags.push('Vacant — holding cost risk');
+                if ((deal.overallCondition||'').includes('HEAVY')) flags.push('Heavy rehab — fewer cash buyer candidates');
+                if (deal.dealType === 'SUBTO' || deal.dealType === 'CREATIVE') flags.push('Creative finance — requires buyer education');
+                if (!flags.length) return null;
+                return (
+                  <div className="mb-2">
+                    <p className="text-gray-600 text-[10px] font-bold uppercase tracking-wide mb-1 px-1">Risk Flags</p>
+                    <div className="space-y-1">
+                      {flags.map((flag, i) => (
+                        <div key={i} className="flex items-start gap-1.5 text-xs text-yellow-600 bg-yellow-900/10 rounded px-2 py-1">
+                          <AlertCircle size={10} className="shrink-0 mt-0.5 text-yellow-500"/>
+                          {flag}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
+
               {/* Blockers */}
               {sellBlockers.length > 0 && (
-                <div className="pt-2 border-t border-white/5 space-y-2 flex-1">
+                <div className="pt-2 border-t border-white/5 space-y-2 mt-auto">
                   {missingPermission && (
                     <div className="bg-amber-900/20 border border-amber-800/40 rounded-lg p-2.5">
                       <div className="flex items-start gap-1.5 mb-1.5">
@@ -641,20 +723,13 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
                       </div>
                     </div>
                   )}
-                  {sellBlockers.filter(bl => !bl.includes('Photos') && !bl.includes('JV') && !bl.includes('permission')).slice(0,2).map((bl,i) => (
-                    <div key={i} className="flex items-start gap-1.5 text-xs text-gray-500">
-                      <AlertCircle size={10} className="text-gray-600 shrink-0 mt-0.5"/>
-                      {bl.split('—')[0].trim()}
-                    </div>
-                  ))}
                 </div>
               )}
               {sellBlockers.length === 0 && (
-                <div className="flex-1 flex items-center justify-center">
+                <div className="mt-auto pt-2 border-t border-white/5 flex items-center justify-center py-2">
                   <div className="text-center">
-                    <CheckCircle size={24} className="text-green-400 mx-auto mb-1"/>
-                    <p className="text-green-400 text-xs font-semibold">No Blockers</p>
-                    <p className="text-gray-600 text-[10px]">Ready to blast</p>
+                    <CheckCircle size={20} className="text-green-400 mx-auto mb-1"/>
+                    <p className="text-green-400 text-xs font-semibold">No Blockers — Ready to Blast</p>
                   </div>
                 </div>
               )}
