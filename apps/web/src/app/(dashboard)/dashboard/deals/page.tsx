@@ -317,7 +317,7 @@ export default function DealsPage() {
                 const t3count = t1>0 ? Math.max(0,Math.round((b-t1)*0.4)) : Math.round(b*0.4);
                 return (
                   <motion.div key={deal.id} initial={{opacity:0}} animate={{opacity:1}} transition={{delay:i*0.02}}
-                    className={`group transition-colors ${t.hot?'border-l-[3px] border-orange-500/80 bg-orange-950/10 hover:bg-orange-950/20':'border-l-[3px] border-transparent hover:bg-gray-800/30'}`}>
+                    className={`group relative transition-colors ${t.hot?'border-l-[3px] border-orange-500/80 bg-orange-950/10 hover:bg-orange-950/20':'border-l-[3px] border-transparent hover:bg-gray-800/30'}`}>
                     <div className="grid items-center min-h-[44px]" style={{gridTemplateColumns:COLS, width:"fit-content", minWidth:"100%"}}>
 
                       {/* Score */}
@@ -406,15 +406,6 @@ export default function DealsPage() {
 
                       {/* Next Action */}
                       <div className="px-2 flex items-center gap-1.5 relative group/na">
-                        <button onClick={async(e)=>{
-                          e.stopPropagation(); e.preventDefault();
-                          if(!confirm('Delete this deal?')) return;
-                          const apiUrl = process.env.NEXT_PUBLIC_API_URL||'https://dispo-platform-production.up.railway.app/api/v1';
-                          await fetch(`${apiUrl}/deals/${deal.id}`,{method:'DELETE'});
-                          window.location.reload();
-                        }} className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-900/40 text-red-600 hover:text-red-400 rounded transition shrink-0">
-                          <Trash2 size={11}/>
-                        </button>
                         <Link href={`/dashboard/deals/${deal.id}`} className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold transition whitespace-nowrap ${na.c}`}>
                           {na.l} <ChevronRight size={9}/>
                         </Link>
