@@ -353,12 +353,22 @@ If fewer than 2 sold homes found, return empty array [].`;
   private calculateWeightedArv(comps: ValidatedComp[]): { low: number | null; median: number | null; high: number | null } {
     if (comps.length === 0) return { low: null, median: null, high: null };
 
-    // Weight by confidence score
-    const totalWeight = comps.reduce((a, c) => a + c.confidenceScore, 0);
-    const weightedAvg = comps.reduce((a, c) => a + (c.weightedValue * c.confidenceScore), 0) / totalWeight;
+    // Remove outliers: exclude comps more than 40% below or 60% above the median sale price
+    const prices = comps.map(c => c.salePrice).sort((a, b) => a - b);
+    const medianPrice = prices[Math.floor(prices.length / 2)];
+    const filteredComps = comps.filter(c => {
+      const ratio = c.salePrice / medianPrice;
+      return ratio >= 0.60 && ratio <= 1.60;
+    });
+    const useComps = filteredComps.length >= 2 ? filteredComps : comps;
+    console.log(`ARV outlier filter: ${comps.length} comps -> ${useComps.length} after outlier removal`);
 
-    const values = comps.map(c => c.weightedValue).sort((a, b) => a - b);
-    const low = Math.round(values[0] * 0.95); // Conservative: 5% below lowest
+    // Weight by confidence score
+    const totalWeight = useComps.reduce((a, c) => a + c.confidenceScore, 0);
+    const weightedAvg = useComps.reduce((a, c) => a + (c.weightedValue * c.confidenceScore), 0) / totalWeight;
+
+    const values = useComps.map(c => c.weightedValue).sort((a, b) => a - b);
+    const low = Math.round(values[0] * 0.95);
     const high = Math.round(values[values.length - 1] * 1.02);
     const median = Math.round(weightedAvg);
 
