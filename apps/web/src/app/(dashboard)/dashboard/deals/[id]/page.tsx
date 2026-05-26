@@ -900,7 +900,7 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
                           finally { setAiAnalyzing(false); }
                         }}
                         disabled={aiAnalyzing}
-                        className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs rounded-lg font-semibold transition"
+                        className={`w-full flex items-center justify-center gap-2 px-3 py-2 disabled:opacity-50 text-white text-xs rounded-lg font-semibold transition ${dqColor==="#22c55e"?"bg-green-700 hover:bg-green-600":dqColor==="#f59e0b"?"bg-yellow-700 hover:bg-yellow-600":"bg-red-700 hover:bg-red-600"}`}
                       >
                         <Sparkles size={12}/>
                         {aiAnalyzing ? 'Analyzing...' : 'Run AI Analysis'}
