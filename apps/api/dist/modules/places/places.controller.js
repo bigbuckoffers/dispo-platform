@@ -20,16 +20,20 @@ let PlacesController = class PlacesController {
     async autocomplete(input) {
         if (!input || input.length < 3)
             return { predictions: [] };
-        const res = await axios_1.default.get('https://maps.googleapis.com/maps/api/place/autocomplete/json', {
-            params: { input, types: 'address', components: 'country:us', key: GKEY }
-        });
-        return res.data;
+        const res = await axios_1.default.post('https://places.googleapis.com/v1/places:autocomplete', { input, includedRegionCodes: ['us'] }, { headers: { 'Content-Type': 'application/json', 'X-Goog-Api-Key': GKEY } });
+        const suggestions = (res.data.suggestions || []).map((s) => ({
+            place_id: s.placePrediction?.placeId,
+            description: s.placePrediction?.text?.text,
+            structured_formatting: {
+                main_text: s.placePrediction?.structuredFormat?.mainText?.text,
+                secondary_text: s.placePrediction?.structuredFormat?.secondaryText?.text,
+            }
+        }));
+        return { predictions: suggestions };
     }
     async details(placeId) {
-        const res = await axios_1.default.get('https://maps.googleapis.com/maps/api/place/details/json', {
-            params: { place_id: placeId, fields: 'address_components', key: GKEY }
-        });
-        return res.data;
+        const res = await axios_1.default.get(`https://places.googleapis.com/v1/places/${placeId}`, { headers: { 'X-Goog-Api-Key': GKEY, 'X-Goog-FieldMask': 'addressComponents' } });
+        return { result: { address_components: res.data.addressComponents } };
     }
 };
 exports.PlacesController = PlacesController;
