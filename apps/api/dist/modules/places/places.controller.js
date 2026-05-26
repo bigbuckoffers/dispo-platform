@@ -20,20 +20,30 @@ let PlacesController = class PlacesController {
     async autocomplete(input) {
         if (!input || input.length < 3)
             return { predictions: [] };
-        const res = await axios_1.default.post('https://places.googleapis.com/v1/places:autocomplete', { input, includedRegionCodes: ['us'] }, { headers: { 'Content-Type': 'application/json', 'X-Goog-Api-Key': GKEY } });
-        const suggestions = (res.data.suggestions || []).map((s) => ({
-            place_id: s.placePrediction?.placeId,
-            description: s.placePrediction?.text?.text,
-            structured_formatting: {
-                main_text: s.placePrediction?.structuredFormat?.mainText?.text,
-                secondary_text: s.placePrediction?.structuredFormat?.secondaryText?.text,
-            }
-        }));
-        return { predictions: suggestions };
+        try {
+            const res = await axios_1.default.post(`https://places.googleapis.com/v1/places:autocomplete?key=${GKEY}`, { input, includedRegionCodes: ['us'] }, { headers: { 'Content-Type': 'application/json' } });
+            const suggestions = (res.data.suggestions || []).map((s) => ({
+                place_id: s.placePrediction?.placeId,
+                description: s.placePrediction?.text?.text,
+                structured_formatting: {
+                    main_text: s.placePrediction?.structuredFormat?.mainText?.text,
+                    secondary_text: s.placePrediction?.structuredFormat?.secondaryText?.text,
+                }
+            }));
+            return { predictions: suggestions };
+        }
+        catch (e) {
+            return { predictions: [], error: e.response?.data || e.message };
+        }
     }
     async details(placeId) {
-        const res = await axios_1.default.get(`https://places.googleapis.com/v1/places/${placeId}`, { headers: { 'X-Goog-Api-Key': GKEY, 'X-Goog-FieldMask': 'addressComponents' } });
-        return { result: { address_components: res.data.addressComponents } };
+        try {
+            const res = await axios_1.default.get(`https://places.googleapis.com/v1/places/${placeId}?key=${GKEY}&fields=addressComponents`);
+            return { result: { address_components: res.data.addressComponents } };
+        }
+        catch (e) {
+            return { result: null, error: e.response?.data || e.message };
+        }
     }
 };
 exports.PlacesController = PlacesController;
