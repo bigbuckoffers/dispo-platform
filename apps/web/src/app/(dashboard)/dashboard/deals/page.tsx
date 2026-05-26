@@ -422,6 +422,18 @@ export default function DealsPage() {
                       </div>
 
                     </div>
+                    {/* Delete button - shows on row hover */}
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button onClick={async(e)=>{
+                        e.stopPropagation(); e.preventDefault();
+                        if(!confirm('Delete this deal? Cannot be undone.')) return;
+                        const r = await fetch('https://dispo-platform-production.up.railway.app/api/v1/deals/'+deal.id,{method:'DELETE'});
+                        if(r.ok||r.status===204) window.location.reload();
+                        else alert('Delete failed');
+                      }} className="p-1.5 bg-red-900/60 hover:bg-red-800 text-red-400 hover:text-white rounded-lg transition">
+                        <Trash2 size={11}/>
+                      </button>
+                    </div>
                   </motion.div>
                 );
               })}
