@@ -127,7 +127,7 @@ export class ArvEngineService {
   private async scrapeRedfin(fullAddr: string, zip: string, city: string, state: string): Promise<any[]> {
     // Use Anthropic API with web search to find real sold comps
     const today = new Date().toISOString().split('T')[0];
-    const prop = `${subject.beds}bd/${subject.baths}ba, ${subject.sqft} sqft, built ${subject.yearBuilt}, ${subject.propertyType}`;
+    const prop = `${deal.beds||"?"}bd/${deal.baths||"?"}ba, ${deal.sqft||"?"} sqft, built ${deal.yearBuilt||"?"}, ${deal.propertyType||"SFR"}`;
     const prompt = `You are a certified Master Appraiser and underwriting grade valuation analyst. Estimate the ARV for the subject property using only current public data from the last 12 months and the same subdivision. Be conservative.
 
 Subject property: ${fullAddr}
