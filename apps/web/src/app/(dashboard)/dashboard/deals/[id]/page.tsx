@@ -465,8 +465,22 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
     setArvLoading(true); setArvAnalysis(null);
     try {
       const r = await api.post(`/deals/${id}/arv-analysis`);
-      setArvAnalysis(r.data);
-      if(r.data.arvMedian) qc.invalidateQueries({ queryKey: ['deal', id] });
+      const d = r.data;
+      // Map new validation-first response to UI format
+      setArvAnalysis({
+        ...d,
+        arvLow: d.arvLow,
+        arvMedian: d.arvMedian,
+        arvHigh: d.arvHigh,
+        comps: d.validatedComps || [],
+        recommendation: d.aiNarrative?.recommendedNextAction || '',
+        subdivisionName: d.subject?.city || '',
+        confidence: d.avgConfidenceScore ? Math.round(d.avgConfidenceScore/20) : 2,
+        confidenceReason: `${d.validatedCompCount} validated comps · State: ${d.outputState}`,
+        dataWarnings: d.outputState === 'MANUAL_REVIEW_REQUIRED' ? 'High price variance detected — manual review recommended before using ARV.' : d.outputState === 'INSUFFICIENT_DATA' ? 'Insufficient verified comp data found.' : '',
+        assumptionLog: d.validationLog ? `Scraped: ${d.validationLog.totalScraped}, Validated: ${d.validationLog.totalValidated}, Rejected: ${d.validationLog.rejectedCount}` : '',
+      });
+      if(d.arvMedian) qc.invalidateQueries({ queryKey: ['deal', id] });
     } catch(e: any) { setArvAnalysis({error: e.message}); }
     finally { setArvLoading(false); }
   };
