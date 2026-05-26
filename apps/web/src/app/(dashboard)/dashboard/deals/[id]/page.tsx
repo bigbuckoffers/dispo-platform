@@ -677,7 +677,7 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
                 return (
                   <div className="grid grid-cols-2 gap-2 mb-2 auto-rows-auto">
                     <div className="bg-gray-800/50 rounded-lg px-2.5 py-2">
-                      <p className="text-gray-600 text-[10px] font-semibold uppercase tracking-wide mb-0.5">Est. Close</p>
+                      <p className="text-gray-600 text-[10px] font-semibold uppercase tracking-wide mb-0.5">Est. to Sell</p>
                       <p className="text-white font-bold text-sm">{estClose || '—'}</p>
                       <p className="text-gray-600 text-[10px]">from today</p>
                     </div>
@@ -1050,13 +1050,21 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
                   <div className="mt-3 pt-3 border-t border-gray-800 space-y-0">
                     <p className="text-gray-600 text-[10px] font-bold uppercase tracking-wide mb-2">Legal & HOA</p>
                     <div className="flex justify-between items-center py-2 border-b border-gray-800/50">
-                      <span className="text-gray-500 text-xs">Title Issues</span>
-                      <button onClick={()=>updateDeal.mutate({titleStatus:deal.titleStatus==='CLEAR'?'ISSUES':'CLEAR'})}
-                        className={`text-xs px-2 py-0.5 rounded font-semibold ${deal.titleStatus!=='CLEAR'?'bg-red-900/40 text-red-400':'bg-green-900/30 text-green-400'}`}>
-                        {deal.titleStatus==='CLEAR'?'CLEAR':'HAS ISSUES'}
+                      <span className="text-gray-500 text-xs">Title Status</span>
+                      <button onClick={()=>{
+                        const cycle: Record<string,string> = {'CLEAR':'ISSUES','ISSUES':'PENDING','PENDING':'UNKNOWN','UNKNOWN':'CLEAR'};
+                        updateDeal.mutate({titleStatus: cycle[deal.titleStatus||'UNKNOWN']||'UNKNOWN'});
+                      }}
+                        className={`text-xs px-2 py-0.5 rounded font-semibold ${
+                          deal.titleStatus==='CLEAR'?'bg-green-900/30 text-green-400':
+                          deal.titleStatus==='ISSUES'?'bg-red-900/40 text-red-400':
+                          deal.titleStatus==='PENDING'?'bg-yellow-900/30 text-yellow-400':
+                          'bg-gray-800 text-gray-500'}`}>
+                        {deal.titleStatus||'UNKNOWN'}
                       </button>
                     </div>
                     <EditableRow label="Title Notes" value={deal.titleIssuesNotes||''} onSave={v=>updateDeal.mutate({titleIssuesNotes:v})} />
+                    <EditableRow label="Title Company" value={deal.titleCompany||''} onSave={v=>updateDeal.mutate({titleCompany:v})} />
                     <div className="flex justify-between items-center py-2 border-b border-gray-800/50">
                       <span className="text-gray-500 text-xs">Code Violations</span>
                       <button onClick={()=>updateDeal.mutate({codeIssues:!deal.codeIssues})}
