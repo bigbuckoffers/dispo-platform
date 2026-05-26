@@ -558,6 +558,8 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
               <span><span className="text-gray-500">Year Built:</span> <HeaderField value={deal.yearBuilt?`${deal.yearBuilt}`:''} placeholder="—" onSave={v=>updateDeal.mutate({yearBuilt:parseInt(v)||null})} width="w-12" /></span>
               <span><span className="text-gray-500">Occupancy:</span> <HeaderField value={deal.occupancy?.replace(/_/g,' ')||''} placeholder="—" onSave={v=>updateDeal.mutate({occupancy:v.toUpperCase().replace(/ /g,'_')})} width="w-16" /></span>
               <span><span className="text-gray-500">Access:</span> <HeaderField value={deal.accessInfo||''} placeholder="—" onSave={v=>updateDeal.mutate({accessInfo:v})} width="w-24" /></span>
+              <span className="text-gray-700 text-xs mx-0.5">·</span>
+              <span><span className="text-gray-500">Insp. Deadline:</span> <HeaderField value={deal.inspectionDeadline?new Date(deal.inspectionDeadline).toLocaleDateString():''} placeholder="—" onSave={v=>updateDeal.mutate({inspectionDeadline:v?new Date(v).toISOString():null})} width="w-24" /></span>
             </div>
             <div className="flex items-center gap-4 text-xs shrink-0">
               <span className="text-gray-500">County: <span className="text-white">{deal.county||'—'}</span></span>
@@ -602,15 +604,36 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
                 </div>
               </div>
 
-              {/* Green reasons */}
-              <div className="space-y-1 mb-2">
-                {sellReasons.slice(0,3).map((r,i) => (
-                  <div key={i} className="flex items-start gap-1.5 text-xs text-gray-300">
-                    <CheckCircle size={11} className="text-green-400 shrink-0 mt-0.5"/>
-                    {r}
+              {/* Inspection + Close countdown */}
+              {(() => {
+                const inspDate = deal.inspectionDeadline ? new Date(deal.inspectionDeadline) : null;
+                const closeDate = deal.closingDate ? new Date(deal.closingDate) : null;
+                const today = Date.now();
+                const inspDays = inspDate ? Math.ceil((inspDate.getTime() - today) / 86400000) : null;
+                const closeDays = closeDate ? Math.ceil((closeDate.getTime() - today) / 86400000) : null;
+                const t1 = deal.tier1MatchCount || 0;
+                const total = deal.matchedBuyerCount || 0;
+                const estClose = t1 >= 3 ? '3–5 days' : t1 >= 1 ? '5–10 days' : total >= 3 ? '10–21 days' : null;
+                return (
+                  <div className="grid grid-cols-2 gap-2 mb-2">
+                    <div className="bg-gray-800/50 rounded-lg px-2.5 py-2">
+                      <p className="text-gray-600 text-[10px] font-semibold uppercase tracking-wide mb-0.5">Est. Close</p>
+                      <p className="text-white font-bold text-sm">{estClose || '—'}</p>
+                      <p className="text-gray-600 text-[10px]">from today</p>
+                    </div>
+                    <div className={`rounded-lg px-2.5 py-2 ${inspDays !== null && inspDays <= 5 ? 'bg-red-900/30 border border-red-800/40' : inspDays !== null && inspDays <= 10 ? 'bg-yellow-900/20 border border-yellow-800/30' : 'bg-gray-800/50'}`}>
+                      <p className="text-gray-600 text-[10px] font-semibold uppercase tracking-wide mb-0.5">Insp. Deadline</p>
+                      {inspDays !== null ? <>
+                        <p className={`font-bold text-sm ${inspDays <= 5 ? 'text-red-400' : inspDays <= 10 ? 'text-yellow-400' : 'text-white'}`}>{inspDays}d left</p>
+                        <p className="text-gray-600 text-[10px]">{inspDate!.toLocaleDateString()}</p>
+                      </> : <>
+                        <p className="text-gray-600 text-sm">—</p>
+                        <p className="text-gray-700 text-[10px]">not set</p>
+                      </>}
+                    </div>
                   </div>
-                ))}
-              </div>
+                );
+              })()}
 
               {/* Buyer Demand */}
               {(() => {
@@ -642,31 +665,7 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
                 );
               })()}
 
-              {/* Days estimate */}
-              {(() => {
-                const t1 = deal.tier1MatchCount || 0;
-                const total = deal.matchedBuyerCount || 0;
-                const daysEst = t1 >= 3 ? '3–5 days' : t1 >= 1 ? '5–10 days' : total >= 3 ? '10–21 days' : null;
-                const deadline = deal.closingDate ? new Date(deal.closingDate) : null;
-                const daysLeft = deadline ? Math.ceil((deadline.getTime() - Date.now()) / 86400000) : null;
-                if (!daysEst && !daysLeft) return null;
-                return (
-                  <div className="flex items-center gap-2 mb-2 px-1">
-                    {daysEst && (
-                      <div className="flex items-center gap-1.5 text-xs text-gray-400">
-                        <Clock size={11} className="text-blue-400 shrink-0"/>
-                        <span>Est. close: <span className="text-white font-semibold">{daysEst}</span></span>
-                      </div>
-                    )}
-                    {daysLeft !== null && (
-                      <div className={`flex items-center gap-1.5 text-xs ml-auto ${daysLeft <= 7 ? 'text-red-400' : 'text-gray-400'}`}>
-                        <AlertCircle size={11} className="shrink-0"/>
-                        <span><span className="font-semibold">{daysLeft}d</span> left on deal</span>
-                      </div>
-                    )}
-                  </div>
-                );
-              })()}
+
 
               {/* Risk Flags */}
               {(() => {
