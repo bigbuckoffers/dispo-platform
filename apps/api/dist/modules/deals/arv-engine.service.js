@@ -37,7 +37,9 @@ let ArvEngineService = class ArvEngineService {
         };
         const propDetails = `${deal.beds || "?"}bd/${deal.baths || "?"}ba, ${deal.sqft || "?"} sqft, built ${deal.yearBuilt || "?"}, ${deal.propertyType || "SFR"}`;
         const rawComps = await this.scrapeRedfin(addr, deal.zipCode || '', deal.city || '', deal.state || '', propDetails);
-        const normalized = this.normalizeComps(rawComps);
+        const narrativeComp = rawComps.find((r) => r._narrative);
+        const claudeNarrative = narrativeComp ? narrativeComp._narrative : null;
+        const normalized = this.normalizeComps(actualComps);
         const conflicts = this.detectSubjectConflicts(deal, normalized);
         if (conflicts.length > 0) {
             return {
@@ -79,6 +81,7 @@ let ArvEngineService = class ArvEngineService {
             aiNarrative,
             validationLog: this.buildValidationLog(normalized, validatedComps),
             scrapedAt: new Date().toISOString(),
+            claudeNarrative,
         };
     }
     async scrapeRedfin(fullAddr, zip, city, state, propDetails) {

@@ -48,6 +48,7 @@ export declare class ArvEngineService {
         avgConfidenceScore?: undefined;
         validationLog?: undefined;
         scrapedAt?: undefined;
+        claudeNarrative?: undefined;
     } | {
         outputState: OutputState;
         subject: {
@@ -72,6 +73,7 @@ export declare class ArvEngineService {
         aiNarrative: any;
         validationLog: any;
         scrapedAt: string;
+        claudeNarrative: any;
         reason?: undefined;
         conflicts?: undefined;
     }>;

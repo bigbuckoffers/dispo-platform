@@ -66,8 +66,11 @@ export class ArvEngineService {
     const propDetails = `${deal.beds||"?"}bd/${deal.baths||"?"}ba, ${deal.sqft||"?"} sqft, built ${deal.yearBuilt||"?"}, ${deal.propertyType||"SFR"}`;
     const rawComps = await this.scrapeRedfin(addr, deal.zipCode || '', deal.city || '', deal.state || '', propDetails);
     
+    // Extract narrative if Claude returned text instead of JSON
+    const narrativeComp = rawComps.find((r: any) => r._narrative);
+    const claudeNarrative = narrativeComp ? narrativeComp._narrative : null;
     // STEP 2: Normalize
-    const normalized = this.normalizeComps(rawComps);
+    const normalized = this.normalizeComps(actualComps);
 
     // STEP 3: Detect subject data conflicts
     const conflicts = this.detectSubjectConflicts(deal, normalized);
@@ -122,6 +125,7 @@ export class ArvEngineService {
       aiNarrative,
       validationLog: this.buildValidationLog(normalized, validatedComps),
       scrapedAt: new Date().toISOString(),
+      claudeNarrative,
     };
   }
 
