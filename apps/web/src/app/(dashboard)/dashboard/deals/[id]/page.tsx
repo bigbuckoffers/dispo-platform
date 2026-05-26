@@ -887,6 +887,26 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
                       )}
                       {!deal.arv && <p className="text-gray-700 text-[10px] text-center pt-1">Enter ARV to calculate MAO</p>}
                     </div>
+                    {/* Run AI Analysis button */}
+                    <div className="pt-2 mt-1 border-t border-white/5">
+                      <button
+                        onClick={async () => {
+                          setAiAnalyzing(true);
+                          try {
+                            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/deals/${deal.id}/analyze`, { method: 'POST' });
+                            const data = await res.json();
+                            setAiResult(data);
+                          } catch(e) { alert('AI analysis failed'); }
+                          finally { setAiAnalyzing(false); }
+                        }}
+                        disabled={aiAnalyzing}
+                        className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs rounded-lg font-semibold transition"
+                      >
+                        <Sparkles size={12}/>
+                        {aiAnalyzing ? 'Analyzing...' : 'Run AI Analysis'}
+                      </button>
+                      {deal.aiAnalyzedAt && <p className="text-gray-700 text-[10px] text-center mt-1">Last analyzed {new Date(deal.aiAnalyzedAt).toLocaleDateString()}</p>}
+                    </div>
                   </div>
                 </div>
               );
