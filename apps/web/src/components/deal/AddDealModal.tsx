@@ -69,7 +69,8 @@ function AddressAutocomplete({ value, onChange }: {
     onChange(val);
     if (val.length < 3) { setSuggestions([]); return; }
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/places/autocomplete?input=${encodeURIComponent(val)}`);
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://dispo-platform-production.up.railway.app/api/v1';
+      const res = await fetch(`${apiUrl}/places/autocomplete?input=${encodeURIComponent(val)}`);
       const data = await res.json();
       setSuggestions(data.predictions || []);
     } catch { setSuggestions([]); }
@@ -78,7 +79,8 @@ function AddressAutocomplete({ value, onChange }: {
   const pick = async (placeId: string, desc: string) => {
     setSuggestions([]);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/places/details?place_id=${placeId}`);
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://dispo-platform-production.up.railway.app/api/v1';
+      const res = await fetch(`${apiUrl}/places/details?place_id=${placeId}`);
       sessionToken.current = Math.random().toString(36);
       const data = await res.json();
       const comps = data.result?.address_components || [];
