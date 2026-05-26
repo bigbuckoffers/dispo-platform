@@ -2,7 +2,7 @@
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Building2, Users, Zap, Plus, Filter, RefreshCw, Camera, ChevronRight, BarChart3, ChevronDown, ChevronUp, TrendingUp, Clock, Target } from 'lucide-react';
+import { Building2, Users, Zap, Plus, Filter, RefreshCw, Camera, ChevronRight, BarChart3, ChevronDown, ChevronUp, TrendingUp, Clock, Target , Trash2 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { formatCurrency } from '@/lib/format';
 import Link from 'next/link';
