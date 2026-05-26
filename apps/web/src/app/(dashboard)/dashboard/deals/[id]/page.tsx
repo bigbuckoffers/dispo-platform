@@ -906,13 +906,7 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
                         onClick={async () => {
                           setAiAnalyzing(true);
                           try {
-                            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://dispo-platform-production.up.railway.app/api/v1';
-                            const res = await fetch(`${apiUrl}/deals/${deal.id}/arv-analysis`, { method: 'POST' });
-                            const data = await res.json();
-                            setArvResult(data);
-                            if (data.arvMedian) {
-                              updateDeal.mutate({ arv: data.arvMedian });
-                            }
+                            await runArvAnalysis();
                           } catch(e) { alert('ARV analysis failed'); }
                           finally { setAiAnalyzing(false); }
                         }}
@@ -1192,7 +1186,43 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
                           </div>
                         ))}
                       </div>
+                      {arvAnalysis.subdivisionName && <p className="text-gray-500 text-xs px-1">Subdivision: <span className="text-gray-300">{arvAnalysis.subdivisionName}</span></p>}
                       {arvAnalysis.recommendation && <p className="text-gray-300 text-sm bg-blue-900/20 border border-blue-800/40 rounded-lg p-3">{arvAnalysis.recommendation}</p>}
+                      {arvAnalysis.confidence && (
+                        <div className="flex items-center gap-2 px-1">
+                          <span className="text-gray-500 text-xs">Confidence:</span>
+                          <div className="flex gap-0.5">{[1,2,3,4,5].map(i=><div key={i} className={`w-3 h-3 rounded-full ${i<=arvAnalysis.confidence?'bg-green-400':'bg-gray-700'}`}/>)}</div>
+                          <span className="text-gray-400 text-xs">{arvAnalysis.confidence}/5</span>
+                        </div>
+                      )}
+                      {arvAnalysis.confidenceReason && <p className="text-gray-500 text-xs italic px-1">{arvAnalysis.confidenceReason}</p>}
+                      {arvAnalysis.comps?.length > 0 && (
+                        <div>
+                          <p className="text-gray-500 text-xs font-bold uppercase tracking-wide mb-2 px-1">Comparable Sales</p>
+                          <div className="space-y-2">
+                            {arvAnalysis.comps.map((comp: any, i: number) => (
+                              <div key={i} className="bg-gray-800/50 rounded-lg p-3 text-xs">
+                                <div className="flex items-start justify-between mb-1">
+                                  <p className="text-white font-semibold">{comp.address}</p>
+                                  <p className="text-green-400 font-bold shrink-0 ml-2">{comp.salePrice?formatCurrency(comp.salePrice):'—'}</p>
+                                </div>
+                                <div className="flex items-center gap-3 text-gray-500">
+                                  <span>{comp.saleDate}</span>
+                                  <span>{comp.sqft?.toLocaleString()} sqft</span>
+                                  {comp.beds && <span>{comp.beds}bd/{comp.baths}ba</span>}
+                                  {comp.pricePerSqft && <span>${comp.pricePerSqft}/sqft</span>}
+                                </div>
+                                {comp.renovationEvidence && <p className="text-gray-600 text-[10px] mt-1 italic">{comp.renovationEvidence}</p>}
+                                {comp.adjustedValue && comp.adjustedValue !== comp.salePrice && (
+                                  <p className="text-blue-400 text-[10px] mt-1">Adjusted: {formatCurrency(comp.adjustedValue)} — {comp.adjustmentNotes}</p>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {arvAnalysis.dataWarnings && <p className="text-amber-500 text-xs bg-amber-900/20 rounded-lg p-2">⚠ {arvAnalysis.dataWarnings}</p>}
+                      {arvAnalysis.assumptionLog && <p className="text-gray-600 text-[10px] italic px-1">Assumptions: {arvAnalysis.assumptionLog}</p>}
                     </div>
                   )}
                   {arvAnalysis?.error && <p className="text-red-400 text-xs">{arvAnalysis.error}</p>}
