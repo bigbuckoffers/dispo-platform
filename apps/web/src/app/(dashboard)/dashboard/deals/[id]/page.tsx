@@ -688,11 +688,7 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
                         <p className="text-gray-700 text-[10px]">not set</p>
                       </>}
                     </div>
-                    {closeDays !== null && (
-                      <div className={`rounded-lg px-2.5 py-2 col-span-2 ${closeDays <= 7 ? 'bg-red-900/30 border border-red-800/40' : closeDays <= 14 ? 'bg-yellow-900/20 border border-yellow-800/30' : 'bg-gray-800/50'}`}>
-                        <p className="text-gray-600 text-[10px] font-semibold uppercase tracking-wide mb-0.5">COE</p>
-                        <p className={`font-bold text-sm ${closeDays <= 7 ? 'text-red-400' : closeDays <= 14 ? 'text-yellow-400' : 'text-white'}`}>{closeDays}d to close</p>
-                        <p className="text-gray-600 text-[10px]">{closeDate!.toLocaleDateString()}</p>
+                    </p>
                       </div>
                     )}
                   </div>
