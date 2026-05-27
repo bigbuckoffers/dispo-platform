@@ -74,8 +74,8 @@ export default function BuyersPage() {
               <tr key={b.id} className="border-b border-gray-800/50 hover:bg-gray-800/30 cursor-pointer transition-colors"
                 onClick={() => window.location.href = `/dashboard/buyers/${b.id}`}>
                 <td className="px-4 py-3">
-                  <div className="font-medium text-white">{(b.firstName === 'Unknown' || !b.firstName) ? (b.phone || b.email?.split('@')[0]) : `${b.firstName} ${b.lastName}`}</div>
-                  <div className="text-gray-400 text-xs">{b.email}</div>
+                  <div className="font-medium text-white">{(b.firstName === 'Unknown' || !b.firstName) ? (b.phone || b.email?.split('@')[0]) : b.lastName === 'Buyer' ? b.firstName : `${b.firstName} ${b.lastName}`}</div>
+                  <div className="text-gray-400 text-xs">{b.email?.includes("@import.dispoai.com") ? (b.phone || "") : b.email}</div>
                 </td>
                 <td className="px-4 py-3">
                   <span className={`px-2 py-1 rounded text-xs font-medium ${tb[b.tier] || tb.TIER_3}`}>{tl[b.tier] || b.tier}</span>
