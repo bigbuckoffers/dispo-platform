@@ -44,6 +44,12 @@ export class CreateBuyerDto {
   @ApiPropertyOptional() @IsString() @IsOptional() notes?: string;
   @ApiPropertyOptional() @IsArray() @IsOptional() tags?: string[];
   @ApiPropertyOptional() @IsString() @IsOptional() source?: string;
+  @ApiPropertyOptional() @IsString() @IsOptional() ghlContactId?: string;
+  @ApiPropertyOptional() @IsString() @IsOptional() importSource?: string;
+  @ApiPropertyOptional() @IsString() @IsOptional() marketPrimary?: string;
+  @ApiPropertyOptional() @IsString() @IsOptional() buyerIntelNotes?: string;
+  @ApiPropertyOptional() @IsOptional() rawImportData?: any;
+  @ApiPropertyOptional() @IsOptional() seriousnessScore?: number;
 
   @ApiPropertyOptional()
   @ValidateNested()

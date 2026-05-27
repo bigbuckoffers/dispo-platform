@@ -37,6 +37,12 @@ export declare class BuyersController {
             notes: string | null;
             tags: string[];
             source: string | null;
+            ghlContactId: string | null;
+            importSource: string | null;
+            marketPrimary: string | null;
+            buyerIntelNotes: string | null;
+            rawImportData: import("@prisma/client/runtime/library").JsonValue | null;
+            seriousnessScore: number;
             tier: import(".prisma/client").$Enums.BuyerTier;
             compositeScore: number;
             activityScore: number;
@@ -53,8 +59,6 @@ export declare class BuyersController {
             isSuspended: boolean;
             suspendedReason: string | null;
             customFields: import("@prisma/client/runtime/library").JsonValue;
-            ghlContactId: string | null;
-            buyerIntelNotes: string | null;
             aiExtractedInsights: import("@prisma/client/runtime/library").JsonValue | null;
             aiSummary: string | null;
             lastAiAnalysisAt: Date | null;
@@ -65,18 +69,14 @@ export declare class BuyersController {
             closeRate: number | null;
             avgCloseSpeedDays: number | null;
             emdFailureCount: number;
-            seriousnessScore: number;
             intentScore: number;
             matchScore: number | null;
-            marketPrimary: string | null;
             marketSecondary: string[];
             dealBreakers: string[];
             preferredStrategies: string[];
             lastActiveDate: Date | null;
             lastContactDate: Date | null;
-            importSource: string | null;
             importedAt: Date | null;
-            rawImportData: import("@prisma/client/runtime/library").JsonValue | null;
         })[];
         meta: {
             total: number;
@@ -135,6 +135,12 @@ export declare class BuyersController {
         notes: string | null;
         tags: string[];
         source: string | null;
+        ghlContactId: string | null;
+        importSource: string | null;
+        marketPrimary: string | null;
+        buyerIntelNotes: string | null;
+        rawImportData: import("@prisma/client/runtime/library").JsonValue | null;
+        seriousnessScore: number;
         tier: import(".prisma/client").$Enums.BuyerTier;
         compositeScore: number;
         activityScore: number;
@@ -151,8 +157,6 @@ export declare class BuyersController {
         isSuspended: boolean;
         suspendedReason: string | null;
         customFields: import("@prisma/client/runtime/library").JsonValue;
-        ghlContactId: string | null;
-        buyerIntelNotes: string | null;
         aiExtractedInsights: import("@prisma/client/runtime/library").JsonValue | null;
         aiSummary: string | null;
         lastAiAnalysisAt: Date | null;
@@ -163,18 +167,14 @@ export declare class BuyersController {
         closeRate: number | null;
         avgCloseSpeedDays: number | null;
         emdFailureCount: number;
-        seriousnessScore: number;
         intentScore: number;
         matchScore: number | null;
-        marketPrimary: string | null;
         marketSecondary: string[];
         dealBreakers: string[];
         preferredStrategies: string[];
         lastActiveDate: Date | null;
         lastContactDate: Date | null;
-        importSource: string | null;
         importedAt: Date | null;
-        rawImportData: import("@prisma/client/runtime/library").JsonValue | null;
     }>;
     getTopBuyers(orgId: string, limit?: number): Promise<{
         buyBox: {
@@ -264,6 +264,12 @@ export declare class BuyersController {
         notes: string | null;
         tags: string[];
         source: string | null;
+        ghlContactId: string | null;
+        importSource: string | null;
+        marketPrimary: string | null;
+        buyerIntelNotes: string | null;
+        rawImportData: import("@prisma/client/runtime/library").JsonValue | null;
+        seriousnessScore: number;
         tier: import(".prisma/client").$Enums.BuyerTier;
         compositeScore: number;
         activityScore: number;
@@ -280,8 +286,6 @@ export declare class BuyersController {
         isSuspended: boolean;
         suspendedReason: string | null;
         customFields: import("@prisma/client/runtime/library").JsonValue;
-        ghlContactId: string | null;
-        buyerIntelNotes: string | null;
         aiExtractedInsights: import("@prisma/client/runtime/library").JsonValue | null;
         aiSummary: string | null;
         lastAiAnalysisAt: Date | null;
@@ -292,18 +296,14 @@ export declare class BuyersController {
         closeRate: number | null;
         avgCloseSpeedDays: number | null;
         emdFailureCount: number;
-        seriousnessScore: number;
         intentScore: number;
         matchScore: number | null;
-        marketPrimary: string | null;
         marketSecondary: string[];
         dealBreakers: string[];
         preferredStrategies: string[];
         lastActiveDate: Date | null;
         lastContactDate: Date | null;
-        importSource: string | null;
         importedAt: Date | null;
-        rawImportData: import("@prisma/client/runtime/library").JsonValue | null;
     }>;
     update(orgId: string, id: string, dto: UpdateBuyerDto, userId: string): Promise<{
         id: string;
@@ -324,6 +324,12 @@ export declare class BuyersController {
         notes: string | null;
         tags: string[];
         source: string | null;
+        ghlContactId: string | null;
+        importSource: string | null;
+        marketPrimary: string | null;
+        buyerIntelNotes: string | null;
+        rawImportData: import("@prisma/client/runtime/library").JsonValue | null;
+        seriousnessScore: number;
         tier: import(".prisma/client").$Enums.BuyerTier;
         compositeScore: number;
         activityScore: number;
@@ -340,8 +346,6 @@ export declare class BuyersController {
         isSuspended: boolean;
         suspendedReason: string | null;
         customFields: import("@prisma/client/runtime/library").JsonValue;
-        ghlContactId: string | null;
-        buyerIntelNotes: string | null;
         aiExtractedInsights: import("@prisma/client/runtime/library").JsonValue | null;
         aiSummary: string | null;
         lastAiAnalysisAt: Date | null;
@@ -352,18 +356,14 @@ export declare class BuyersController {
         closeRate: number | null;
         avgCloseSpeedDays: number | null;
         emdFailureCount: number;
-        seriousnessScore: number;
         intentScore: number;
         matchScore: number | null;
-        marketPrimary: string | null;
         marketSecondary: string[];
         dealBreakers: string[];
         preferredStrategies: string[];
         lastActiveDate: Date | null;
         lastContactDate: Date | null;
-        importSource: string | null;
         importedAt: Date | null;
-        rawImportData: import("@prisma/client/runtime/library").JsonValue | null;
     }>;
     getScores(orgId: string, id: string): Promise<{
         current: {
@@ -536,6 +536,12 @@ export declare class BuyersController {
         notes: string | null;
         tags: string[];
         source: string | null;
+        ghlContactId: string | null;
+        importSource: string | null;
+        marketPrimary: string | null;
+        buyerIntelNotes: string | null;
+        rawImportData: import("@prisma/client/runtime/library").JsonValue | null;
+        seriousnessScore: number;
         tier: import(".prisma/client").$Enums.BuyerTier;
         compositeScore: number;
         activityScore: number;
@@ -552,8 +558,6 @@ export declare class BuyersController {
         isSuspended: boolean;
         suspendedReason: string | null;
         customFields: import("@prisma/client/runtime/library").JsonValue;
-        ghlContactId: string | null;
-        buyerIntelNotes: string | null;
         aiExtractedInsights: import("@prisma/client/runtime/library").JsonValue | null;
         aiSummary: string | null;
         lastAiAnalysisAt: Date | null;
@@ -564,18 +568,14 @@ export declare class BuyersController {
         closeRate: number | null;
         avgCloseSpeedDays: number | null;
         emdFailureCount: number;
-        seriousnessScore: number;
         intentScore: number;
         matchScore: number | null;
-        marketPrimary: string | null;
         marketSecondary: string[];
         dealBreakers: string[];
         preferredStrategies: string[];
         lastActiveDate: Date | null;
         lastContactDate: Date | null;
-        importSource: string | null;
         importedAt: Date | null;
-        rawImportData: import("@prisma/client/runtime/library").JsonValue | null;
     }>;
     suspend(orgId: string, id: string, reason: string, userId: string): Promise<{
         id: string;
@@ -596,6 +596,12 @@ export declare class BuyersController {
         notes: string | null;
         tags: string[];
         source: string | null;
+        ghlContactId: string | null;
+        importSource: string | null;
+        marketPrimary: string | null;
+        buyerIntelNotes: string | null;
+        rawImportData: import("@prisma/client/runtime/library").JsonValue | null;
+        seriousnessScore: number;
         tier: import(".prisma/client").$Enums.BuyerTier;
         compositeScore: number;
         activityScore: number;
@@ -612,8 +618,6 @@ export declare class BuyersController {
         isSuspended: boolean;
         suspendedReason: string | null;
         customFields: import("@prisma/client/runtime/library").JsonValue;
-        ghlContactId: string | null;
-        buyerIntelNotes: string | null;
         aiExtractedInsights: import("@prisma/client/runtime/library").JsonValue | null;
         aiSummary: string | null;
         lastAiAnalysisAt: Date | null;
@@ -624,18 +628,14 @@ export declare class BuyersController {
         closeRate: number | null;
         avgCloseSpeedDays: number | null;
         emdFailureCount: number;
-        seriousnessScore: number;
         intentScore: number;
         matchScore: number | null;
-        marketPrimary: string | null;
         marketSecondary: string[];
         dealBreakers: string[];
         preferredStrategies: string[];
         lastActiveDate: Date | null;
         lastContactDate: Date | null;
-        importSource: string | null;
         importedAt: Date | null;
-        rawImportData: import("@prisma/client/runtime/library").JsonValue | null;
     }>;
     remove(orgId: string, id: string, userId: string): Promise<void>;
 }

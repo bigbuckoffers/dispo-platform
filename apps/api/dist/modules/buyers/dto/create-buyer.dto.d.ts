@@ -35,5 +35,11 @@ export declare class CreateBuyerDto {
     notes?: string;
     tags?: string[];
     source?: string;
+    ghlContactId?: string;
+    importSource?: string;
+    marketPrimary?: string;
+    buyerIntelNotes?: string;
+    rawImportData?: any;
+    seriousnessScore?: number;
     buyBox?: CreateBuyBoxDto;
 }
