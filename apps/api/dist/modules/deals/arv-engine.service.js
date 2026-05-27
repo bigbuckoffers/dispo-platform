@@ -104,6 +104,7 @@ Return every sold home you find. If nothing found return [].`;
                 body: JSON.stringify({
                     model: 'claude-haiku-4-5-20251001',
                     max_tokens: 4000,
+                    system: 'You are a JSON-only API. Never write prose. Your entire response must be a valid JSON array starting with [ and ending with ]. No text before or after the array.',
                     tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 5 }],
                     messages: [{ role: 'user', content: prompt }],
                 }),
