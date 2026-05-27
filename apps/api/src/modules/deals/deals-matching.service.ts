@@ -175,7 +175,7 @@ export class DealsMatchingService {
   }
 
   async getMatchesForDeal(dealId: string, limit = 50) {
-    return this.prisma.matchResult.findMany({ where: { dealId }, orderBy: { rank: 'asc' }, take: limit, include: { buyer: { select: { id: true, firstName: true, lastName: true, email: true, phone: true, company: true, tier: true, investorType: true, reliabilityScore: true, liquidityScore: true, activityScore: true, compositeScore: true, marketPrimary: true, marketSecondary: true, preferredStrategies: true, buyerIntelNotes: true, aiSummary: true, temperatureNotes: true, dealBreakers: true, hasCash: true, hasHardMoney: true, aiBuyerProfile: true, buyBox: { select: { states: true, zipCodes: true, minPrice: true, maxPrice: true, propertyTypes: true, investmentStrategy: true, rehabTolerance: true } } } } } });
+    return this.prisma.matchResult.findMany({ where: { dealId }, orderBy: { rank: 'asc' }, take: limit, include: { buyer: { select: { id: true, firstName: true, lastName: true, email: true, phone: true, company: true, tier: true, investorType: true, reliabilityScore: true, liquidityScore: true, activityScore: true, compositeScore: true, marketPrimary: true, marketSecondary: true, preferredStrategies: true, buyerIntelNotes: true, aiSummary: true, dealBreakers: true, hasCash: true, hasHardMoney: true, buyBox: { select: { states: true, zipCodes: true, minPrice: true, maxPrice: true, propertyTypes: true, investmentStrategy: true, rehabTolerance: true } } } } } });
   }
 
   private calculateSniperScore(matches: any[], deal: any): number {

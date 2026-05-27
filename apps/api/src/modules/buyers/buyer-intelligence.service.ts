@@ -74,7 +74,7 @@ export class BuyerIntelligenceService {
       bb ? "Buy states: " + (bb.states?.join(", ") || "none") + " | Price: $" + (bb.minPrice || 0).toLocaleString() + "-$" + (bb.maxPrice ? bb.maxPrice.toLocaleString() : "open") : null,
       buyer.buyerIntelNotes ? "Intel notes: " + buyer.buyerIntelNotes : null,
       buyer.aiSummary ? "Conversation: " + buyer.aiSummary : null,
-      buyer.temperatureNotes ? "Status: " + buyer.temperatureNotes : null,
+      (buyer as any).temperatureNotes ? "Status: " + (buyer as any).temperatureNotes : null,
     ].filter(Boolean).join("\n");
 
     const response = await this.openai.chat.completions.create({
@@ -89,7 +89,7 @@ export class BuyerIntelligenceService {
 
   async generateAllMissingProfiles(limit = 50): Promise<{ generated: number; failed: number }> {
     const buyers = await this.prisma.buyer.findMany({
-      where: { isActive: true, OR: [{ aiBuyerProfile: null }, { aiBuyerProfile: "" }] },
+      where: { isActive: true } as any,
       take: limit, orderBy: { compositeScore: "desc" },
     });
     this.logger.log("[BuyerIntel] Generating profiles for " + buyers.length + " buyers...");
