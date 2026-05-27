@@ -140,7 +140,7 @@ export default function DealsPage() {
     setMatchingAll(true);
     try {
       const activeDeals = deals.filter((d: any) => !['DEAD','CLOSED'].includes(d.status));
-      await Promise.all(activeDeals.map((d: any) => api.post('/deals/' + d.id + '/match-buyers').catch(() => {})));
+      await Promise.all(activeDeals.map((d: any) => api.post('/deals/' + d.id + '/calculate-metrics').catch(() => {})));
       await refetch();
       toast.success('Buyer counts updated for all deals');
     } catch { toast.error('Match all failed'); }
