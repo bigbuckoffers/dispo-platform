@@ -27,8 +27,13 @@ function inferState(market: string): string | null {
 export class BuyerIntelligenceService {
   private readonly logger = new Logger(BuyerIntelligenceService.name);
   private openai: OpenAI;
-  constructor(private prisma: PrismaService) {
-    this.openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  constructor(private prisma: PrismaService) {}
+
+  private getOpenAI(): OpenAI {
+    if (!this.openai) {
+      this.openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    }
+    return this.openai;
   }
 
   async backfillBuyBoxes(): Promise<{ updated: number; created: number; skipped: number }> {
@@ -77,7 +82,7 @@ export class BuyerIntelligenceService {
       (buyer as any).temperatureNotes ? "Status: " + (buyer as any).temperatureNotes : null,
     ].filter(Boolean).join("\n");
 
-    const response = await this.openai.chat.completions.create({
+    const response = await this.getOpenAI().chat.completions.create({
       model: "gpt-4o-mini",
       messages: [{ role: "user", content: "Write a 3-5 sentence buyer intelligence profile for wholesale real estate matching. Include: what markets/states they buy in, deal types (subto/wholesale/flip/rental), price range, funding type, current status. Be specific. Use ALL data provided.\n\nBUYER DATA:\n" + context + "\n\nWrite ONLY the profile. No headers." }],
       max_tokens: 300, temperature: 0.3,
