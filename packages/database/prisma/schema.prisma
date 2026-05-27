@@ -940,9 +940,11 @@ enum InvestorType {
 }
 
 enum BuyerTier {
-  TIER_1  // VIP
-  TIER_2  // Active
-  TIER_3  // General
+  VIP
+  TIER_1
+  TIER_2
+  TIER_3
+  TIER_4
 }
 
 enum PropertyType {

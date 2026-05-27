@@ -5,7 +5,7 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { InvestorType } from '@prisma/client';
+import { InvestorType, BuyerTier } from '@prisma/client';
 
 export class CreateBuyBoxDto {
   @IsArray() @IsOptional() states?: string[];
@@ -60,7 +60,7 @@ export class CreateBuyerDto {
   @ApiPropertyOptional() @IsNumber() @IsOptional() ghostCount?: number;
   @ApiPropertyOptional() @IsString() @IsOptional() aiSummary?: string;
   @ApiPropertyOptional() @IsString() @IsOptional() temperatureNotes?: string;
-  @ApiPropertyOptional() @IsString() @IsOptional() tier?: string;
+  @ApiPropertyOptional() @IsEnum(BuyerTier) @IsOptional() tier?: BuyerTier;
   @ApiPropertyOptional() @IsString() @IsOptional() aiTemperatureAnalysis?: string;
   @ApiPropertyOptional() @IsString() @IsOptional() proofOfFundsUrl?: string;
   @ApiPropertyOptional() @IsNumber() @IsOptional() maxEmd?: number;
