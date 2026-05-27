@@ -96,11 +96,20 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
     try {
       const notes = (intelText || buyer.buyerIntelNotes||'None').substring(0,1200);
       const prompt = 'You are a senior real estate dispositions analyst. Analyze this buyer and respond ONLY in valid JSON with no other text or markdown.\n\nBuyer: '+buyer.firstName+' '+buyer.lastName+'\nMarket: '+(buyer.marketPrimary||'Unknown')+'\nSecondary: '+(buyer.marketSecondary||[]).join(', ')+'\nStrategies: '+(buyer.preferredStrategies||[]).join(', ')+'\nFunding: '+(buyer.notes||'Unknown')+'\nRehab: '+(buyer.buyBox?.rehabTolerance||'Unknown')+'\nScore: '+buyer.compositeScore+'/100\nNotes:\n'+notes+'\n\nRespond ONLY with JSON: {"summary":"2-3 sentence buyer intelligence summary","tags":["tag1"],"recommendedDealTypes":["type1"],"bestFirstDeal":"specific best first deal description","notIdealFor":["bad match1"],"dealBreakers":["breaker1"],"nextActions":["action1","action2","action3"],"strengths":["strength1"],"risks":["risk1"],"dispoStrategy":"how to sell deals to this buyer","extractedPrefs":[{"pref":"pref desc","confidence":85,"verified":false,"source":"intel notes"}]}';
-      const response = await fetch('/api/anthropic',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt,maxTokens:1200})});
+      const response = await fetch('/api/anthropic',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt,maxTokens:2500})});
       const data = await response.json();
       const text = data.content?.[0]?.text||'';
       const clean = text.replace(/```json|```/g,'').trim();
-      const parsed = JSON.parse(clean.substring(clean.indexOf('{'),clean.lastIndexOf('}')+1));
+      let parsed: any = {};
+      try {
+        const start = clean.indexOf('{');
+        const end = clean.lastIndexOf('}');
+        if (start !== -1 && end !== -1) parsed = JSON.parse(clean.substring(start, end + 1));
+      } catch (parseErr) {
+        console.error('JSON parse error:', parseErr, 'Raw:', text.substring(0, 500));
+        toast.error('AI response could not be parsed - try again');
+        setGenerating(false); return;
+      }
       if (parsed.summary) setAiSummary(parsed.summary);
       if (parsed.tags) setAiTags(parsed.tags);
       if (parsed.recommendedDealTypes) setRecommendedDeals(parsed.recommendedDealTypes);
