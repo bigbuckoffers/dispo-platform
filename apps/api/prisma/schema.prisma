@@ -129,7 +129,45 @@ model Buyer {
   notes              String?
   tags               String[]    @default([])
   customFields       Json        @default("{}")
-  
+
+  // GHL Integration
+  ghlContactId       String?
+
+  // Buyer Intelligence
+  buyerIntelNotes    String?
+  aiExtractedInsights Json?
+  aiSummary          String?
+  lastAiAnalysisAt   DateTime?
+
+  // Reliability tracking
+  closeCount         Int         @default(0)
+  cancelCount        Int         @default(0)
+  retradeCount       Int         @default(0)
+  ghostCount         Int         @default(0)
+  closeRate          Float?
+  avgCloseSpeedDays  Int?
+  emdFailureCount    Int         @default(0)
+
+  // Scoring
+  seriousnessScore   Float       @default(50)
+  intentScore        Float       @default(50)
+  matchScore         Float?
+
+  // Market intelligence
+  marketPrimary      String?
+  marketSecondary    String[]    @default([])
+  dealBreakers       String[]    @default([])
+  preferredStrategies String[]  @default([])
+
+  // Activity
+  lastActiveDate     DateTime?
+  lastContactDate    DateTime?
+
+  // Import metadata
+  importSource       String?
+  importedAt         DateTime?
+  rawImportData      Json?
+
   createdAt          DateTime    @default(now())
   updatedAt          DateTime    @updatedAt
 
@@ -405,6 +443,10 @@ model Deal {
   aiPitch                       String?
   aiDispoScoreBonus             Int?      @default(0)
   aiDealScoreBonus              Int?      @default(0)
+  rehabTier                     String?
+  photoAnalysis                 Json?
+  sellerMotivationScore         Int?
+  exitStrategies                String[]  @default([])
   aiAnalyzedAt                  DateTime?
   conditionNotes                String?
 
@@ -450,6 +492,8 @@ model Deal {
   missingInfo                   String[]
   aiFollowUpQuestions           String?
   dealPriorityScore             Int       @default(0)
+  velocityScore                 Int       @default(0)
+  sniperScore                   Int       @default(0)
   buyerDemandScore              Int       @default(0)
   dataCompletenessScore         Int       @default(0)
   missingInfoCount              Int       @default(0)
