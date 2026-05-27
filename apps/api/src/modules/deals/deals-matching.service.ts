@@ -99,19 +99,28 @@ export class DealsMatchingService {
 
   private preFilterBuyers(buyers: any[], deal: any): any[] {
     const price = deal.askingPrice || deal.buyerFacingPrice || 0;
+    const dealState = (deal.state || '').toUpperCase();
+    const dealCity = (deal.city || '').toLowerCase();
+
     return buyers.filter(buyer => {
       const bb = buyer.buyBox;
+
+      // RULE 1: If buyer has states in buyBox, deal state MUST be in that list. Hard stop.
       if (bb && bb.states && bb.states.length > 0) {
-        const dealState = (deal.state || '').toLowerCase();
-        const dealCity = (deal.city || '').toLowerCase();
-        const stateMatch = bb.states.some((s: string) => s.toLowerCase() === dealState);
-        const primaryMatch = buyer.marketPrimary && (buyer.marketPrimary.toLowerCase().includes(dealState) || buyer.marketPrimary.toLowerCase().includes(dealCity));
-        const secondaryMatch = buyer.marketSecondary && buyer.marketSecondary.some((m: string) => m.toLowerCase().includes(dealState) || m.toLowerCase().includes(dealCity));
-        const profileMatch = buyer.aiBuyerProfile && (buyer.aiBuyerProfile.toLowerCase().includes(dealState) || buyer.aiBuyerProfile.toLowerCase().includes(dealCity));
-        const summaryMatch = buyer.aiSummary && (buyer.aiSummary.toLowerCase().includes(dealState) || buyer.aiSummary.toLowerCase().includes(dealCity));
-        const intelMatch = buyer.buyerIntelNotes && (buyer.buyerIntelNotes.toLowerCase().includes(dealState) || buyer.buyerIntelNotes.toLowerCase().includes(dealCity));
-        if (!stateMatch && !primaryMatch && !secondaryMatch && !profileMatch && !summaryMatch && !intelMatch) return false;
+        const stateMatch = bb.states.some((s: string) => s.toUpperCase() === dealState);
+        if (!stateMatch) return false;
+      } else {
+        // RULE 2: No states set — check text fields for city/state match
+        const dl = dealState.toLowerCase();
+        const primaryMatch = buyer.marketPrimary && (buyer.marketPrimary.toLowerCase().includes(dl) || buyer.marketPrimary.toLowerCase().includes(dealCity));
+        const summaryMatch = buyer.aiSummary && (buyer.aiSummary.toLowerCase().includes(dl) || buyer.aiSummary.toLowerCase().includes(dealCity));
+        const intelMatch = buyer.buyerIntelNotes && (buyer.buyerIntelNotes.toLowerCase().includes(dl) || buyer.buyerIntelNotes.toLowerCase().includes(dealCity));
+        const hasSignals = !!(buyer.marketPrimary || buyer.aiSummary || buyer.buyerIntelNotes);
+        // No geo signals at all = exclude. Has signals but none match = exclude.
+        if (!hasSignals || (!primaryMatch && !summaryMatch && !intelMatch)) return false;
       }
+
+      // Price filters
       if (bb && bb.maxPrice && price > 0 && price > bb.maxPrice * 1.5) return false;
       if (bb && bb.minPrice && price > 0 && price < bb.minPrice * 0.5) return false;
       return true;
