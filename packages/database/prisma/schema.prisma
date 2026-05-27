@@ -440,6 +440,8 @@ model Deal {
   aiStrengths                   Json?
   aiRedFlags                    Json?
   aiBuyerProfile                String?
+  temperatureNotes              String?
+  aiTemperatureAnalysis         String?
   aiPitch                       String?
   aiDispoScoreBonus             Int?      @default(0)
   aiDealScoreBonus              Int?      @default(0)
