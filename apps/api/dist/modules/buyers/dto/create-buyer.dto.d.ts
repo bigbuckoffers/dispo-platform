@@ -51,6 +51,7 @@ export declare class CreateBuyerDto {
     ghostCount?: number;
     aiSummary?: string;
     temperatureNotes?: string;
+    tier?: string;
     aiTemperatureAnalysis?: string;
     proofOfFundsUrl?: string;
     maxEmd?: number;

@@ -60,6 +60,7 @@ export class CreateBuyerDto {
   @ApiPropertyOptional() @IsNumber() @IsOptional() ghostCount?: number;
   @ApiPropertyOptional() @IsString() @IsOptional() aiSummary?: string;
   @ApiPropertyOptional() @IsString() @IsOptional() temperatureNotes?: string;
+  @ApiPropertyOptional() @IsString() @IsOptional() tier?: string;
   @ApiPropertyOptional() @IsString() @IsOptional() aiTemperatureAnalysis?: string;
   @ApiPropertyOptional() @IsString() @IsOptional() proofOfFundsUrl?: string;
   @ApiPropertyOptional() @IsNumber() @IsOptional() maxEmd?: number;
