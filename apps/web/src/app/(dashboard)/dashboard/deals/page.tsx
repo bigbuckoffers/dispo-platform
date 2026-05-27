@@ -1,5 +1,5 @@
 'use client';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Building2, Users, Zap, Plus, Filter, RefreshCw, Camera, ChevronRight, BarChart3, ChevronDown, ChevronUp, TrendingUp, Clock, Target , Trash2 } from 'lucide-react';
@@ -130,6 +130,14 @@ export default function DealsPage() {
     queryFn:()=>api.get(`/deals?page=1&limit=100&sort=${sortBy}`).then(r=>r.data),
   });
   const deals = dealsData?.data||[];
+
+  // Auto-fetch RentCast AVM for deals missing public value
+  useEffect(() => {
+    const missingAvm = deals.filter((d: any) => !d.rentcastEstimate && !d.zillowEstimate && !d.realtorEstimate);
+    if (missingAvm.length > 0) {
+      api.post('/deals/fetch-all-avm').then(() => refetch()).catch(() => {});
+    }
+  }, [dealsData]);
 
   const stats = useMemo(()=>({
     total:  deals.filter((d:any)=>!['DEAD','CLOSED','DRAFT'].includes(d.status)).length,
