@@ -211,7 +211,25 @@ Rules:
     }
   }
 
-  private detectSubjectConflicts(deal: any, comps: RawComp[]): string[] {
+  private normalizeComps(rawComps: any[]): RawComp[] {
+    return rawComps
+      .filter((r: any) => r && r.salePrice && r.address)
+      .map((r: any) => ({
+        address: String(r.address || ''),
+        saleDate: String(r.saleDate || ''),
+        salePrice: Number(r.salePrice) || 0,
+        sqft: Number(r.sqft) || 0,
+        beds: Number(r.beds) || 0,
+        baths: Number(r.baths) || 0,
+        renovationEvidence: r.renovationEvidence || undefined,
+        subdivisionProof: r.subdivisionProof || undefined,
+        sourcePortal: String(r.sourcePortal || 'Unknown'),
+        sourceUrl: String(r.sourceUrl || ''),
+      }))
+      .filter((r: RawComp) => r.salePrice > 0);
+  }
+
+    private detectSubjectConflicts(deal: any, comps: RawComp[]): string[] {
     const conflicts: string[] = [];
     // Check if subject sqft varies wildly across comps mentioning it
     if (!deal.sqft) conflicts.push('Subject sqft not verified — required for comp scoring');

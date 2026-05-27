@@ -161,6 +161,23 @@ Rules:
             return [];
         }
     }
+    normalizeComps(rawComps) {
+        return rawComps
+            .filter((r) => r && r.salePrice && r.address)
+            .map((r) => ({
+            address: String(r.address || ''),
+            saleDate: String(r.saleDate || ''),
+            salePrice: Number(r.salePrice) || 0,
+            sqft: Number(r.sqft) || 0,
+            beds: Number(r.beds) || 0,
+            baths: Number(r.baths) || 0,
+            renovationEvidence: r.renovationEvidence || undefined,
+            subdivisionProof: r.subdivisionProof || undefined,
+            sourcePortal: String(r.sourcePortal || 'Unknown'),
+            sourceUrl: String(r.sourceUrl || ''),
+        }))
+            .filter((r) => r.salePrice > 0);
+    }
     detectSubjectConflicts(deal, comps) {
         const conflicts = [];
         if (!deal.sqft)
