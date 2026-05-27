@@ -48,6 +48,9 @@ export class CreateBuyerDto {
   @ApiPropertyOptional() @IsString() @IsOptional() importSource?: string;
   @ApiPropertyOptional() @IsString() @IsOptional() marketPrimary?: string;
   @ApiPropertyOptional() @IsString() @IsOptional() buyerIntelNotes?: string;
+  @ApiPropertyOptional() @IsArray() @IsOptional() preferredStrategies?: string[];
+  @ApiPropertyOptional() @IsArray() @IsOptional() marketSecondary?: string[];
+  @ApiPropertyOptional() @IsArray() @IsOptional() dealBreakers?: string[];
   @ApiPropertyOptional() @IsOptional() rawImportData?: any;
   @ApiPropertyOptional() @IsOptional() seriousnessScore?: number;
 

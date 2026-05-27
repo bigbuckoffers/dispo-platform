@@ -41,6 +41,9 @@ export declare class BuyersController {
             importSource: string | null;
             marketPrimary: string | null;
             buyerIntelNotes: string | null;
+            preferredStrategies: string[];
+            marketSecondary: string[];
+            dealBreakers: string[];
             rawImportData: import("@prisma/client/runtime/library").JsonValue | null;
             seriousnessScore: number;
             tier: import(".prisma/client").$Enums.BuyerTier;
@@ -71,9 +74,6 @@ export declare class BuyersController {
             emdFailureCount: number;
             intentScore: number;
             matchScore: number | null;
-            marketSecondary: string[];
-            dealBreakers: string[];
-            preferredStrategies: string[];
             lastActiveDate: Date | null;
             lastContactDate: Date | null;
             importedAt: Date | null;
@@ -139,6 +139,9 @@ export declare class BuyersController {
         importSource: string | null;
         marketPrimary: string | null;
         buyerIntelNotes: string | null;
+        preferredStrategies: string[];
+        marketSecondary: string[];
+        dealBreakers: string[];
         rawImportData: import("@prisma/client/runtime/library").JsonValue | null;
         seriousnessScore: number;
         tier: import(".prisma/client").$Enums.BuyerTier;
@@ -169,9 +172,6 @@ export declare class BuyersController {
         emdFailureCount: number;
         intentScore: number;
         matchScore: number | null;
-        marketSecondary: string[];
-        dealBreakers: string[];
-        preferredStrategies: string[];
         lastActiveDate: Date | null;
         lastContactDate: Date | null;
         importedAt: Date | null;
@@ -268,6 +268,9 @@ export declare class BuyersController {
         importSource: string | null;
         marketPrimary: string | null;
         buyerIntelNotes: string | null;
+        preferredStrategies: string[];
+        marketSecondary: string[];
+        dealBreakers: string[];
         rawImportData: import("@prisma/client/runtime/library").JsonValue | null;
         seriousnessScore: number;
         tier: import(".prisma/client").$Enums.BuyerTier;
@@ -298,9 +301,6 @@ export declare class BuyersController {
         emdFailureCount: number;
         intentScore: number;
         matchScore: number | null;
-        marketSecondary: string[];
-        dealBreakers: string[];
-        preferredStrategies: string[];
         lastActiveDate: Date | null;
         lastContactDate: Date | null;
         importedAt: Date | null;
@@ -328,6 +328,9 @@ export declare class BuyersController {
         importSource: string | null;
         marketPrimary: string | null;
         buyerIntelNotes: string | null;
+        preferredStrategies: string[];
+        marketSecondary: string[];
+        dealBreakers: string[];
         rawImportData: import("@prisma/client/runtime/library").JsonValue | null;
         seriousnessScore: number;
         tier: import(".prisma/client").$Enums.BuyerTier;
@@ -358,9 +361,6 @@ export declare class BuyersController {
         emdFailureCount: number;
         intentScore: number;
         matchScore: number | null;
-        marketSecondary: string[];
-        dealBreakers: string[];
-        preferredStrategies: string[];
         lastActiveDate: Date | null;
         lastContactDate: Date | null;
         importedAt: Date | null;
@@ -540,6 +540,9 @@ export declare class BuyersController {
         importSource: string | null;
         marketPrimary: string | null;
         buyerIntelNotes: string | null;
+        preferredStrategies: string[];
+        marketSecondary: string[];
+        dealBreakers: string[];
         rawImportData: import("@prisma/client/runtime/library").JsonValue | null;
         seriousnessScore: number;
         tier: import(".prisma/client").$Enums.BuyerTier;
@@ -570,9 +573,6 @@ export declare class BuyersController {
         emdFailureCount: number;
         intentScore: number;
         matchScore: number | null;
-        marketSecondary: string[];
-        dealBreakers: string[];
-        preferredStrategies: string[];
         lastActiveDate: Date | null;
         lastContactDate: Date | null;
         importedAt: Date | null;
@@ -600,6 +600,9 @@ export declare class BuyersController {
         importSource: string | null;
         marketPrimary: string | null;
         buyerIntelNotes: string | null;
+        preferredStrategies: string[];
+        marketSecondary: string[];
+        dealBreakers: string[];
         rawImportData: import("@prisma/client/runtime/library").JsonValue | null;
         seriousnessScore: number;
         tier: import(".prisma/client").$Enums.BuyerTier;
@@ -630,9 +633,6 @@ export declare class BuyersController {
         emdFailureCount: number;
         intentScore: number;
         matchScore: number | null;
-        marketSecondary: string[];
-        dealBreakers: string[];
-        preferredStrategies: string[];
         lastActiveDate: Date | null;
         lastContactDate: Date | null;
         importedAt: Date | null;

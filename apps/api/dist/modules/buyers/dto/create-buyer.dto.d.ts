@@ -39,6 +39,9 @@ export declare class CreateBuyerDto {
     importSource?: string;
     marketPrimary?: string;
     buyerIntelNotes?: string;
+    preferredStrategies?: string[];
+    marketSecondary?: string[];
+    dealBreakers?: string[];
     rawImportData?: any;
     seriousnessScore?: number;
     buyBox?: CreateBuyBoxDto;
