@@ -525,7 +525,7 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
   const hasPermission = isOwn || !!(deal.dealSource?.permissionToMarket);
   const b = deal.matchedBuyerCount || 0;
   const t1 = deal.tier1MatchCount || 0;
-  const pubEstimates = [deal.zillowEstimate, deal.realtorEstimate, deal.redfinEstimate].filter(Boolean) as number[];
+  const pubEstimates = [deal.zillowEstimate, deal.realtorEstimate, deal.redfinEstimate, deal.rentcastEstimate].filter(Boolean) as number[];
   const avgPub = pubEstimates.length > 0 ? pubEstimates.reduce((a,x) => a+x, 0) / pubEstimates.length : 0;
   const threshold70 = (avgPub || deal.arv || 0) * 0.70;
   const refValue = avgPub || deal.arv || 0;
