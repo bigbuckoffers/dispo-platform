@@ -102,7 +102,8 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
   const uploadPof = async (e: any) => { const file = e.target.files?.[0]; if (!file) return; setUploadingPof(true); try { const fd = new FormData(); fd.append('file', file); fd.append('upload_preset', 'dispoai_photos'); fd.append('folder', 'pof'); const r = await fetch('https://api.cloudinary.com/v1_1/dhueussrm/auto/upload', {method:'POST',body:fd}); const d = await r.json(); if (d.secure_url) { await api.put(`/buyers/${id}`, { proofOfFundsUrl: d.secure_url }); qc.invalidateQueries({queryKey:['buyer',id]}); toast.success('POF uploaded'); } } catch { toast.error('Upload failed'); } finally { setUploadingPof(false); } };
   const saveTempNote = async () => { setSavingTemp(true); try { await api.put(`/buyers/${id}`, { temperatureNotes: tempNote }); qc.invalidateQueries({queryKey:['buyer',id]}); toast.success('Saved'); } catch { toast.error('Failed'); } finally { setSavingTemp(false); } };
   const analyzeTempNote = async () => { if (!tempNote) return; setAnalyzingTemp(true); try { const prompt = 'Parse this buyer temperature note and respond ONLY in JSON.\n\nBuyer: '+buyer.firstName+' '+buyer.lastName+'\nNote: '+tempNote+'\n\nJSON: {"temperature":"HOT|ACTIVE|WARM|HIBERNATING|COLD","trend":"Heating Up|Stable|Cooling Down|Hibernating","reactivationDate":"timeframe or null","reasonForPause":"reason or null","nextAction":"specific action","dealPriority":"HIGH|MEDIUM|LOW|HOLD","followUpTiming":"timing","summary":"1 sentence status"}'; const r = await fetch('/api/anthropic',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt,maxTokens:500})}); const d = await r.json(); const t = d.content?.[0]?.text||''; const cl = t.replace(/```json|```/g,'').trim(); const p = JSON.parse(cl.substring(cl.indexOf('{'),cl.lastIndexOf('}')+1)); setTempAnalysis(p); toast.success('Analysis complete'); } catch { toast.error('Analysis failed'); } finally { setAnalyzingTemp(false); } };
-  const applyTempAnalysis = async () => { if (!tempAnalysis) return; try { await api.put(`/buyers/${id}`,{temperatureNotes:tempNote,aiTemperatureAnalysis:JSON.stringify(tempAnalysis)}); qc.invalidateQueries({queryKey:['buyer',id]}); toast.success('Applied to profile'); setTempAnalysis(null); } catch { toast.error('Failed'); } };
+  const [tempApplied, setTempApplied] = useState(false);
+  const applyTempAnalysis = async () => { if (!tempAnalysis) return; try { await api.put(`/buyers/${id}`,{temperatureNotes:tempNote,aiTemperatureAnalysis:JSON.stringify(tempAnalysis)}); qc.invalidateQueries({queryKey:['buyer',id]}); toast.success('Applied to profile'); setTempApplied(true); } catch { toast.error('Failed'); } };
   const generateAiIntel = async () => {
     if (!buyer) return; setGenerating(true);
     try {
@@ -347,10 +348,17 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
             <div className="bg-gray-800 rounded p-2 text-xs"><span className="text-gray-500 block">Next Action</span><span className="text-white">{tempAnalysis.nextAction}</span></div>
             <div className="bg-gray-800 rounded p-2 text-xs"><span className="text-gray-500 block">Follow-up Timing</span><span className="text-amber-300">{tempAnalysis.followUpTiming}</span></div>
             <div className="bg-gray-800 rounded p-2 text-xs"><span className="text-gray-500 block">Summary</span><span className="text-white italic">{tempAnalysis.summary}</span></div>
-            <div className="flex gap-2 pt-1">
-              <button onClick={applyTempAnalysis} className="px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white text-xs rounded-lg">Apply to Profile</button>
-              <button onClick={()=>setTempAnalysis(null)} className="px-3 py-1.5 bg-gray-700 text-gray-300 text-xs rounded-lg">Dismiss</button>
-            </div>
+            {!tempApplied ? (
+              <div className="flex gap-2 pt-1">
+                <button onClick={applyTempAnalysis} className="px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white text-xs rounded-lg">Apply to Profile</button>
+                <button onClick={()=>setTempAnalysis(null)} className="px-3 py-1.5 bg-gray-700 text-gray-300 text-xs rounded-lg">Dismiss</button>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between pt-1">
+                <span className="text-green-400 text-xs">✓ Applied to profile</span>
+                <button onClick={()=>setTempApplied(false)} className="text-xs text-gray-500 hover:text-gray-400">Re-analyze</button>
+              </div>
+            )}
           </div>
         )}
       </div>
