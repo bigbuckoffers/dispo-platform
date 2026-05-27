@@ -34,12 +34,27 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
   const [closeProbability, setCloseProbability] = useState(50);
   const [aiConfidence, setAiConfidence] = useState(0);
   const [maturity, setMaturity] = useState('Early Stage');
+  const [editingBuyBox, setEditingBuyBox] = useState(false);
+  const [editingLiquidity, setEditingLiquidity] = useState(false);
+  const [editingHistory, setEditingHistory] = useState(false);
+  const [bbForm, setBbForm] = useState<any>({});
+  const [liqForm, setLiqForm] = useState<any>({});
+  const [histForm, setHistForm] = useState<any>({});
+  const [savingBb, setSavingBb] = useState(false);
+  const [savingLiq, setSavingLiq] = useState(false);
+  const [savingHist, setSavingHist] = useState(false);
+  const [uploadingPof, setUploadingPof] = useState(false);
   const { data: buyer, isLoading, isError } = useQuery({ queryKey: ['buyer', id], queryFn: () => api.get(`/buyers/${id}`).then(r => r.data), retry: 1 });
   const { data: analytics } = useQuery({ queryKey: ['buyer-analytics', id], queryFn: () => api.get(`/buyers/${id}/analytics`).then(r => r.data), enabled: !!buyer, retry: 1 });
   useEffect(() => {
     if (buyer?.buyerIntelNotes) setIntelText(buyer.buyerIntelNotes);
     if (buyer?.aiSummary) setAiSummary(buyer.aiSummary);
     if (buyer?.dealBreakers?.length) setDealBreakers(buyer.dealBreakers);
+    if (buyer) {
+      setBbForm({ marketPrimary: buyer.marketPrimary||'', marketSecondary: (buyer.marketSecondary||[]).join(', '), states: (buyer.buyBox?.states||[]).join(', '), zipCodes: (buyer.buyBox?.zipCodes||[]).join(', '), minPrice: buyer.buyBox?.minPrice||'', maxPrice: buyer.buyBox?.maxPrice||'', rehabTolerance: buyer.buyBox?.rehabTolerance||'', minBeds: buyer.buyBox?.minBeds||'', strategies: (buyer.preferredStrategies||[]).join(', '), funding: buyer.notes||'' });
+      setLiqForm({ closeSpeed: buyer.avgCloseSpeedDays||'', titleCo: buyer.preferredTitleCo||'', maxEmd: buyer.maxEmd||'', lender: buyer.preferredLender||'' });
+      setHistForm({ closeCount: buyer.closeCount||0, cancelCount: buyer.cancelCount||0, retradeCount: buyer.retradeCount||0, ghostCount: buyer.ghostCount||0, avgFee: buyer.avgAssignmentFee||'' });
+    }
     if (buyer) {
       let conf = 0;
       if ((buyer.buyerIntelNotes?.length||0)>200) conf+=25; else if ((buyer.buyerIntelNotes?.length||0)>50) conf+=15;
@@ -72,6 +87,10 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
   }, [buyer]);
   const recalculate = useMutation({ mutationFn: () => api.post(`/buyers/${id}/recalculate-scores`).then(r=>r.data), onSuccess: () => { qc.invalidateQueries({queryKey:['buyer',id]}); toast.success('Recalculated'); } });
   const saveIntel = async () => { setSaving(true); try { await api.put(`/buyers/${id}`,{buyerIntelNotes:intelText,dealBreakers}); qc.invalidateQueries({queryKey:['buyer',id]}); toast.success('Saved'); } catch { toast.error('Failed'); } finally { setSaving(false); } };
+  const saveBuyBox = async () => { setSavingBb(true); try { const bb = { states: bbForm.states?bbForm.states.split(',').map((s:string)=>s.trim()).filter(Boolean):[], zipCodes: bbForm.zipCodes?bbForm.zipCodes.split(',').map((s:string)=>s.trim()).filter(Boolean):[], minPrice: bbForm.minPrice?parseInt(bbForm.minPrice):null, maxPrice: bbForm.maxPrice?parseInt(bbForm.maxPrice):null, rehabTolerance: bbForm.rehabTolerance||null, minBeds: bbForm.minBeds?parseInt(bbForm.minBeds):null }; await api.put(`/buyers/${id}`, { marketPrimary: bbForm.marketPrimary, marketSecondary: bbForm.marketSecondary?bbForm.marketSecondary.split(',').map((s:string)=>s.trim()).filter(Boolean):[], preferredStrategies: bbForm.strategies?bbForm.strategies.split(',').map((s:string)=>s.trim()).filter(Boolean):[], notes: bbForm.funding, buyBox: bb }); qc.invalidateQueries({queryKey:['buyer',id]}); setEditingBuyBox(false); toast.success('Buy box saved'); } catch { toast.error('Failed'); } finally { setSavingBb(false); } };
+  const saveLiquidity = async () => { setSavingLiq(true); try { await api.put(`/buyers/${id}`, { avgCloseSpeedDays: liqForm.closeSpeed?parseInt(liqForm.closeSpeed):null, preferredTitleCo: liqForm.titleCo, preferredLender: liqForm.lender }); qc.invalidateQueries({queryKey:['buyer',id]}); setEditingLiquidity(false); toast.success('Liquidity saved'); } catch { toast.error('Failed'); } finally { setSavingLiq(false); } };
+  const saveHistory = async () => { setSavingHist(true); try { await api.put(`/buyers/${id}`, { closeCount: parseInt(histForm.closeCount)||0, cancelCount: parseInt(histForm.cancelCount)||0, retradeCount: parseInt(histForm.retradeCount)||0, ghostCount: parseInt(histForm.ghostCount)||0 }); qc.invalidateQueries({queryKey:['buyer',id]}); setEditingHistory(false); toast.success('History saved'); } catch { toast.error('Failed'); } finally { setSavingHist(false); } };
+  const uploadPof = async (e: any) => { const file = e.target.files?.[0]; if (!file) return; setUploadingPof(true); try { const fd = new FormData(); fd.append('file', file); fd.append('upload_preset', 'dispoai_photos'); fd.append('folder', 'pof'); const r = await fetch('https://api.cloudinary.com/v1_1/dhueussrm/auto/upload', {method:'POST',body:fd}); const d = await r.json(); if (d.secure_url) { await api.put(`/buyers/${id}`, { proofOfFundsUrl: d.secure_url }); qc.invalidateQueries({queryKey:['buyer',id]}); toast.success('POF uploaded'); } } catch { toast.error('Upload failed'); } finally { setUploadingPof(false); } };
   const generateAiIntel = async () => {
     if (!buyer) return; setGenerating(true);
     try {
@@ -162,14 +181,111 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
     {(dealBreakers.length>0||(buyer.dealBreakers?.length||0)>0)&&(<SECTION title="Avoids / Deal Breakers" icon={XCircle} iconColor="text-red-400"><div className="grid grid-cols-2 gap-2">{(dealBreakers.length>0?dealBreakers:buyer.dealBreakers||[]).map((d:string,i:number)=><div key={i} className="flex items-center gap-2 bg-red-500/5 border border-red-500/20 rounded-lg px-3 py-2"><XCircle size={12} className="text-red-400 flex-shrink-0" /><span className="text-red-300 text-xs">{d}</span></div>)}</div></SECTION>)}
     <SECTION title={'Profile Completeness — '+completeness+'/100'} icon={Target} iconColor="text-blue-400"><div className="space-y-3"><div className="h-2 bg-gray-800 rounded-full overflow-hidden"><div className={`h-full rounded-full ${completeness>=80?'bg-green-500':completeness>=50?'bg-yellow-500':'bg-red-500'}`} style={{width:completeness+'%'}} /></div>{missing.length>0&&<div><p className="text-gray-500 text-xs mb-2">Most important missing info:</p><div className="space-y-1">{missing.slice(0,5).map((m,i)=><div key={m} className="flex items-center gap-2 text-xs"><span className="w-4 h-4 rounded-full bg-gray-800 text-gray-500 flex items-center justify-center flex-shrink-0">{i+1}</span><span className="text-amber-400">{m}</span></div>)}</div></div>}<div className="grid grid-cols-2 gap-1.5">{checks.filter(c=>c.done).map(c=><div key={c.label} className="flex items-center gap-1.5 text-xs text-green-400"><CheckCircle size={11} />{c.label}</div>)}</div></div></SECTION>
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <SECTION title="Buy Box" icon={Building2} iconColor="text-blue-400"><div className="space-y-0"><Row label="Primary Market" value={buyer.marketPrimary} verified={!!buyer.marketPrimary} /><Row label="Secondary Markets" value={buyer.marketSecondary?.join(', ')} verified={false} /><Row label="States" value={buyer.buyBox?.states?.join(', ')} verified={false} /><Row label="Zip Codes" value={buyer.buyBox?.zipCodes?.join(', ')} verified={false} /><Row label="Price Range" value={(buyer.buyBox?.minPrice||buyer.buyBox?.maxPrice)?(buyer.buyBox?.minPrice?formatCurrency(buyer.buyBox.minPrice):'—')+' – '+(buyer.buyBox?.maxPrice?formatCurrency(buyer.buyBox.maxPrice):'—'):null} verified={false} /><Row label="Rehab Tolerance" value={buyer.buyBox?.rehabTolerance} verified={false} /><Row label="Min Beds" value={buyer.buyBox?.minBeds?buyer.buyBox.minBeds+'+':null} verified={false} /><Row label="Strategy" value={buyer.preferredStrategies?.join(', ')} verified={false} /><Row label="Funding" value={buyer.notes} verified={false} />{(!buyer.buyBox&&!buyer.marketPrimary)&&<p className="text-gray-600 text-xs italic pt-2">No buy box data yet</p>}</div></SECTION>
+      <SECTION title="Buy Box" icon={Building2} iconColor="text-blue-400">
+        {!editingBuyBox ? (
+          <div className="space-y-0">
+            <Row label="Primary Market" value={buyer.marketPrimary} verified={!!buyer.marketPrimary} />
+            <Row label="Secondary Markets" value={buyer.marketSecondary?.join(', ')} verified={false} />
+            <Row label="States" value={buyer.buyBox?.states?.join(', ')} verified={false} />
+            <Row label="Zip Codes" value={buyer.buyBox?.zipCodes?.join(', ')} verified={false} />
+            <Row label="Price Range" value={(buyer.buyBox?.minPrice||buyer.buyBox?.maxPrice)?(buyer.buyBox?.minPrice?formatCurrency(buyer.buyBox.minPrice):'—')+' – '+(buyer.buyBox?.maxPrice?formatCurrency(buyer.buyBox.maxPrice):'—'):null} verified={false} />
+            <Row label="Rehab Tolerance" value={buyer.buyBox?.rehabTolerance} verified={false} />
+            <Row label="Min Beds" value={buyer.buyBox?.minBeds?buyer.buyBox.minBeds+'+':null} verified={false} />
+            <Row label="Strategy" value={buyer.preferredStrategies?.join(', ')} verified={false} />
+            <Row label="Funding" value={buyer.notes} verified={false} />
+            <button onClick={()=>setEditingBuyBox(true)} className="mt-3 text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1"><span>✏️</span>Edit Buy Box</button>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {[['Primary Market','marketPrimary','text'],['Secondary Markets (comma sep)','marketSecondary','text'],['States (comma sep)','states','text'],['Zip Codes (comma sep)','zipCodes','text'],['Min Price','minPrice','number'],['Max Price','maxPrice','number'],['Min Beds','minBeds','number'],['Strategies (comma sep)','strategies','text'],['Funding Type','funding','text']].map(([label,key,type])=>(
+              <div key={key as string}>
+                <label className="text-gray-500 text-xs block mb-1">{label as string}</label>
+                <input type={type as string} value={bbForm[key as string]||''} onChange={e=>setBbForm((p:any)=>({...p,[key as string]:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500" />
+              </div>
+            ))}
+            <div>
+              <label className="text-gray-500 text-xs block mb-1">Rehab Tolerance</label>
+              <select value={bbForm.rehabTolerance||''} onChange={e=>setBbForm((p:any)=>({...p,rehabTolerance:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none">
+                <option value="">Unknown</option>
+                <option value="TURNKEY">Turnkey Only</option>
+                <option value="LIGHT">Light/Cosmetic</option>
+                <option value="MEDIUM">Medium Rehab</option>
+                <option value="HEAVY">Heavy Rehab</option>
+                <option value="FULL_GUT">Full Gut</option>
+              </select>
+            </div>
+            <div className="flex gap-2 pt-1">
+              <button onClick={saveBuyBox} disabled={savingBb} className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs rounded-lg transition disabled:opacity-50">{savingBb?'Saving...':'Save Buy Box'}</button>
+              <button onClick={()=>setEditingBuyBox(false)} className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-300 text-xs rounded-lg transition">Cancel</button>
+            </div>
+          </div>
+        )}
+      </SECTION>
       <div className="space-y-4">
         <SECTION title="Reliability Breakdown" icon={Shield} iconColor="text-green-400"><div className="space-y-3"><SBar label="Close Rate" score={buyer.closeCount>0?Math.min(100,buyer.closeCount*20):40} color="bg-green-500" /><SBar label="EMD Performance" score={buyer.emdFailureCount===0?75:Math.max(10,75-buyer.emdFailureCount*20)} color="bg-blue-500" /><SBar label="No Retrade Risk" score={buyer.retradeCount===0?80:Math.max(10,80-buyer.retradeCount*20)} color="bg-yellow-500" /><SBar label="No Ghost Risk" score={buyer.ghostCount===0?80:Math.max(10,80-buyer.ghostCount*20)} color="bg-purple-500" /><div className="grid grid-cols-3 gap-2 pt-1">{[['Closed',buyer.closeCount??0],['Cancelled',buyer.cancelCount??0],['Retraded',buyer.retradeCount??0]].map(([l,v])=><div key={l as string} className="bg-gray-800 rounded p-2 text-center"><span className="text-gray-500 block text-xs">{l}</span><p className="text-white font-bold text-lg">{v}</p></div>)}</div></div></SECTION>
-        <SECTION title="Liquidity Breakdown" icon={DollarSign} iconColor="text-blue-400"><div className="space-y-2"><Row label="Proof of Funds" value={buyer.proofOfFundsUrl?'✓ Uploaded':'✗ Not uploaded'} valueClass={buyer.proofOfFundsUrl?'text-green-400':'text-red-400'} verified={!!buyer.proofOfFundsUrl} /><Row label="Funding Type" value={buyer.notes} verified={false} /><Row label="Close Speed" value={buyer.avgCloseSpeedDays?buyer.avgCloseSpeedDays+' days avg':'Unknown'} verified={buyer.closeCount>0} /><Row label="Preferred Title Co" value={buyer.preferredTitleCo} verified={false} /><SBar label="Overall Liquidity" score={buyer.liquidityScore||50} color="bg-blue-500" /></div></SECTION>
+        <SECTION title="Liquidity Breakdown" icon={DollarSign} iconColor="text-blue-400">
+          {!editingLiquidity ? (
+            <div className="space-y-2">
+              <Row label="Proof of Funds" value={buyer.proofOfFundsUrl?'✓ Uploaded':'✗ Not uploaded'} valueClass={buyer.proofOfFundsUrl?'text-green-400':'text-red-400'} verified={!!buyer.proofOfFundsUrl} />
+              <Row label="Funding Type" value={buyer.notes} verified={false} />
+              <Row label="Close Speed" value={buyer.avgCloseSpeedDays?buyer.avgCloseSpeedDays+' days avg':'Unknown'} verified={buyer.closeCount>0} />
+              <Row label="Preferred Title Co" value={buyer.preferredTitleCo} verified={false} />
+              <Row label="Preferred Lender" value={buyer.preferredLender} verified={false} />
+              <SBar label="Overall Liquidity" score={buyer.liquidityScore||50} color="bg-blue-500" />
+              <div className="flex gap-2 pt-2">
+                <label className={`px-3 py-1.5 text-xs rounded-lg cursor-pointer transition flex items-center gap-1.5 ${uploadingPof?'bg-gray-700 text-gray-500':'bg-green-600/20 hover:bg-green-600/30 text-green-400 border border-green-500/30'}`}>
+                  <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png" onChange={uploadPof} disabled={uploadingPof} />
+                  {uploadingPof?'Uploading...':'📄 Upload POF'}
+                </label>
+                <button onClick={()=>setEditingLiquidity(true)} className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1">✏️ Edit</button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {[['Close Speed (days)','closeSpeed','number'],['Preferred Title Company','titleCo','text'],['Max EMD Available','maxEmd','text'],['Preferred Lender','lender','text']].map(([label,key,type])=>(
+                <div key={key as string}>
+                  <label className="text-gray-500 text-xs block mb-1">{label as string}</label>
+                  <input type={type as string} value={liqForm[key as string]||''} onChange={e=>setLiqForm((p:any)=>({...p,[key as string]:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500" />
+                </div>
+              ))}
+              <div className="flex gap-2 pt-1">
+                <button onClick={saveLiquidity} disabled={savingLiq} className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs rounded-lg disabled:opacity-50">{savingLiq?'Saving...':'Save'}</button>
+                <button onClick={()=>setEditingLiquidity(false)} className="px-3 py-1.5 bg-gray-700 text-gray-300 text-xs rounded-lg">Cancel</button>
+              </div>
+            </div>
+          )}
+        </SECTION>
       </div>
     </div>
     <SECTION title={'Buying Seriousness — '+(buyer.seriousnessScore??50)+'/100'} icon={Activity} iconColor="text-amber-400"><div className="space-y-3"><SBar label="Seriousness" score={buyer.seriousnessScore??50} color="bg-amber-500" /><div className="space-y-1.5">{(buyer.buyerIntelNotes?.length||0)>100&&<div className="flex items-center gap-2 text-xs text-gray-300"><CheckCircle size={11} className="text-green-400" />Has detailed conversation history</div>}{buyer.marketPrimary&&<div className="flex items-center gap-2 text-xs text-gray-300"><CheckCircle size={11} className="text-green-400" />Confirmed market: {buyer.marketPrimary}</div>}{!buyer.closeCount&&<div className="flex items-center gap-2 text-xs text-amber-400"><AlertCircle size={11} />No verified close history</div>}{!buyer.buyBox?.zipCodes?.length&&<div className="flex items-center gap-2 text-xs text-amber-400"><AlertCircle size={11} />Zip codes not confirmed</div>}</div></div></SECTION>
-    <SECTION title="Analytics" icon={BarChart2} iconColor="text-green-400"><div className="grid grid-cols-2 md:grid-cols-4 gap-3">{[{label:'Deals Closed',value:buyer.closeCount??0},{label:'Close Rate',value:(analytics?.closeRate??0)+'%'},{label:'Avg Fee',value:analytics?.avgFee?formatCurrency(analytics.avgFee):'—'},{label:'Ghost Count',value:buyer.ghostCount??0}].map(({label,value})=><div key={label} className="bg-gray-800 rounded-lg p-3"><span className="text-gray-500 text-xs">{label}</span><p className="text-white text-xl font-bold mt-1">{value}</p></div>)}</div></SECTION>
+    <SECTION title="Deal History & Analytics" icon={BarChart2} iconColor="text-green-400">
+      {!editingHistory ? (
+        <div className="space-y-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">{[{label:'Deals Closed',value:buyer.closeCount??0},{label:'Cancelled',value:buyer.cancelCount??0},{label:'Retraded',value:buyer.retradeCount??0},{label:'Ghosted',value:buyer.ghostCount??0}].map(({label,value})=><div key={label} className="bg-gray-800 rounded-lg p-3"><span className="text-gray-500 text-xs">{label}</span><p className="text-white text-xl font-bold mt-1">{value}</p></div>)}</div>
+          <button onClick={()=>setEditingHistory(true)} className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1">✏️ Log Deal History</button>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          <p className="text-gray-500 text-xs">Manually log deal history for deals closed outside the platform.</p>
+          <div className="grid grid-cols-2 gap-3">
+            {[['Deals Closed','closeCount'],['Deals Cancelled','cancelCount'],['Retraded','retradeCount'],['Ghosted','ghostCount']].map(([label,key])=>(
+              <div key={key as string}>
+                <label className="text-gray-500 text-xs block mb-1">{label as string}</label>
+                <input type="number" min="0" value={histForm[key as string]||0} onChange={e=>setHistForm((p:any)=>({...p,[key as string]:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500" />
+              </div>
+            ))}
+          </div>
+          <div>
+            <label className="text-gray-500 text-xs block mb-1">Avg Assignment Fee ($)</label>
+            <input type="number" value={histForm.avgFee||''} onChange={e=>setHistForm((p:any)=>({...p,avgFee:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500" />
+          </div>
+          <div className="flex gap-2 pt-1">
+            <button onClick={saveHistory} disabled={savingHist} className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs rounded-lg disabled:opacity-50">{savingHist?'Saving...':'Save History'}</button>
+            <button onClick={()=>setEditingHistory(false)} className="px-3 py-1.5 bg-gray-700 text-gray-300 text-xs rounded-lg">Cancel</button>
+          </div>
+        </div>
+      )}
+    </SECTION>
     {extractedPrefs.length>0&&(<SECTION title="AI Extracted Preferences" icon={Brain} iconColor="text-purple-400" badge="Needs Review"><p className="text-gray-600 text-xs mb-3">Approve or reject each AI-detected preference.</p><div className="space-y-2">{extractedPrefs.map((pref,i)=><div key={i} className="flex items-start justify-between bg-gray-800/60 rounded-lg p-3 border border-gray-700/50"><div className="flex-1"><p className="text-white text-xs">{pref.pref}</p><div className="flex items-center gap-2 mt-1"><span className="text-gray-500 text-xs">Confidence: {pref.confidence}%</span><span className={`text-xs px-1.5 py-0.5 rounded ${pref.verified?'bg-green-500/10 text-green-400':'bg-yellow-500/10 text-yellow-500'}`}>{pref.verified?'✓ Verified':'~ AI Inferred'}</span>{pref.source&&<span className="text-gray-600 text-xs">· {pref.source}</span>}</div></div><div className="flex gap-2 ml-3"><button onClick={()=>setExtractedPrefs(p=>p.filter((_,j)=>j!==i))} className="text-green-400 hover:text-green-300"><CheckCircle size={15} /></button><button onClick={()=>setExtractedPrefs(p=>p.filter((_,j)=>j!==i))} className="text-red-400 hover:text-red-300"><XCircle size={15} /></button></div></div>)}</div></SECTION>)}
     <SECTION title="Buyer Intelligence Notes" icon={MessageSquare} iconColor="text-purple-400"><div className="space-y-3"><p className="text-gray-600 text-xs">Paste call transcripts, SMS, meeting notes, objections, feedback — AI reads all of this</p><textarea value={intelText} onChange={e=>setIntelText(e.target.value)} placeholder="Paste transcripts, call notes, SMS conversations..." className="w-full h-40 bg-gray-800 border border-gray-700 text-white placeholder-gray-600 rounded-lg p-3 text-xs resize-none focus:outline-none focus:border-purple-500" /><div className="flex items-center justify-between"><button onClick={generateAiIntel} disabled={generating} className="text-xs text-purple-400 hover:text-purple-300 flex items-center gap-1.5 disabled:opacity-40"><Sparkles size={11} />{generating?'Generating...':'Analyze & Generate Full Intel Report'}</button><button onClick={saveIntel} disabled={saving} className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white text-xs rounded-lg transition disabled:opacity-50"><Save size={11} />{saving?'Saving...':'Save Notes'}</button></div></div></SECTION>
     <SECTION title="Activity Timeline" icon={FileText} iconColor="text-gray-400" defaultOpen={false}><ActivityTimeline buyerId={id} /></SECTION>
