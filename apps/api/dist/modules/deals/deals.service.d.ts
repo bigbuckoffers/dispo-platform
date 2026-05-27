@@ -29,8 +29,8 @@ export declare class DealsService {
         createdAt: Date;
         updatedAt: Date;
         organizationId: string;
-        liquidityScore: number | null;
         aiSummary: string | null;
+        liquidityScore: number | null;
         closingDate: Date | null;
         status: import(".prisma/client").$Enums.DealStatus;
         address: string;
@@ -214,8 +214,8 @@ export declare class DealsService {
         createdAt: Date;
         updatedAt: Date;
         organizationId: string;
-        liquidityScore: number | null;
         aiSummary: string | null;
+        liquidityScore: number | null;
         closingDate: Date | null;
         status: import(".prisma/client").$Enums.DealStatus;
         address: string;
@@ -370,8 +370,8 @@ export declare class DealsService {
         createdAt: Date;
         updatedAt: Date;
         organizationId: string;
-        liquidityScore: number | null;
         aiSummary: string | null;
+        liquidityScore: number | null;
         closingDate: Date | null;
         status: import(".prisma/client").$Enums.DealStatus;
         address: string;
@@ -580,8 +580,8 @@ export declare class DealsService {
         createdAt: Date;
         updatedAt: Date;
         organizationId: string;
-        liquidityScore: number | null;
         aiSummary: string | null;
+        liquidityScore: number | null;
         closingDate: Date | null;
         status: import(".prisma/client").$Enums.DealStatus;
         address: string;

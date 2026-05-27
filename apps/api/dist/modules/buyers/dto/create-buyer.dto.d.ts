@@ -42,6 +42,17 @@ export declare class CreateBuyerDto {
     preferredStrategies?: string[];
     marketSecondary?: string[];
     dealBreakers?: string[];
+    avgCloseSpeedDays?: number;
+    preferredTitleCo?: string;
+    preferredLender?: string;
+    closeCount?: number;
+    cancelCount?: number;
+    retradeCount?: number;
+    ghostCount?: number;
+    aiSummary?: string;
+    proofOfFundsUrl?: string;
+    maxEmd?: number;
+    buyBox?: any;
     rawImportData?: any;
     seriousnessScore?: number;
     buyBox?: CreateBuyBoxDto;

@@ -51,6 +51,17 @@ export class CreateBuyerDto {
   @ApiPropertyOptional() @IsArray() @IsOptional() preferredStrategies?: string[];
   @ApiPropertyOptional() @IsArray() @IsOptional() marketSecondary?: string[];
   @ApiPropertyOptional() @IsArray() @IsOptional() dealBreakers?: string[];
+  @ApiPropertyOptional() @IsNumber() @IsOptional() avgCloseSpeedDays?: number;
+  @ApiPropertyOptional() @IsString() @IsOptional() preferredTitleCo?: string;
+  @ApiPropertyOptional() @IsString() @IsOptional() preferredLender?: string;
+  @ApiPropertyOptional() @IsNumber() @IsOptional() closeCount?: number;
+  @ApiPropertyOptional() @IsNumber() @IsOptional() cancelCount?: number;
+  @ApiPropertyOptional() @IsNumber() @IsOptional() retradeCount?: number;
+  @ApiPropertyOptional() @IsNumber() @IsOptional() ghostCount?: number;
+  @ApiPropertyOptional() @IsString() @IsOptional() aiSummary?: string;
+  @ApiPropertyOptional() @IsString() @IsOptional() proofOfFundsUrl?: string;
+  @ApiPropertyOptional() @IsNumber() @IsOptional() maxEmd?: number;
+  @ApiPropertyOptional() @IsObject() @IsOptional() buyBox?: any;
   @ApiPropertyOptional() @IsOptional() rawImportData?: any;
   @ApiPropertyOptional() @IsOptional() seriousnessScore?: number;
 
