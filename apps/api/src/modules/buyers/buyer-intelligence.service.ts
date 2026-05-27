@@ -88,7 +88,7 @@ export class BuyerIntelligenceService {
       max_tokens: 300, temperature: 0.3,
     });
     const profile = response.choices[0]?.message?.content?.trim() || "";
-    await this.prisma.buyer.update({ where: { id: buyerId }, data: { aiBuyerProfile: profile } as any });
+    await this.prisma.$executeRaw`UPDATE buyers SET "aiBuyerProfile" = ${profile} WHERE id = ${buyerId}::uuid`;
     return profile;
   }
 
