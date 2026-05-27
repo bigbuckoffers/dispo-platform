@@ -58,6 +58,16 @@ export class BuyersController {
     return this.buyersService.getTopBuyers(orgId, +limit);
   }
 
+  @Post('backfill-buy-boxes')
+  async backfillBuyBoxes() {
+    return this.intelService.backfillBuyBoxes();
+  }
+
+  @Post('generate-profiles')
+  async generateProfiles(@Query('limit') limit = 50) {
+    return this.intelService.generateAllMissingProfiles(+limit);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get full buyer profile' })
   findOne(
