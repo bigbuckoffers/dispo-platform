@@ -34,6 +34,7 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
   const [closeProbability, setCloseProbability] = useState(50);
   const [tempNote, setTempNote] = useState('');
   const [savingTier, setSavingTier] = useState(false);
+  const [tierOpen, setTierOpen] = useState(false);
   const [savingTemp, setSavingTemp] = useState(false);
   const [analyzingTemp, setAnalyzingTemp] = useState(false);
   const [tempAnalysis, setTempAnalysis] = useState<any>(null);
