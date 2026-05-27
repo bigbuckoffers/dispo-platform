@@ -537,8 +537,25 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
   // ── Sellability score ─────────────────────────────────────────────────
   const sellReasons: string[] = [];
   const sellBlockers: string[] = [];
-  // Use DB score (calculated by scoring engine) — single source of truth
-  const sellScore = deal.dealPriorityScore || 0;
+  // Deal Quality Score = pure deal score from DB
+  const dealScore = deal.dealPriorityScore || 0;
+
+  // Dispo Score = Deal Score + buyer demand + blast readiness proxy
+  let dispoBonus = 0;
+  if ((deal.matchedBuyerCount || 0) >= 10) dispoBonus += 8;
+  else if ((deal.matchedBuyerCount || 0) >= 5) dispoBonus += 5;
+  else if ((deal.matchedBuyerCount || 0) >= 1) dispoBonus += 3;
+  if ((deal.tier1MatchCount || 0) >= 3) dispoBonus += 5;
+  else if ((deal.tier1MatchCount || 0) >= 1) dispoBonus += 3;
+  if (hasPhotos) dispoBonus += 3;
+  if (hasPermission) dispoBonus += 2;
+  if (deal.assignmentDeadline || deal.closingDate) {
+    const dl = deal.assignmentDeadline || deal.closingDate;
+    const daysLeft = Math.ceil((new Date(dl).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+    if (daysLeft <= 14) dispoBonus += 3;
+    else if (daysLeft <= 30) dispoBonus += 1;
+  }
+  const sellScore = Math.min(100, dealScore + dispoBonus);
 
   const scoreLabel = sellScore >= 85 ? 'Hot — Ready to Blast'
     : sellScore >= 75 ? 'Strong Dispo Opportunity'
