@@ -396,6 +396,116 @@ function HeaderField({ value, placeholder, onSave, suffix='', width='w-20' }: {
   );
 }
 
+
+function RealBuyerMatches({ dealId, matchCount, onRunMatch, isMatching }: { dealId: string; matchCount: number; onRunMatch: () => void; isMatching: boolean }) {
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const { data: matches = [], isLoading } = useQuery({
+    queryKey: ['deal-matches', dealId],
+    queryFn: () => api.get('/deals/' + dealId + '/matches?limit=50').then(r => r.data),
+    enabled: matchCount > 0,
+  });
+  const TIER_COLOR: Record<string, string> = {
+    VIP: 'bg-yellow-900/60 text-yellow-300',
+    TIER_1: 'bg-orange-900/60 text-orange-300',
+    TIER_2: 'bg-blue-900/60 text-blue-300',
+    TIER_3: 'bg-gray-800 text-gray-400',
+    TIER_4: 'bg-gray-800 text-gray-500',
+  };
+  if (matchCount === 0) return (
+    <div className="text-center py-12 bg-gray-900 rounded-xl border border-gray-800">
+      <Users size={32} className="text-gray-700 mx-auto mb-3"/>
+      <p className="text-gray-400 font-medium mb-1">No buyers matched yet</p>
+      <p className="text-gray-600 text-sm mb-4">AI will scan your entire buyer database and rank matches by likelihood to close.</p>
+      <button onClick={onRunMatch} disabled={isMatching} className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm rounded-xl font-medium transition mx-auto disabled:opacity-50">
+        <Target size={14}/> {isMatching ? 'Running AI Matching...' : 'Run AI Buyer Match'}
+      </button>
+    </div>
+  );
+  if (isLoading) return <div className="p-8 text-center text-gray-500 text-sm">Loading buyer matches...</div>;
+  if (matches.length === 0) return (
+    <div className="text-center py-8 bg-gray-900 rounded-xl border border-gray-800">
+      <p className="text-gray-500 text-sm mb-3">No match results yet</p>
+      <button onClick={onRunMatch} disabled={isMatching} className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs rounded-lg transition mx-auto disabled:opacity-50">
+        <Target size={12}/> {isMatching ? 'Running...' : 'Run AI Match'}
+      </button>
+    </div>
+  );
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between px-1">
+        <p className="text-xs text-gray-500">{matches.length} buyers ranked by AI — most likely to close first</p>
+        <button onClick={onRunMatch} disabled={isMatching} className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs rounded-lg transition border border-gray-700 disabled:opacity-50">
+          <RefreshCw size={10} className={isMatching ? 'animate-spin' : ''}/> {isMatching ? 'Running...' : 'Re-run AI Match'}
+        </button>
+      </div>
+      {matches.map((match: any, i: number) => {
+        const buyer = match.buyer;
+        const score = Math.round(match.confidencePct || 0);
+        const isExpanded = expandedId === match.id;
+        const scoreColor = score >= 70 ? 'text-green-400' : score >= 50 ? 'text-yellow-400' : 'text-gray-500';
+        const strength = score >= 70 ? 'Strong Match' : score >= 50 ? 'Moderate' : 'Weak';
+        const strengthBg = score >= 70 ? 'bg-green-900/20 border-green-800/40 text-green-400' : score >= 50 ? 'bg-amber-900/20 border-amber-800/40 text-amber-400' : 'bg-gray-800 border-gray-700 text-gray-500';
+        return (
+          <div key={match.id} className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+            <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-800/30 transition" onClick={() => setExpandedId(isExpanded ? null : match.id)}>
+              <div className="flex items-center gap-3">
+                <span className="text-xs text-gray-600 w-5 font-mono">#{i+1}</span>
+                <div className="w-8 h-8 rounded-full bg-gray-800 border border-gray-700 flex items-center justify-center text-xs font-bold text-gray-300">
+                  {buyer?.firstName?.[0]}{buyer?.lastName?.[0]}
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <p className="text-white font-semibold text-sm">{buyer?.firstName} {buyer?.lastName}</p>
+                    {buyer?.company && <span className="text-gray-500 text-xs">· {buyer.company}</span>}
+                    <span className={"text-[10px] px-1.5 py-0.5 rounded-full font-bold " + (TIER_COLOR[buyer?.tier] || TIER_COLOR.TIER_3)}>{buyer?.tier?.replace("_"," ")}</span>
+                  </div>
+                  <p className="text-gray-500 text-xs">{buyer?.investorType?.replace(/_/g," ")}{buyer?.marketPrimary ? " · " + buyer.marketPrimary : ""}{buyer?.hasCash ? " · Cash" : ""}{buyer?.hasHardMoney ? " · Hard Money" : ""}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className={"text-[10px] px-2 py-0.5 rounded border font-medium " + strengthBg}>{strength}</span>
+                <div className="text-right">
+                  <p className={"text-lg font-bold " + scoreColor}>{score}%</p>
+                  <p className="text-gray-600 text-[10px]">match</p>
+                </div>
+                {isExpanded ? <ChevronUp size={14} className="text-gray-500"/> : <ChevronDown size={14} className="text-gray-500"/>}
+              </div>
+            </div>
+            {isExpanded && (
+              <div className="px-4 pb-4 space-y-3 border-t border-gray-800">
+                {(buyer?.buyerIntelNotes || buyer?.aiSummary) && (
+                  <div className="bg-green-900/15 border border-green-800/30 rounded-lg p-3 mt-3">
+                    <p className="text-green-400 text-[10px] font-bold mb-1">Why they match</p>
+                    <p className="text-gray-300 text-xs">{buyer.buyerIntelNotes || buyer.aiSummary}</p>
+                  </div>
+                )}
+                {buyer?.temperatureNotes && (
+                  <div className="bg-amber-900/15 border border-amber-800/30 rounded-lg p-3">
+                    <p className="text-amber-400 text-[10px] font-bold mb-1">Possible concern</p>
+                    <p className="text-gray-300 text-xs">{buyer.temperatureNotes}</p>
+                  </div>
+                )}
+                {buyer?.buyBox && (
+                  <div className="grid grid-cols-3 gap-2 text-xs">
+                    <div className="bg-gray-800 rounded p-2"><p className="text-gray-600 mb-0.5">Strategy</p><p className="text-gray-300 font-medium">{buyer.buyBox.investmentStrategy?.[0]?.replace(/_/g," ") || buyer.preferredStrategies?.[0] || "—"}</p></div>
+                    <div className="bg-gray-800 rounded p-2"><p className="text-gray-600 mb-0.5">Price Range</p><p className="text-gray-300 font-medium">{buyer.buyBox.minPrice||buyer.buyBox.maxPrice ? "$"+Math.round((buyer.buyBox.minPrice||0)/1000)+"k–$"+Math.round((buyer.buyBox.maxPrice||0)/1000)+"k" : "Open"}</p></div>
+                    <div className="bg-gray-800 rounded p-2"><p className="text-gray-600 mb-0.5">Rehab</p><p className="text-gray-300 font-medium">{buyer.buyBox.rehabTolerance?.replace(/_/g," ") || "—"}</p></div>
+                  </div>
+                )}
+                <div className="flex gap-2 flex-wrap">
+                  {buyer?.phone && <a href={"tel:"+buyer.phone} className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs rounded-lg transition border border-gray-700"><Phone size={11}/> {buyer.phone}</a>}
+                  {buyer?.email && <a href={"mailto:"+buyer.email} className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs rounded-lg transition border border-gray-700"><Mail size={11}/> Email</a>}
+                  <a href={"/dashboard/buyers/"+buyer?.id} className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-900/40 hover:bg-blue-900/60 text-blue-300 text-xs rounded-lg transition border border-blue-700/40">View Profile →</a>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function DealDetailPage({ params }: { params: { id: string } }) {
   const { id } = params;
   const qc = useQueryClient();
@@ -1321,55 +1431,8 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
                 </div>
               )}
 
-              {/* Buyer cards */}
-              {b > 0 ? (
-                <div className="space-y-3">
-                  {[
-                    { name: 'Top Cash Buyer', tier: 'TIER_1', match: 94, market: `${deal.city||'Local'}, ${deal.state}`, strategy: 'WHOLESALE', price: deal.askingPrice?formatCurrency(deal.askingPrice):'TBD', rehab: 'MEDIUM_REHAB', reason: `Actively buys SFR in ${deal.city||'this market'} and has responded to similar deals.`, concern: null },
-                    { name: 'Active Investor', tier: 'TIER_1', match: 87, market: deal.state||'Regional', strategy: 'BUY AND HOLD', price: deal.askingPrice?formatCurrency(deal.askingPrice):'TBD', rehab: 'MEDIUM_REHAB', reason: 'Buy-and-hold investor with DSCR financing.', concern: 'Has not been contacted in 30+ days.' },
-                    { name: 'Regional Flipper', tier: 'TIER_2', match: 72, market: deal.state||'Regional', strategy: 'FLIP', price: deal.askingPrice?`Up to ${formatCurrency(deal.askingPrice)}`:'TBD', rehab: 'HEAVY_REHAB', reason: 'Fix-and-flip buyer comfortable with rehab.', concern: null },
-                  ].slice(0, Math.max(1, b)).map((buyer, i) => (
-                    <div key={i} className="bg-gray-900 rounded-xl border border-gray-800 p-4">
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <span className="text-white font-semibold text-sm">{buyer.name}</span>
-                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${buyer.tier==='TIER_1'?'bg-orange-900/60 text-orange-300':'bg-gray-800 text-gray-400'}`}>{buyer.tier==='TIER_1'?'Tier 1':'Tier 2'}</span>
-                        </div>
-                        <span className={`text-sm font-bold ${buyer.match>=80?'text-green-400':buyer.match>=60?'text-yellow-400':'text-gray-400'}`}>{buyer.match}% match</span>
-                      </div>
-                      <div className="grid grid-cols-3 gap-3 mb-3 text-xs">
-                        <div><p className="text-gray-600 mb-0.5">Strategy</p><p className="text-gray-300 font-medium">{buyer.strategy}</p></div>
-                        <div><p className="text-gray-600 mb-0.5">Price Range</p><p className="text-gray-300 font-medium">{buyer.price}</p></div>
-                        <div><p className="text-gray-600 mb-0.5">Rehab</p><p className="text-gray-300 font-medium">{buyer.rehab.replace(/_/g,' ')}</p></div>
-                      </div>
-                      <div className="bg-green-900/20 border border-green-800/40 rounded-lg p-2.5 mb-2">
-                        <p className="text-green-400 text-[10px] font-bold mb-0.5">Why they match</p>
-                        <p className="text-gray-300 text-xs">{buyer.reason}</p>
-                      </div>
-                      {buyer.concern && (
-                        <div className="bg-amber-900/20 border border-amber-800/40 rounded-lg p-2.5 mb-2">
-                          <p className="text-amber-400 text-[10px] font-bold mb-0.5">Possible concern</p>
-                          <p className="text-gray-300 text-xs">{buyer.concern}</p>
-                        </div>
-                      )}
-                      <div className="flex gap-2 mt-2">
-                        <button className="flex items-center gap-1 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs rounded-lg transition border border-gray-700"><Phone size={11}/> Contact</button>
-                        <button className="flex items-center gap-1 px-3 py-1.5 bg-blue-900/40 hover:bg-blue-900/60 text-blue-300 text-xs rounded-lg transition border border-blue-700/40"><Plus size={11}/> Add to Blast</button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-12 bg-gray-900 rounded-xl border border-gray-800">
-                  <Users size={32} className="text-gray-700 mx-auto mb-3"/>
-                  <p className="text-gray-400 font-medium mb-1">No buyers matched yet</p>
-                  <p className="text-gray-600 text-sm mb-4">Run buyer match to find qualified buyers for this deal.</p>
-                  <button onClick={()=>matchAction.mutate()} disabled={matchAction.isPending}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm rounded-xl font-medium transition mx-auto disabled:opacity-50">
-                    <Target size={14}/> {matchAction.isPending?'Matching...':'Run Buyer Match'}
-                  </button>
-                </div>
-              )}
+              {/* Buyer cards — real AI match results */}
+              <RealBuyerMatches dealId={id} matchCount={b} onRunMatch={() => matchAction.mutate()} isMatching={matchAction.isPending} />
             </div>
           )}
 

@@ -47,7 +47,7 @@ export class DealsMatchingService {
 
     const tier1Count = matches.filter(m => m.tier === 'TIER_1' || m.tier === 'VIP').length;
     const buyerDemandScore = Math.min(100, matches.length * 4);
-    await this.prisma.deal.update({ where: { id: dealId }, data: { matchedBuyerCount: matches.length, tier1MatchCount: tier1Count, buyerDemandScore, status: matches.length > 0 ? 'MATCHED' as any : deal.status, buyerCoverageStatus: this.getBuyerCoverageStatus(matches.length, tier1Count), nextBestAction: matches.length > 0 ? 'Send buyer blast' : 'Find buyers for this market' } as any });
+    await this.prisma.deal.update({ where: { id: dealId }, data: { matchedBuyerCount: matches.length, tier1MatchCount: tier1Count, buyerDemandScore, sniperScore: this.calculateSniperScore(matches, deal), status: matches.length > 0 ? 'MATCHED' as any : deal.status, buyerCoverageStatus: this.getBuyerCoverageStatus(matches.length, tier1Count), nextBestAction: matches.length > 0 ? 'Send buyer blast' : 'Find buyers for this market' } as any });
 
     return { dealId, dealAddress: deal.address, gateResult, matches, totalBuyersScanned: candidateBuyers.length, matchCount: matches.length, tier1Count, runAt: new Date().toISOString(), aiSummary };
   }
@@ -173,6 +173,20 @@ export class DealsMatchingService {
   async getMatchesForDeal(dealId: string, limit = 50) {
     return this.prisma.matchResult.findMany({ where: { dealId }, orderBy: { rank: 'asc' }, take: limit, include: { buyer: { select: { id: true, firstName: true, lastName: true, email: true, phone: true, company: true, tier: true, investorType: true, reliabilityScore: true, liquidityScore: true, activityScore: true, compositeScore: true, marketPrimary: true, marketSecondary: true, preferredStrategies: true, buyerIntelNotes: true, aiSummary: true, temperatureNotes: true, dealBreakers: true, hasCash: true, hasHardMoney: true, buyBox: { select: { states: true, zipCodes: true, minPrice: true, maxPrice: true, propertyTypes: true, investmentStrategy: true, rehabTolerance: true } } } } } });
   }
+
+  private calculateSniperScore(matches: any[], deal: any): number {
+    if (matches.length === 0) return 0;
+    const top3 = matches.slice(0, 3);
+    const avgTopScore = top3.reduce((s: number, m: any) => s + (m.matchScore || 0), 0) / top3.length;
+    const matchStrengthPts = Math.round((avgTopScore / 100) * 50);
+    const dealScore = deal.dealPriorityScore || 0;
+    const dealQualityPts = Math.round((dealScore / 100) * 30);
+    const avgBuyerQuality = top3.reduce((s: number, m: any) => s + (m.compositeScore || 50), 0) / top3.length;
+    const buyerQualityPts = Math.round((avgBuyerQuality / 100) * 20);
+    return Math.min(100, matchStrengthPts + dealQualityPts + buyerQualityPts);
+  }
+
+  runFinancialGateOnly(deal: any): any { return this.runFinancialGate(deal); }
 
   private getBuyerCoverageStatus(matchCount: number, tier1Count: number): string {
     if (matchCount >= 10 && tier1Count >= 2) return 'Strong Coverage';

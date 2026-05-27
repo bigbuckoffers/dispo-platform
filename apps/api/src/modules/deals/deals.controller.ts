@@ -1,7 +1,7 @@
 // deals.controller.ts
 import {
   Controller, Get, Post, Put, Patch, Delete, Body, Param, Query,
-  UseGuards, ParseUUIDPipe, HttpCode, HttpStatus,
+  UseGuards, ParseUUIDPipe, HttpCode, HttpStatus, Logger,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { TeamRole } from '@prisma/client';
@@ -19,6 +19,8 @@ import { CreateDealDto } from './dto/create-deal.dto';
 @ApiBearerAuth()
 @Controller('deals')
 export class DealsController {
+  private readonly logger = new Logger(DealsController.name);
+
   constructor(
     private readonly dealsService: DealsService,
     private readonly scoringService: DealsScoringService,
@@ -97,7 +99,7 @@ export class DealsController {
   async create(@OrgId() orgId: string, @CurrentUser('id') userId: string, @Body() dto: any) {
     const metrics = this.scoringService.calculateMetrics(dto);
     const marketKey = `${dto.city || ''}, ${dto.state || ''}`.trim().replace(/^,\s*/, '');
-    return this.prisma.deal.create({
+    const deal = await this.prisma.deal.create({
       data: {
         ...dto,
         ...metrics,
@@ -111,6 +113,20 @@ export class DealsController {
         askingPrice: dto.askingPrice || 0,
       } as any,
     });
+    setImmediate(async () => {
+      try {
+        const gate = this.matchingService.runFinancialGateOnly(deal);
+        if (gate.passes) {
+          this.logger.log('[Auto-match] Deal ' + deal.id + ' passed gate — running AI matching');
+          await this.matchingService.runMatchingForDeal(deal.id);
+        } else {
+          this.logger.log('[Auto-match] Deal ' + deal.id + ' failed gate — skipping AI');
+        }
+      } catch (err: any) {
+        this.logger.warn('[Auto-match] Failed: ' + err.message);
+      }
+    });
+    return deal;
   }
 
   @Get(':id')
