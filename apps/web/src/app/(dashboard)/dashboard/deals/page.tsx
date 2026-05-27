@@ -467,14 +467,14 @@ export default function DealsPage() {
                             ))}
                           </div>
                         )}
+                        <button onClick={e=>{e.preventDefault();e.stopPropagation();runMatch.mutate(deal.id);}} disabled={matchingDealId===deal.id} className="ml-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-violet-900/40 text-violet-300 border border-violet-700/40 hover:bg-violet-800/60 disabled:opacity-50 transition">
+                          {matchingDealId===deal.id ? <RefreshCw size={9} className="animate-spin"/> : <Zap size={9}/>}
+                          {matchingDealId===deal.id ? 'Running...' : 'AI Match'}
+                        </button>
                       </div>
 
                     </div>
-                        <button onClick={e=>{e.preventDefault();e.stopPropagation();runMatch.mutate(deal.id);}} disabled={matchingDealId===deal.id} title="Run AI Matching" className="ml-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold transition whitespace-nowrap bg-violet-900/40 text-violet-300 border border-violet-700/40 hover:bg-violet-800/60 disabled:opacity-50">
-                          {matchingDealId===deal.id?<RefreshCw size={9} className="animate-spin"/>:<Zap size={9}/>}
-                          {matchingDealId===deal.id?'Running...':'AI Match'}
-                        </button>
-                    </div>
+
                     {/* Delete button - shows on row hover */}
                     <div className="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button onClick={async(e)=>{
