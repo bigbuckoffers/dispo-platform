@@ -8,7 +8,7 @@ export class DealsMatchingService {
   private readonly logger = new Logger(DealsMatchingService.name);
   private openai: OpenAI;
   private readonly GATE_MIN_FINANCIAL_SCORE = 35;
-  private readonly MAX_MATCHES = 50;
+  private readonly MAX_MATCHES = 355;
 
   constructor(private prisma: PrismaService) {
     this.openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
