@@ -195,6 +195,12 @@ export class DealsController {
     return this.arvEngine.runArvEngine(id, body?.manualApprovals);
   }
 
+  @Post('fetch-all-avm')
+  async fetchAllAvm(@Request() req: any) {
+    const orgId = await this.dealsService.getDefaultOrgId();
+    return this.dealsService.fetchAllMissingAvm(orgId);
+  }
+
   @Post(':id/fetch-zestimate')
   async fetchZestimate(@Param('id') id: string) {
     return this.dealsService.fetchZestimate(id);

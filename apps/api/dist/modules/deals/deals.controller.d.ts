@@ -55,6 +55,9 @@ export declare class DealsController {
         askingPrice: number;
         arv: number | null;
         arvAnalysis: string | null;
+        rentcastEstimate: number | null;
+        rentcastRangeLow: number | null;
+        rentcastRangeHigh: number | null;
         assignmentFee: number | null;
         repairEstimate: number | null;
         propertyType: import(".prisma/client").$Enums.PropertyType;
@@ -230,6 +233,9 @@ export declare class DealsController {
         askingPrice: number;
         arv: number | null;
         arvAnalysis: string | null;
+        rentcastEstimate: number | null;
+        rentcastRangeLow: number | null;
+        rentcastRangeHigh: number | null;
         assignmentFee: number | null;
         repairEstimate: number | null;
         propertyType: import(".prisma/client").$Enums.PropertyType;
@@ -377,6 +383,9 @@ export declare class DealsController {
         askingPrice: number;
         arv: number | null;
         arvAnalysis: string | null;
+        rentcastEstimate: number | null;
+        rentcastRangeLow: number | null;
+        rentcastRangeHigh: number | null;
         assignmentFee: number | null;
         repairEstimate: number | null;
         propertyType: import(".prisma/client").$Enums.PropertyType;
@@ -524,6 +533,9 @@ export declare class DealsController {
         askingPrice: number;
         arv: number | null;
         arvAnalysis: string | null;
+        rentcastEstimate: number | null;
+        rentcastRangeLow: number | null;
+        rentcastRangeHigh: number | null;
         assignmentFee: number | null;
         repairEstimate: number | null;
         propertyType: import(".prisma/client").$Enums.PropertyType;
@@ -672,6 +684,9 @@ export declare class DealsController {
         askingPrice: number;
         arv: number | null;
         arvAnalysis: string | null;
+        rentcastEstimate: number | null;
+        rentcastRangeLow: number | null;
+        rentcastRangeHigh: number | null;
         assignmentFee: number | null;
         repairEstimate: number | null;
         propertyType: import(".prisma/client").$Enums.PropertyType;
@@ -821,6 +836,9 @@ export declare class DealsController {
         askingPrice: number;
         arv: number | null;
         arvAnalysis: string | null;
+        rentcastEstimate: number | null;
+        rentcastRangeLow: number | null;
+        rentcastRangeHigh: number | null;
         assignmentFee: number | null;
         repairEstimate: number | null;
         propertyType: import(".prisma/client").$Enums.PropertyType;
@@ -979,6 +997,9 @@ export declare class DealsController {
         askingPrice: number;
         arv: number | null;
         arvAnalysis: string | null;
+        rentcastEstimate: number | null;
+        rentcastRangeLow: number | null;
+        rentcastRangeHigh: number | null;
         assignmentFee: number | null;
         repairEstimate: number | null;
         propertyType: import(".prisma/client").$Enums.PropertyType;
@@ -1110,6 +1131,11 @@ export declare class DealsController {
         error: string;
     }>;
     arvAnalysis(id: string, body?: any): Promise<any>;
+    fetchAllAvm(req: any): Promise<{
+        fetched: number;
+        skipped: number;
+        remaining: number;
+    }>;
     fetchZestimate(id: string): Promise<{
         success: boolean;
         zestimate: number;

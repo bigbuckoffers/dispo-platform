@@ -17,12 +17,14 @@ const client_1 = require("@prisma/client");
 const prisma_service_1 = require("../../shared/prisma/prisma.service");
 const matching_service_1 = require("../matching/matching.service");
 const ai_writer_service_1 = require("../ai/ai-writer.service");
+const rentcast_service_1 = require("../rentcast/rentcast.service");
 let DealsService = DealsService_1 = class DealsService {
-    constructor(prisma, matchingService, aiWriter, eventEmitter) {
+    constructor(prisma, matchingService, aiWriter, eventEmitter, rentcast) {
         this.prisma = prisma;
         this.matchingService = matchingService;
         this.aiWriter = aiWriter;
         this.eventEmitter = eventEmitter;
+        this.rentcast = rentcast;
         this.logger = new common_1.Logger(DealsService_1.name);
     }
     async getDefaultOrgId() {
@@ -86,6 +88,19 @@ let DealsService = DealsService_1 = class DealsService {
         }
         catch (err) {
             this.logger.warn(`AI analysis failed for deal ${dealId}: ${err.message}`);
+        }
+        try {
+            const avm = await this.rentcast.getValueEstimate(deal.address, deal.city || '', deal.state || '', deal.zipCode || '', deal.beds || undefined, deal.baths || undefined, deal.sqft || undefined, deal.propertyType || undefined);
+            if (avm?.price) {
+                await this.prisma.deal.update({
+                    where: { id: dealId },
+                    data: { rentcastEstimate: avm.price, rentcastRangeLow: avm.priceRangeLow, rentcastRangeHigh: avm.priceRangeHigh },
+                });
+                this.logger.log(`RentCast AVM for deal ${dealId}: $${avm.price}`);
+            }
+        }
+        catch (err) {
+            this.logger.warn(`RentCast failed for deal ${dealId}: ${err.message}`);
         }
         await this.matchingService.queueMatchingJob(dealId, orgId);
     }
@@ -282,6 +297,31 @@ Find comps now and return the JSON.`;
         await this.prisma.deal.update({ where: { id }, data: { zillowUrl } });
         return { success: false, message: 'Zestimate not found — Zillow URL saved.', zillowUrl };
     }
+    async fetchAllMissingAvm(orgId) {
+        const deals = await this.prisma.deal.findMany({
+            where: { organizationId: orgId, rentcastEstimate: null },
+            select: { id: true, address: true, city: true, state: true, zipCode: true, beds: true, baths: true, sqft: true, propertyType: true },
+        });
+        const usage = this.rentcast.getUsage();
+        const toFetch = deals.slice(0, usage.remaining);
+        let fetched = 0;
+        for (const deal of toFetch) {
+            try {
+                const avm = await this.rentcast.getValueEstimate(deal.address, deal.city || '', deal.state || '', deal.zipCode || '', deal.beds || undefined, deal.baths || undefined, deal.sqft || undefined, deal.propertyType || undefined);
+                if (avm?.price) {
+                    await this.prisma.deal.update({
+                        where: { id: deal.id },
+                        data: { rentcastEstimate: avm.price, rentcastRangeLow: avm.priceRangeLow, rentcastRangeHigh: avm.priceRangeHigh },
+                    });
+                    fetched++;
+                }
+            }
+            catch (e) {
+                this.logger.warn(`RentCast batch failed for ${deal.id}`);
+            }
+        }
+        return { fetched, skipped: deals.length - toFetch.length, remaining: usage.remaining - fetched };
+    }
 };
 exports.DealsService = DealsService;
 exports.DealsService = DealsService = DealsService_1 = __decorate([
@@ -289,6 +329,7 @@ exports.DealsService = DealsService = DealsService_1 = __decorate([
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
         matching_service_1.MatchingService,
         ai_writer_service_1.AiWriterService,
-        event_emitter_1.EventEmitter2])
+        event_emitter_1.EventEmitter2,
+        rentcast_service_1.RentCastService])
 ], DealsService);
 //# sourceMappingURL=deals.service.js.map

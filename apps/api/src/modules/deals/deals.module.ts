@@ -6,10 +6,12 @@ import { DealsScoringService } from './deals-scoring.service';
 import { DealsAiAnalyzeService } from './deals-ai-analyze.service';
 import { DealsAiParserService } from './deals-ai-parser.service';
 import { MatchingModule } from '../matching/matching.module';
+import { RentCastModule } from '../rentcast/rentcast.module';
 import { AiModule } from '../ai/ai.module';
 
 @Module({
-  imports: [MatchingModule, AiModule],
+  imports: [MatchingModule,
+    RentCastModule, AiModule],
   controllers: [DealsController],
   providers: [
     ArvEngineService,DealsService, DealsScoringService, DealsAiParserService, DealsAiAnalyzeService],

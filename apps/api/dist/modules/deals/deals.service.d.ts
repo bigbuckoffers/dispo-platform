@@ -4,13 +4,15 @@ import { PrismaService } from '../../shared/prisma/prisma.service';
 import { MatchingService } from '../matching/matching.service';
 import { AiWriterService } from '../ai/ai-writer.service';
 import { CreateDealDto } from './dto/create-deal.dto';
+import { RentCastService } from '../rentcast/rentcast.service';
 export declare class DealsService {
     private prisma;
     private matchingService;
     private aiWriter;
     private eventEmitter;
+    private rentcast;
     private readonly logger;
-    constructor(prisma: PrismaService, matchingService: MatchingService, aiWriter: AiWriterService, eventEmitter: EventEmitter2);
+    constructor(prisma: PrismaService, matchingService: MatchingService, aiWriter: AiWriterService, eventEmitter: EventEmitter2, rentcast: RentCastService);
     getDefaultOrgId(): Promise<string>;
     findAll(orgId: string, query: any): Promise<{
         data: any;
@@ -39,6 +41,9 @@ export declare class DealsService {
         askingPrice: number;
         arv: number | null;
         arvAnalysis: string | null;
+        rentcastEstimate: number | null;
+        rentcastRangeLow: number | null;
+        rentcastRangeHigh: number | null;
         assignmentFee: number | null;
         repairEstimate: number | null;
         propertyType: import(".prisma/client").$Enums.PropertyType;
@@ -215,6 +220,9 @@ export declare class DealsService {
         askingPrice: number;
         arv: number | null;
         arvAnalysis: string | null;
+        rentcastEstimate: number | null;
+        rentcastRangeLow: number | null;
+        rentcastRangeHigh: number | null;
         assignmentFee: number | null;
         repairEstimate: number | null;
         propertyType: import(".prisma/client").$Enums.PropertyType;
@@ -362,6 +370,9 @@ export declare class DealsService {
         askingPrice: number;
         arv: number | null;
         arvAnalysis: string | null;
+        rentcastEstimate: number | null;
+        rentcastRangeLow: number | null;
+        rentcastRangeHigh: number | null;
         assignmentFee: number | null;
         repairEstimate: number | null;
         propertyType: import(".prisma/client").$Enums.PropertyType;
@@ -563,6 +574,9 @@ export declare class DealsService {
         askingPrice: number;
         arv: number | null;
         arvAnalysis: string | null;
+        rentcastEstimate: number | null;
+        rentcastRangeLow: number | null;
+        rentcastRangeHigh: number | null;
         assignmentFee: number | null;
         repairEstimate: number | null;
         propertyType: import(".prisma/client").$Enums.PropertyType;
@@ -705,5 +719,10 @@ export declare class DealsService {
         zillowUrl: string;
         zestimate?: undefined;
         source?: undefined;
+    }>;
+    fetchAllMissingAvm(orgId: string): Promise<{
+        fetched: number;
+        skipped: number;
+        remaining: number;
     }>;
 }

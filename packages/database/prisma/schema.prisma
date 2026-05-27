@@ -282,6 +282,9 @@ model Deal {
   askingPrice      Float
   arv              Float?
   arvAnalysis      String?
+  rentcastEstimate  Float?
+  rentcastRangeLow  Float?
+  rentcastRangeHigh Float?
   assignmentFee    Float?
   repairEstimate   Float?
   

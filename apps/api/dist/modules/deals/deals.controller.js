@@ -170,6 +170,10 @@ let DealsController = class DealsController {
     async arvAnalysis(id, body) {
         return this.arvEngine.runArvEngine(id, body?.manualApprovals);
     }
+    async fetchAllAvm(req) {
+        const orgId = await this.dealsService.getDefaultOrgId();
+        return this.dealsService.fetchAllMissingAvm(orgId);
+    }
     async fetchZestimate(id) {
         return this.dealsService.fetchZestimate(id);
     }
@@ -281,6 +285,13 @@ __decorate([
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], DealsController.prototype, "arvAnalysis", null);
+__decorate([
+    (0, common_1.Post)('fetch-all-avm'),
+    __param(0, Request()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], DealsController.prototype, "fetchAllAvm", null);
 __decorate([
     (0, common_1.Post)(':id/fetch-zestimate'),
     __param(0, (0, common_1.Param)('id')),

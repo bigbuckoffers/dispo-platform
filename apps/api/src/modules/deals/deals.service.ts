@@ -5,6 +5,7 @@ import { PrismaService } from '../../shared/prisma/prisma.service';
 import { MatchingService } from '../matching/matching.service';
 import { AiWriterService } from '../ai/ai-writer.service';
 import { CreateDealDto } from './dto/create-deal.dto';
+import { RentCastService } from '../rentcast/rentcast.service';
 
 @Injectable()
 export class DealsService {
@@ -15,6 +16,7 @@ export class DealsService {
     private matchingService: MatchingService,
     private aiWriter: AiWriterService,
     private eventEmitter: EventEmitter2,
+    private rentcast: RentCastService,
   ) {}
 
   async getDefaultOrgId(): Promise<string> {
@@ -91,7 +93,23 @@ export class DealsService {
       this.logger.warn(`AI analysis failed for deal ${dealId}: ${err.message}`);
     }
 
-    // 2. Queue matching
+    // 2. Fetch public value estimate via RentCast
+    try {
+      const avm = await this.rentcast.getValueEstimate(
+        deal.address, deal.city || '', deal.state || '', deal.zipCode || '',
+        deal.beds || undefined, deal.baths || undefined, deal.sqft || undefined, deal.propertyType || undefined
+      );
+      if (avm?.price) {
+        await this.prisma.deal.update({
+          where: { id: dealId },
+          data: { rentcastEstimate: avm.price, rentcastRangeLow: avm.priceRangeLow, rentcastRangeHigh: avm.priceRangeHigh },
+        });
+        this.logger.log(`RentCast AVM for deal ${dealId}: $${avm.price}`);
+      }
+    } catch (err) {
+      this.logger.warn(`RentCast failed for deal ${dealId}: ${err.message}`);
+    }
+    // 3. Queue matching
     await this.matchingService.queueMatchingJob(dealId, orgId);
   }
 
@@ -298,5 +316,29 @@ Find comps now and return the JSON.`;
     await this.prisma.deal.update({ where: { id }, data: { zillowUrl } });
     return { success: false, message: 'Zestimate not found — Zillow URL saved.', zillowUrl };
   }
-
+  async fetchAllMissingAvm(orgId: string) {
+    const deals = await this.prisma.deal.findMany({
+      where: { organizationId: orgId, rentcastEstimate: null },
+      select: { id: true, address: true, city: true, state: true, zipCode: true, beds: true, baths: true, sqft: true, propertyType: true },
+    });
+    const usage = this.rentcast.getUsage();
+    const toFetch = deals.slice(0, usage.remaining);
+    let fetched = 0;
+    for (const deal of toFetch) {
+      try {
+        const avm = await this.rentcast.getValueEstimate(
+          deal.address, deal.city || '', deal.state || '', deal.zipCode || '',
+          deal.beds || undefined, deal.baths || undefined, deal.sqft || undefined, deal.propertyType || undefined
+        );
+        if (avm?.price) {
+          await this.prisma.deal.update({
+            where: { id: deal.id },
+            data: { rentcastEstimate: avm.price, rentcastRangeLow: avm.priceRangeLow, rentcastRangeHigh: avm.priceRangeHigh },
+          });
+          fetched++;
+        }
+      } catch(e) { this.logger.warn(`RentCast batch failed for ${deal.id}`); }
+    }
+    return { fetched, skipped: deals.length - toFetch.length, remaining: usage.remaining - fetched };
+  }
 }
