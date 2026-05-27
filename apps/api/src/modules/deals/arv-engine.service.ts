@@ -198,11 +198,16 @@ Rules:
       const raw = (d2.content || []).filter((b: any) => b.type === 'text').map((b: any) => b.text).join('');
       console.log('ARV call2 preview:', raw.substring(0, 300));
 
-      const clean = raw.replace(/```json|```/g, '').trim();
+      const clean = raw.replace(/```json/g, '').replace(/```/g, '').trim();
       const arrStart = clean.indexOf('[');
       const arrEnd = clean.lastIndexOf(']');
-      if (arrStart === -1 || arrEnd === -1) return [];
-      const parsed = JSON.parse(clean.substring(arrStart, arrEnd + 1));
+      if (arrStart === -1 || arrEnd === -1) {
+        console.log('ARV no array brackets found in:', clean.substring(0, 100));
+        return [];
+      }
+      const jsonStr = clean.substring(arrStart, arrEnd + 1);
+      console.log('ARV extracting JSON length:', jsonStr.length, 'preview:', jsonStr.substring(0, 100));
+      const parsed = JSON.parse(jsonStr);
       console.log('ARV parsed comps:', parsed.length);
       return Array.isArray(parsed) ? parsed : [];
     } catch(e: any) {
