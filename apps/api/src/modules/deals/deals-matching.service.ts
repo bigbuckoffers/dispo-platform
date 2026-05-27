@@ -112,9 +112,11 @@ export class DealsMatchingService {
       } else {
         // RULE 2: No states set — check text fields for city/state match
         const dl = dealState.toLowerCase();
-        const primaryMatch = buyer.marketPrimary && (buyer.marketPrimary.toLowerCase().includes(dl) || buyer.marketPrimary.toLowerCase().includes(dealCity));
-        const summaryMatch = buyer.aiSummary && (buyer.aiSummary.toLowerCase().includes(dl) || buyer.aiSummary.toLowerCase().includes(dealCity));
-        const intelMatch = buyer.buyerIntelNotes && (buyer.buyerIntelNotes.toLowerCase().includes(dl) || buyer.buyerIntelNotes.toLowerCase().includes(dealCity));
+        // Use word boundary for state codes to avoid matching 'fl' in 'flip', 'flexible' etc
+        const stateRegex = new RegExp('\\b' + dl + '\\b', 'i');
+        const primaryMatch = buyer.marketPrimary && (stateRegex.test(buyer.marketPrimary) || buyer.marketPrimary.toLowerCase().includes(dealCity));
+        const summaryMatch = buyer.aiSummary && (stateRegex.test(buyer.aiSummary) || buyer.aiSummary.toLowerCase().includes(dealCity));
+        const intelMatch = buyer.buyerIntelNotes && (stateRegex.test(buyer.buyerIntelNotes) || buyer.buyerIntelNotes.toLowerCase().includes(dealCity));
         const hasSignals = !!(buyer.marketPrimary || buyer.aiSummary || buyer.buyerIntelNotes);
         // No geo signals at all = exclude. Has signals but none match = exclude.
         if (!hasSignals || (!primaryMatch && !summaryMatch && !intelMatch)) return false;
