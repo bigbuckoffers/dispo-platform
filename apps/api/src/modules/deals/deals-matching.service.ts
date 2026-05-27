@@ -8,7 +8,7 @@ export class DealsMatchingService {
   private readonly logger = new Logger(DealsMatchingService.name);
   private openai: OpenAI;
   private readonly GATE_MIN_FINANCIAL_SCORE = 35;
-  private readonly MAX_MATCHES = 25;
+  private readonly MAX_MATCHES = 50;
 
   constructor(private prisma: PrismaService) {
     this.openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -33,7 +33,7 @@ export class DealsMatchingService {
     for (const buyer of candidateBuyers.slice(0, this.MAX_MATCHES)) {
       try {
         const match = await this.aiScoreBuyer(buyer, deal);
-        if (match.matchScore >= 30) matches.push(match);
+        if (match.matchScore >= 25) matches.push(match);
       } catch (err: any) {
         this.logger.warn('[Matching] AI failed for buyer ' + buyer.id + ': ' + err.message);
       }
