@@ -207,7 +207,7 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
               <label className="text-gray-500 text-xs block mb-1">Rehab Tolerance</label>
               <select value={bbForm.rehabTolerance||''} onChange={e=>setBbForm((p:any)=>({...p,rehabTolerance:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none">
                 <option value="">Unknown</option>
-                <option value="TURNKEY">Turnkey Only</option>
+                <option value="COSMETIC_ONLY">Turnkey/Cosmetic Only</option>
                 <option value="LIGHT">Light/Cosmetic</option>
                 <option value="MEDIUM">Medium Rehab</option>
                 <option value="HEAVY">Heavy Rehab</option>
