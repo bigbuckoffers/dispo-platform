@@ -101,11 +101,23 @@ export class ArvEngineService {
       aiNarrative = await this.getAiNarrative(subject, validatedComps, outputState, arvNumbers);
     }
 
-    // STEP 8: Save ARV if verified or preliminary
-    if (arvNumbers.median && (outputState === 'VERIFIED_ARV' || outputState === 'PRELIMINARY_ARV')) {
+    // STEP 8: Save ARV results to DB for any state that has comps
+    if (arvNumbers.median) {
       await this.prisma.deal.update({
         where: { id: dealId },
-        data: { arv: arvNumbers.median },
+        data: {
+          arv: arvNumbers.median,
+          arvAnalysis: JSON.stringify({
+            outputState,
+            arvLow: arvNumbers.low,
+            arvMedian: arvNumbers.median,
+            arvHigh: arvNumbers.high,
+            validatedComps,
+            avgConfidenceScore: validatedComps.length > 0 ? Math.round(validatedComps.reduce((a, c) => a + c.confidenceScore, 0) / validatedComps.length) : 0,
+            aiNarrative,
+            scrapedAt: new Date().toISOString(),
+          }),
+        },
       });
     }
 

@@ -281,6 +281,7 @@ model Deal {
   // Financials
   askingPrice      Float
   arv              Float?
+  arvAnalysis      String?
   assignmentFee    Float?
   repairEstimate   Float?
   

@@ -54,6 +54,7 @@ export declare class DealsController {
         longitude: number | null;
         askingPrice: number;
         arv: number | null;
+        arvAnalysis: string | null;
         assignmentFee: number | null;
         repairEstimate: number | null;
         propertyType: import(".prisma/client").$Enums.PropertyType;
@@ -228,6 +229,7 @@ export declare class DealsController {
         longitude: number | null;
         askingPrice: number;
         arv: number | null;
+        arvAnalysis: string | null;
         assignmentFee: number | null;
         repairEstimate: number | null;
         propertyType: import(".prisma/client").$Enums.PropertyType;
@@ -374,6 +376,7 @@ export declare class DealsController {
         longitude: number | null;
         askingPrice: number;
         arv: number | null;
+        arvAnalysis: string | null;
         assignmentFee: number | null;
         repairEstimate: number | null;
         propertyType: import(".prisma/client").$Enums.PropertyType;
@@ -520,6 +523,7 @@ export declare class DealsController {
         longitude: number | null;
         askingPrice: number;
         arv: number | null;
+        arvAnalysis: string | null;
         assignmentFee: number | null;
         repairEstimate: number | null;
         propertyType: import(".prisma/client").$Enums.PropertyType;
@@ -667,6 +671,7 @@ export declare class DealsController {
         longitude: number | null;
         askingPrice: number;
         arv: number | null;
+        arvAnalysis: string | null;
         assignmentFee: number | null;
         repairEstimate: number | null;
         propertyType: import(".prisma/client").$Enums.PropertyType;
@@ -815,6 +820,7 @@ export declare class DealsController {
         longitude: number | null;
         askingPrice: number;
         arv: number | null;
+        arvAnalysis: string | null;
         assignmentFee: number | null;
         repairEstimate: number | null;
         propertyType: import(".prisma/client").$Enums.PropertyType;
@@ -972,6 +978,7 @@ export declare class DealsController {
         longitude: number | null;
         askingPrice: number;
         arv: number | null;
+        arvAnalysis: string | null;
         assignmentFee: number | null;
         repairEstimate: number | null;
         propertyType: import(".prisma/client").$Enums.PropertyType;

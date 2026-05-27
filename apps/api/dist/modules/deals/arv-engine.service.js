@@ -59,10 +59,22 @@ let ArvEngineService = class ArvEngineService {
         if (validatedComps.length > 0 && outputState !== 'INSUFFICIENT_DATA' && outputState !== 'MANUAL_REVIEW_REQUIRED') {
             aiNarrative = await this.getAiNarrative(subject, validatedComps, outputState, arvNumbers);
         }
-        if (arvNumbers.median && (outputState === 'VERIFIED_ARV' || outputState === 'PRELIMINARY_ARV')) {
+        if (arvNumbers.median) {
             await this.prisma.deal.update({
                 where: { id: dealId },
-                data: { arv: arvNumbers.median },
+                data: {
+                    arv: arvNumbers.median,
+                    arvAnalysis: JSON.stringify({
+                        outputState,
+                        arvLow: arvNumbers.low,
+                        arvMedian: arvNumbers.median,
+                        arvHigh: arvNumbers.high,
+                        validatedComps,
+                        avgConfidenceScore: validatedComps.length > 0 ? Math.round(validatedComps.reduce((a, c) => a + c.confidenceScore, 0) / validatedComps.length) : 0,
+                        aiNarrative,
+                        scrapedAt: new Date().toISOString(),
+                    }),
+                },
             });
         }
         return {

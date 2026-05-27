@@ -38,6 +38,7 @@ export declare class DealsService {
         longitude: number | null;
         askingPrice: number;
         arv: number | null;
+        arvAnalysis: string | null;
         assignmentFee: number | null;
         repairEstimate: number | null;
         propertyType: import(".prisma/client").$Enums.PropertyType;
@@ -213,6 +214,7 @@ export declare class DealsService {
         longitude: number | null;
         askingPrice: number;
         arv: number | null;
+        arvAnalysis: string | null;
         assignmentFee: number | null;
         repairEstimate: number | null;
         propertyType: import(".prisma/client").$Enums.PropertyType;
@@ -359,6 +361,7 @@ export declare class DealsService {
         longitude: number | null;
         askingPrice: number;
         arv: number | null;
+        arvAnalysis: string | null;
         assignmentFee: number | null;
         repairEstimate: number | null;
         propertyType: import(".prisma/client").$Enums.PropertyType;
@@ -559,6 +562,7 @@ export declare class DealsService {
         longitude: number | null;
         askingPrice: number;
         arv: number | null;
+        arvAnalysis: string | null;
         assignmentFee: number | null;
         repairEstimate: number | null;
         propertyType: import(".prisma/client").$Enums.PropertyType;
