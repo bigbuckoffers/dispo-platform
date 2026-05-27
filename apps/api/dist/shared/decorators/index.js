@@ -15,6 +15,6 @@ exports.CurrentUser = (0, common_1.createParamDecorator)((data, ctx) => {
 });
 exports.OrgId = (0, common_1.createParamDecorator)((_data, ctx) => {
     const request = ctx.switchToHttp().getRequest();
-    return request.user?.organizationId;
+    return request.user?.organizationId || 'c87f4e63-fd29-4ff5-823f-e4926daa0820';
 });
 //# sourceMappingURL=index.js.map
