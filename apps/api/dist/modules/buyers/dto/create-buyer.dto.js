@@ -298,6 +298,18 @@ __decorate([
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
+], CreateBuyerDto.prototype, "temperatureNotes", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)(),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], CreateBuyerDto.prototype, "aiTemperatureAnalysis", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)(),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
 ], CreateBuyerDto.prototype, "proofOfFundsUrl", void 0);
 __decorate([
     (0, swagger_1.ApiPropertyOptional)(),

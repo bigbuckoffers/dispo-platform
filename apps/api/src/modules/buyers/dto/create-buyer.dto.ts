@@ -59,6 +59,8 @@ export class CreateBuyerDto {
   @ApiPropertyOptional() @IsNumber() @IsOptional() retradeCount?: number;
   @ApiPropertyOptional() @IsNumber() @IsOptional() ghostCount?: number;
   @ApiPropertyOptional() @IsString() @IsOptional() aiSummary?: string;
+  @ApiPropertyOptional() @IsString() @IsOptional() temperatureNotes?: string;
+  @ApiPropertyOptional() @IsString() @IsOptional() aiTemperatureAnalysis?: string;
   @ApiPropertyOptional() @IsString() @IsOptional() proofOfFundsUrl?: string;
   @ApiPropertyOptional() @IsNumber() @IsOptional() maxEmd?: number;
   @ApiPropertyOptional() @IsOptional() rawImportData?: any;

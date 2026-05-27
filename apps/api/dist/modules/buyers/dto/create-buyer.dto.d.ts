@@ -50,6 +50,8 @@ export declare class CreateBuyerDto {
     retradeCount?: number;
     ghostCount?: number;
     aiSummary?: string;
+    temperatureNotes?: string;
+    aiTemperatureAnalysis?: string;
     proofOfFundsUrl?: string;
     maxEmd?: number;
     rawImportData?: any;
