@@ -239,7 +239,25 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
         <SECTION title="Liquidity Breakdown" icon={DollarSign} iconColor="text-blue-400">
           {!editingLiquidity ? (
             <div className="space-y-2">
-              <Row label="Proof of Funds" value={buyer.proofOfFundsUrl?'✓ Uploaded':'✗ Not uploaded'} valueClass={buyer.proofOfFundsUrl?'text-green-400':'text-red-400'} verified={!!buyer.proofOfFundsUrl} />
+              <div className="flex justify-between items-center py-1.5 border-b border-gray-800/50">
+                <span className="text-gray-500 text-xs">Proof of Funds</span>
+                <div className="flex items-center gap-2">
+                  {buyer.proofOfFundsUrl === 'VERIFIED_BY_TEAM' ? (
+                    <span className="text-xs text-green-400 font-medium">✓ Verified by Team</span>
+                  ) : buyer.proofOfFundsUrl ? (
+                    <a href={buyer.proofOfFundsUrl} target="_blank" className="text-xs text-green-400 font-medium">✓ View POF</a>
+                  ) : (
+                    <span className="text-xs text-red-400 font-medium">✗ Not uploaded</span>
+                  )}
+                  <span className="text-xs px-1.5 py-0.5 rounded bg-yellow-500/10 text-yellow-500">~</span>
+                </div>
+              </div>
+              {!buyer.proofOfFundsUrl && (
+                <button onClick={async () => { await api.put(`/buyers/${id}`, { proofOfFundsUrl: 'VERIFIED_BY_TEAM' }); qc.invalidateQueries({queryKey:['buyer',id]}); toast.success('Marked as verified by team'); }}
+                  className="text-xs text-green-400 hover:text-green-300 flex items-center gap-1 py-1">
+                  ✓ Mark as Verified by Team (we know they can close)
+                </button>
+              )}
               <Row label="Funding Type" value={buyer.notes} verified={false} />
               <Row label="Close Speed" value={buyer.avgCloseSpeedDays?buyer.avgCloseSpeedDays+' days avg':'Unknown'} verified={buyer.closeCount>0} />
               <Row label="Preferred Title Co" value={buyer.preferredTitleCo} verified={false} />
