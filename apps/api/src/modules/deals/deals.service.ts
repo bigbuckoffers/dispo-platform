@@ -6,6 +6,7 @@ import { MatchingService } from '../matching/matching.service';
 import { AiWriterService } from '../ai/ai-writer.service';
 import { CreateDealDto } from './dto/create-deal.dto';
 import { RentCastService } from '../rentcast/rentcast.service';
+import { DealsScoringService } from './deals-scoring.service';
 
 @Injectable()
 export class DealsService {
@@ -17,6 +18,7 @@ export class DealsService {
     private aiWriter: AiWriterService,
     private eventEmitter: EventEmitter2,
     private rentcast: RentCastService,
+    private scoring: DealsScoringService,
   ) {}
 
   async getDefaultOrgId(): Promise<string> {
@@ -316,6 +318,29 @@ Find comps now and return the JSON.`;
     await this.prisma.deal.update({ where: { id }, data: { zillowUrl } });
     return { success: false, message: 'Zestimate not found — Zillow URL saved.', zillowUrl };
   }
+  async recalculateAllScores(orgId: string) {
+    const deals = await this.prisma.deal.findMany({ where: { organizationId: orgId } });
+    let updated = 0;
+    for (const deal of deals) {
+      const metrics = this.scoring.calculateMetrics(deal as any);
+      await this.prisma.deal.update({
+        where: { id: deal.id },
+        data: {
+          dealPriorityScore: metrics.dealPriorityScore,
+          buyerDemandScore: metrics.buyerDemandScore,
+          dataCompletenessScore: metrics.dataCompletenessScore,
+          missingInfo: metrics.missingInfo,
+          nextBestAction: metrics.nextBestAction,
+          buyerCoverageStatus: metrics.buyerCoverageStatus,
+          buyerGapScore: metrics.buyerGapScore,
+          marketKey: metrics.marketKey,
+        },
+      });
+      updated++;
+    }
+    return { updated };
+  }
+
   async fetchAllMissingAvm(orgId: string) {
     const deals = await this.prisma.deal.findMany({
       where: { organizationId: orgId, rentcastEstimate: null },

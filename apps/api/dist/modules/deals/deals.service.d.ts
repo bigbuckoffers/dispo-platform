@@ -5,14 +5,16 @@ import { MatchingService } from '../matching/matching.service';
 import { AiWriterService } from '../ai/ai-writer.service';
 import { CreateDealDto } from './dto/create-deal.dto';
 import { RentCastService } from '../rentcast/rentcast.service';
+import { DealsScoringService } from './deals-scoring.service';
 export declare class DealsService {
     private prisma;
     private matchingService;
     private aiWriter;
     private eventEmitter;
     private rentcast;
+    private scoring;
     private readonly logger;
-    constructor(prisma: PrismaService, matchingService: MatchingService, aiWriter: AiWriterService, eventEmitter: EventEmitter2, rentcast: RentCastService);
+    constructor(prisma: PrismaService, matchingService: MatchingService, aiWriter: AiWriterService, eventEmitter: EventEmitter2, rentcast: RentCastService, scoring: DealsScoringService);
     getDefaultOrgId(): Promise<string>;
     findAll(orgId: string, query: any): Promise<{
         data: any;
@@ -719,6 +721,9 @@ export declare class DealsService {
         zillowUrl: string;
         zestimate?: undefined;
         source?: undefined;
+    }>;
+    recalculateAllScores(orgId: string): Promise<{
+        updated: number;
     }>;
     fetchAllMissingAvm(orgId: string): Promise<{
         fetched: number;

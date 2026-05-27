@@ -170,6 +170,10 @@ let DealsController = class DealsController {
     async arvAnalysis(id, body) {
         return this.arvEngine.runArvEngine(id, body?.manualApprovals);
     }
+    async recalculateScores() {
+        const orgId = await this.dealsService.getDefaultOrgId();
+        return this.dealsService.recalculateAllScores(orgId);
+    }
     async fetchAllAvm() {
         const orgId = await this.dealsService.getDefaultOrgId();
         return this.dealsService.fetchAllMissingAvm(orgId);
@@ -285,6 +289,12 @@ __decorate([
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], DealsController.prototype, "arvAnalysis", null);
+__decorate([
+    (0, common_1.Post)('recalculate-scores'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], DealsController.prototype, "recalculateScores", null);
 __decorate([
     (0, common_1.Post)('fetch-all-avm'),
     __metadata("design:type", Function),

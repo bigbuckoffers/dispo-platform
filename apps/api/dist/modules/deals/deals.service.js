@@ -18,13 +18,15 @@ const prisma_service_1 = require("../../shared/prisma/prisma.service");
 const matching_service_1 = require("../matching/matching.service");
 const ai_writer_service_1 = require("../ai/ai-writer.service");
 const rentcast_service_1 = require("../rentcast/rentcast.service");
+const deals_scoring_service_1 = require("./deals-scoring.service");
 let DealsService = DealsService_1 = class DealsService {
-    constructor(prisma, matchingService, aiWriter, eventEmitter, rentcast) {
+    constructor(prisma, matchingService, aiWriter, eventEmitter, rentcast, scoring) {
         this.prisma = prisma;
         this.matchingService = matchingService;
         this.aiWriter = aiWriter;
         this.eventEmitter = eventEmitter;
         this.rentcast = rentcast;
+        this.scoring = scoring;
         this.logger = new common_1.Logger(DealsService_1.name);
     }
     async getDefaultOrgId() {
@@ -297,6 +299,28 @@ Find comps now and return the JSON.`;
         await this.prisma.deal.update({ where: { id }, data: { zillowUrl } });
         return { success: false, message: 'Zestimate not found — Zillow URL saved.', zillowUrl };
     }
+    async recalculateAllScores(orgId) {
+        const deals = await this.prisma.deal.findMany({ where: { organizationId: orgId } });
+        let updated = 0;
+        for (const deal of deals) {
+            const metrics = this.scoring.calculateMetrics(deal);
+            await this.prisma.deal.update({
+                where: { id: deal.id },
+                data: {
+                    dealPriorityScore: metrics.dealPriorityScore,
+                    buyerDemandScore: metrics.buyerDemandScore,
+                    dataCompletenessScore: metrics.dataCompletenessScore,
+                    missingInfo: metrics.missingInfo,
+                    nextBestAction: metrics.nextBestAction,
+                    buyerCoverageStatus: metrics.buyerCoverageStatus,
+                    buyerGapScore: metrics.buyerGapScore,
+                    marketKey: metrics.marketKey,
+                },
+            });
+            updated++;
+        }
+        return { updated };
+    }
     async fetchAllMissingAvm(orgId) {
         const deals = await this.prisma.deal.findMany({
             where: { organizationId: orgId, rentcastEstimate: null },
@@ -330,6 +354,7 @@ exports.DealsService = DealsService = DealsService_1 = __decorate([
         matching_service_1.MatchingService,
         ai_writer_service_1.AiWriterService,
         event_emitter_1.EventEmitter2,
-        rentcast_service_1.RentCastService])
+        rentcast_service_1.RentCastService,
+        deals_scoring_service_1.DealsScoringService])
 ], DealsService);
 //# sourceMappingURL=deals.service.js.map

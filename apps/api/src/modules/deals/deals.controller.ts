@@ -195,6 +195,12 @@ export class DealsController {
     return this.arvEngine.runArvEngine(id, body?.manualApprovals);
   }
 
+  @Post('recalculate-scores')
+  async recalculateScores() {
+    const orgId = await this.dealsService.getDefaultOrgId();
+    return this.dealsService.recalculateAllScores(orgId);
+  }
+
   @Post('fetch-all-avm')
   async fetchAllAvm() {
     const orgId = await this.dealsService.getDefaultOrgId();
