@@ -1,14 +1,14 @@
 {
   "/_not-found/page": "app/_not-found/page.js",
   "/api/anthropic/route": "app/api/anthropic/route.js",
-  "/(dashboard)/dashboard/analytics/page": "app/(dashboard)/dashboard/analytics/page.js",
-  "/(dashboard)/dashboard/buyers/page": "app/(dashboard)/dashboard/buyers/page.js",
   "/(dashboard)/dashboard/buyers/[id]/page": "app/(dashboard)/dashboard/buyers/[id]/page.js",
-  "/(dashboard)/dashboard/deals/[id]/page": "app/(dashboard)/dashboard/deals/[id]/page.js",
-  "/(dashboard)/dashboard/deals/page": "app/(dashboard)/dashboard/deals/page.js",
-  "/(dashboard)/dashboard/dispo/page": "app/(dashboard)/dashboard/dispo/page.js",
+  "/(dashboard)/dashboard/analytics/page": "app/(dashboard)/dashboard/analytics/page.js",
   "/(dashboard)/dashboard/marketplace/page": "app/(dashboard)/dashboard/marketplace/page.js",
-  "/(dashboard)/dashboard/matching/page": "app/(dashboard)/dashboard/matching/page.js",
+  "/(dashboard)/dashboard/deals/[id]/page": "app/(dashboard)/dashboard/deals/[id]/page.js",
+  "/(dashboard)/dashboard/dispo/page": "app/(dashboard)/dashboard/dispo/page.js",
+  "/(dashboard)/dashboard/buyers/page": "app/(dashboard)/dashboard/buyers/page.js",
+  "/(dashboard)/dashboard/settings/page": "app/(dashboard)/dashboard/settings/page.js",
   "/(dashboard)/dashboard/page": "app/(dashboard)/dashboard/page.js",
-  "/(dashboard)/dashboard/settings/page": "app/(dashboard)/dashboard/settings/page.js"
+  "/(dashboard)/dashboard/deals/page": "app/(dashboard)/dashboard/deals/page.js",
+  "/(dashboard)/dashboard/matching/page": "app/(dashboard)/dashboard/matching/page.js"
 }
