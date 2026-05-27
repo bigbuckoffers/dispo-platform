@@ -537,30 +537,8 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
   // ── Sellability score ─────────────────────────────────────────────────
   const sellReasons: string[] = [];
   const sellBlockers: string[] = [];
-  let sellScore = 0;
-  // AI bonus applied below
-  if (b > 0)                  { sellScore += 25; sellReasons.push(`${b} buyer${b>1?'s':''} matched`); }
-  else                          { sellBlockers.push('No buyer matches yet'); }
-  if (t1 > 0)                 { sellScore += 15; sellReasons.push(`${t1} Tier 1 buyer${t1>1?'s':''}`); }
-  if (hasPhotos)               { sellScore += 15; sellReasons.push('Photos confirmed'); }
-  else                          { sellBlockers.push('Photos missing — required before blast'); }
-  if (deal.askingPrice)        { sellScore += 10; }
-  else                          { sellBlockers.push('Asking price not set'); }
-  if (refValue)                { sellScore += 10; sellReasons.push('Public value data available'); }
-  else                          { sellBlockers.push('No public value or ARV'); }
-  if (pricePos === 'UNDER_70') { sellScore += 15; sellReasons.push(`Ask is ${formatCurrency(Math.abs(gap))} under 70% of ${avgPub ? 'public value' : 'ARV'}`); }
-  else if (pricePos === 'NEAR_UNDER') { sellScore += 8; sellReasons.push('Ask is near the 70% investor threshold'); }
-  if (deal.description)        { sellScore += 5; }
-  if (hasPermission)           { sellScore += 5; }
-  else if (!isOwn)               { sellBlockers.push('JV permission to market not confirmed'); }
-  if (deal.closingDate)        { sellScore += 5; sellReasons.push('Closing date confirmed'); }
-  // Hard caps
-  if (!b)           sellScore = Math.min(sellScore, 60);
-  if (!hasPhotos)   sellScore = Math.min(sellScore, 82);
-  if (!refValue)    sellScore = Math.min(sellScore, 70);
-  if (!deal.askingPrice) sellScore = Math.min(sellScore, 55);
-  if (!hasPermission && !isOwn) sellScore = Math.min(sellScore, 70);
-  sellScore = Math.max(0, Math.min(100, sellScore));
+  // Use DB score (calculated by scoring engine) — single source of truth
+  const sellScore = deal.dealPriorityScore || 0;
 
   const scoreLabel = sellScore >= 85 ? 'Hot — Ready to Blast'
     : sellScore >= 75 ? 'Strong Dispo Opportunity'
