@@ -30,6 +30,8 @@ export declare class DealsService {
         updatedAt: Date;
         organizationId: string;
         aiSummary: string | null;
+        temperatureNotes: string | null;
+        aiTemperatureAnalysis: string | null;
         liquidityScore: number | null;
         closingDate: Date | null;
         status: import(".prisma/client").$Enums.DealStatus;
@@ -215,6 +217,8 @@ export declare class DealsService {
         updatedAt: Date;
         organizationId: string;
         aiSummary: string | null;
+        temperatureNotes: string | null;
+        aiTemperatureAnalysis: string | null;
         liquidityScore: number | null;
         closingDate: Date | null;
         status: import(".prisma/client").$Enums.DealStatus;
@@ -371,6 +375,8 @@ export declare class DealsService {
         updatedAt: Date;
         organizationId: string;
         aiSummary: string | null;
+        temperatureNotes: string | null;
+        aiTemperatureAnalysis: string | null;
         liquidityScore: number | null;
         closingDate: Date | null;
         status: import(".prisma/client").$Enums.DealStatus;
@@ -581,6 +587,8 @@ export declare class DealsService {
         updatedAt: Date;
         organizationId: string;
         aiSummary: string | null;
+        temperatureNotes: string | null;
+        aiTemperatureAnalysis: string | null;
         liquidityScore: number | null;
         closingDate: Date | null;
         status: import(".prisma/client").$Enums.DealStatus;

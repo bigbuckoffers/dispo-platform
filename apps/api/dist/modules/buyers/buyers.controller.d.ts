@@ -52,6 +52,8 @@ export declare class BuyersController {
             retradeCount: number;
             ghostCount: number;
             aiSummary: string | null;
+            temperatureNotes: string | null;
+            aiTemperatureAnalysis: string | null;
             proofOfFundsUrl: string | null;
             rawImportData: import("@prisma/client/runtime/library").JsonValue | null;
             seriousnessScore: number;
@@ -150,6 +152,8 @@ export declare class BuyersController {
         retradeCount: number;
         ghostCount: number;
         aiSummary: string | null;
+        temperatureNotes: string | null;
+        aiTemperatureAnalysis: string | null;
         proofOfFundsUrl: string | null;
         rawImportData: import("@prisma/client/runtime/library").JsonValue | null;
         seriousnessScore: number;
@@ -279,6 +283,8 @@ export declare class BuyersController {
         retradeCount: number;
         ghostCount: number;
         aiSummary: string | null;
+        temperatureNotes: string | null;
+        aiTemperatureAnalysis: string | null;
         proofOfFundsUrl: string | null;
         rawImportData: import("@prisma/client/runtime/library").JsonValue | null;
         seriousnessScore: number;
@@ -339,6 +345,8 @@ export declare class BuyersController {
         retradeCount: number;
         ghostCount: number;
         aiSummary: string | null;
+        temperatureNotes: string | null;
+        aiTemperatureAnalysis: string | null;
         proofOfFundsUrl: string | null;
         rawImportData: import("@prisma/client/runtime/library").JsonValue | null;
         seriousnessScore: number;
@@ -551,6 +559,8 @@ export declare class BuyersController {
         retradeCount: number;
         ghostCount: number;
         aiSummary: string | null;
+        temperatureNotes: string | null;
+        aiTemperatureAnalysis: string | null;
         proofOfFundsUrl: string | null;
         rawImportData: import("@prisma/client/runtime/library").JsonValue | null;
         seriousnessScore: number;
@@ -611,6 +621,8 @@ export declare class BuyersController {
         retradeCount: number;
         ghostCount: number;
         aiSummary: string | null;
+        temperatureNotes: string | null;
+        aiTemperatureAnalysis: string | null;
         proofOfFundsUrl: string | null;
         rawImportData: import("@prisma/client/runtime/library").JsonValue | null;
         seriousnessScore: number;
