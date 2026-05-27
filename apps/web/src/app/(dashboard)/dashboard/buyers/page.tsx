@@ -11,7 +11,7 @@ export default function BuyersPage() {
   async function load() {
     setLoading(true); setError('');
     try {
-      const p = new URLSearchParams({ page:'1', limit:'50' });
+      const p = new URLSearchParams({ page:'1', limit:'100' });
       if (search) p.set('search', search);
       if (tier) p.set('tier', tier);
       const r = await fetch(`${API}/buyers?${p}`);
@@ -69,7 +69,7 @@ export default function BuyersPage() {
               <tr key={b.id} className="border-b border-gray-800/50 hover:bg-gray-800/30 cursor-pointer transition-colors"
                 onClick={() => window.location.href = `/dashboard/buyers/${b.id}`}>
                 <td className="px-4 py-3">
-                  <div className="font-medium text-white">{b.firstName} {b.lastName}</div>
+                  <div className="font-medium text-white">{(b.firstName === 'Unknown' || !b.firstName) ? (b.phone || b.email?.split('@')[0]) : `${b.firstName} ${b.lastName}`}</div>
                   <div className="text-gray-400 text-xs">{b.email}</div>
                 </td>
                 <td className="px-4 py-3">
