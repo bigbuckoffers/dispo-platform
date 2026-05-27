@@ -11,6 +11,7 @@ import { DealsService } from './deals.service';
 import { DealsScoringService } from './deals-scoring.service';
 import { DealsAiAnalyzeService } from './deals-ai-analyze.service';
 import { DealsAiParserService } from './deals-ai-parser.service';
+import { DealsMatchingService } from './deals-matching.service';
 import { PrismaService } from '../../shared/prisma/prisma.service';
 import { CreateDealDto } from './dto/create-deal.dto';
 
@@ -25,6 +26,7 @@ export class DealsController {
     private readonly aiAnalyze: DealsAiAnalyzeService,
     private readonly prisma: PrismaService,
     private readonly arvEngine: ArvEngineService,
+    private readonly matchingService: DealsMatchingService,
   ) {}
 
   @Get()
@@ -166,28 +168,21 @@ export class DealsController {
   }
 
   @Post(':id/match-buyers')
-  @ApiOperation({ summary: 'Run buyer matching' })
+  @ApiOperation({ summary: 'Run AI buyer matching (alias)' })
   async matchBuyers(@Param('id', ParseUUIDPipe) id: string) {
-    const deal = await this.prisma.deal.findUnique({ where: { id } });
-    if (!deal) return { error: 'Not found' };
-    const buyers = await this.prisma.buyer.findMany({ where: { isActive: true }, include: { buyBox: true } });
-    let matched = 0, tier1 = 0;
-    for (const buyer of buyers) {
-      if (!buyer.buyBox) continue;
-      const bb = buyer.buyBox as any;
-      const stateMatch = !bb.states?.length || bb.states.includes(deal.state);
-      const price = (deal as any).askingPrice || (deal as any).buyerFacingPrice || 0;
-      const priceMatch = (!bb.minPrice || price >= bb.minPrice) && (!bb.maxPrice || price <= bb.maxPrice);
-      if (stateMatch && priceMatch) { matched++; if (buyer.tier === 'TIER_1') tier1++; }
-    }
-    const buyerDemandScore = Math.min(100, matched * 5);
-    return this.prisma.deal.update({
-      where: { id },
-      data: {
-        matchedBuyerCount: matched, tier1MatchCount: tier1, buyerDemandScore,
-        status: (matched > 0 ? 'MATCHED' : deal.status) as any,
-      },
-    });
+    return this.matchingService.runMatchingForDeal(id);
+  }
+
+  @Post(':id/trigger-matching')
+  @ApiOperation({ summary: 'Run AI buyer matching' })
+  async triggerMatching(@Param('id', ParseUUIDPipe) id: string) {
+    return this.matchingService.runMatchingForDeal(id);
+  }
+
+  @Get(':id/matches')
+  @ApiOperation({ summary: 'Get AI match results for a deal' })
+  async getMatches(@Param('id', ParseUUIDPipe) id: string, @Query('limit') limit = 50) {
+    return this.matchingService.getMatchesForDeal(id, +limit);
   }
 
   @Post(':id/arv-analysis')
