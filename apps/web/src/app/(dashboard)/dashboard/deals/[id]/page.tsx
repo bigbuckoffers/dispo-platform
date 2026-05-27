@@ -418,6 +418,36 @@ export default function DealDetailPage({ params }: { params: { id: string } }) {
     queryFn: () => api.get(`/deals/${id}`).then(r => r.data),
   });
 
+  // Load saved ARV analysis from DB on page load
+  useEffect(() => {
+    if (deal?.arvAnalysis && !arvAnalysis) {
+      try {
+        const saved = typeof deal.arvAnalysis === 'string' ? JSON.parse(deal.arvAnalysis) : deal.arvAnalysis;
+        if (saved?.arvMedian) {
+          setArvAnalysis({
+            outputState: saved.outputState,
+            arvLow: saved.arvLow,
+            arvMedian: saved.arvMedian,
+            arvHigh: saved.arvHigh,
+            confidence: saved.avgConfidenceScore ? Math.round(saved.avgConfidenceScore / 20) : 2,
+            subdivisionName: saved.validatedComps?.[0]?.address?.split(',')[1]?.trim() || '',
+            comps: (saved.validatedComps || []).map((c: any) => ({
+              address: c.address,
+              salePrice: c.salePrice,
+              sqft: c.sqft,
+              beds: c.beds,
+              baths: c.baths,
+              saleDate: c.saleDate,
+              pricePerSqft: c.pricePerSqft,
+            })),
+            dataWarnings: saved.outputState === 'WEAK_COMP_SET' ? 'High price variance detected — manual review recommended before using ARV.' : null,
+            assumptionLog: `Scraped: ${saved.validatedComps?.length || 0}, Validated: ${saved.validatedComps?.length || 0}, Rejected: 0`,
+          });
+        }
+      } catch(e) { /* ignore parse errors */ }
+    }
+  }, [deal?.arvAnalysis]);
+
   const updateDeal = useMutation({
     mutationFn: (data: any) => api.patch(`/deals/${id}`, data).then(r => r.data),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['deal', id] }); toast.success('Saved!'); },
