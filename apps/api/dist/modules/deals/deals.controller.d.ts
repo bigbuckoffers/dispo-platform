@@ -1131,7 +1131,7 @@ export declare class DealsController {
         error: string;
     }>;
     arvAnalysis(id: string, body?: any): Promise<any>;
-    fetchAllAvm(req: any): Promise<{
+    fetchAllAvm(): Promise<{
         fetched: number;
         skipped: number;
         remaining: number;

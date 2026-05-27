@@ -196,7 +196,7 @@ export class DealsController {
   }
 
   @Post('fetch-all-avm')
-  async fetchAllAvm(@Request() req: any) {
+  async fetchAllAvm() {
     const orgId = await this.dealsService.getDefaultOrgId();
     return this.dealsService.fetchAllMissingAvm(orgId);
   }
