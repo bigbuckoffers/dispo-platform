@@ -86,6 +86,27 @@ function nextActions(deal: any) {
   return actions.length ? actions : [{l:'Fill In Info',         c:'bg-gray-500/20 text-gray-400 border border-gray-500/40'}];
 }
 
+function dispoStatus(deal: any): {label: string; color: string; bg: string; dot: string} {
+  const b = deal.matchedBuyerCount || 0;
+  const sc = deal.dealPriorityScore || 0;
+  const hasPhotos = !!(deal.photosUrl || deal.googleDriveUrl || deal.photos?.length);
+  const hasValue = !!(deal.zillowEstimate || deal.realtorEstimate || deal.arv);
+  const hasPrice = !!deal.askingPrice;
+  const isOwn = deal.sourceType === 'OWN';
+  const hasPermission = isOwn || !!(deal.dealSource?.permissionToMarket);
+  if (b > 0 && hasPhotos && hasValue && hasPrice && hasPermission && sc >= 60)
+    return { label: 'Blast Ready', color: 'text-emerald-300', bg: 'bg-emerald-900/40 border-emerald-700/40', dot: 'bg-emerald-400' };
+  if (b > 0 && hasPrice && sc >= 60)
+    return { label: 'Almost Ready', color: 'text-amber-300', bg: 'bg-amber-900/30 border-amber-700/30', dot: 'bg-amber-400' };
+  if (b === 0 && sc >= 65)
+    return { label: 'Need Buyers', color: 'text-orange-300', bg: 'bg-orange-900/30 border-orange-700/30', dot: 'bg-orange-400' };
+  if (sc >= 40 && b > 0)
+    return { label: 'Has Buyers', color: 'text-blue-300', bg: 'bg-blue-900/30 border-blue-700/30', dot: 'bg-blue-400' };
+  if (!hasPrice || !hasValue)
+    return { label: 'Needs Info', color: 'text-gray-400', bg: 'bg-gray-800 border-gray-700', dot: 'bg-gray-500' };
+  return { label: 'Not Ready', color: 'text-red-400', bg: 'bg-red-900/20 border-red-800/30', dot: 'bg-red-500' };
+}
+
 function signal(deal: any): string {
   const b = deal.matchedBuyerCount||0, t1 = deal.tier1MatchCount||0;
   const hp = !!(deal.photosUrl||deal.googleDriveUrl||deal.photos?.length);
@@ -321,6 +342,7 @@ export default function DealsPage() {
                 const p70 = refV ? Math.round(refV*0.7) : null;
                 const under = p70&&deal.askingPrice ? deal.askingPrice<=p70 : null;
 
+                const ds = dispoStatus(deal);
                 const t2count = t1>0 ? Math.max(0,Math.round((b-t1)*0.6)) : Math.round(b*0.6);
                 const t3count = t1>0 ? Math.max(0,Math.round((b-t1)*0.4)) : Math.round(b*0.4);
                 return (
@@ -333,6 +355,10 @@ export default function DealsPage() {
                         <div className={`border-l-[3px] pl-2 ${t.bdr}`}>
                           <p className={`text-sm font-bold leading-none ${t.t}`}>{sc||'—'}</p>
                           <p className={`text-[10px] ${t.t} opacity-60 leading-tight`}>{t.l}</p>
+                          <div className={`mt-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded border text-[9px] font-semibold ${ds.bg} ${ds.color}`}>
+                            <span className={`w-1 h-1 rounded-full ${ds.dot}`}/>
+                            {ds.label}
+                          </div>
                         </div>
                       </div>
 
