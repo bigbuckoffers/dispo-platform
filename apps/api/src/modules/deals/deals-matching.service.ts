@@ -108,8 +108,9 @@ export class DealsMatchingService {
         const primaryMatch = buyer.marketPrimary && (buyer.marketPrimary.toLowerCase().includes(dealState) || buyer.marketPrimary.toLowerCase().includes(dealCity));
         const secondaryMatch = buyer.marketSecondary && buyer.marketSecondary.some((m: string) => m.toLowerCase().includes(dealState) || m.toLowerCase().includes(dealCity));
         const profileMatch = buyer.aiBuyerProfile && (buyer.aiBuyerProfile.toLowerCase().includes(dealState) || buyer.aiBuyerProfile.toLowerCase().includes(dealCity));
+        const summaryMatch = buyer.aiSummary && (buyer.aiSummary.toLowerCase().includes(dealState) || buyer.aiSummary.toLowerCase().includes(dealCity));
         const intelMatch = buyer.buyerIntelNotes && (buyer.buyerIntelNotes.toLowerCase().includes(dealState) || buyer.buyerIntelNotes.toLowerCase().includes(dealCity));
-        if (!stateMatch && !primaryMatch && !secondaryMatch && !profileMatch && !intelMatch) return false;
+        if (!stateMatch && !primaryMatch && !secondaryMatch && !profileMatch && !summaryMatch && !intelMatch) return false;
       }
       if (bb && bb.maxPrice && price > 0 && price > bb.maxPrice * 1.5) return false;
       if (bb && bb.minPrice && price > 0 && price < bb.minPrice * 0.5) return false;
@@ -150,8 +151,10 @@ export class DealsMatchingService {
       (buyer.hasCash ? 'Has cash\n' : '') +
       (buyer.hasHardMoney ? 'Has hard money\n' : '') +
       'Scores: Reliability ' + buyer.reliabilityScore + ' | Liquidity ' + buyer.liquidityScore + ' | Activity ' + buyer.activityScore + '\n' +
-      (buyer.buyerIntelNotes ? 'Intel: ' + buyer.buyerIntelNotes + '\n' : '') +
-      (buyer.temperatureNotes ? 'Temperature: ' + buyer.temperatureNotes + '\n' : '') +
+      (buyer.aiSummary ? 'Buyer Intelligence Report:\n' + buyer.aiSummary + '\n' : '') +
+      (buyer.aiBuyerProfile && !buyer.aiSummary ? 'Buyer Profile:\n' + buyer.aiBuyerProfile + '\n' : '') +
+      (buyer.buyerIntelNotes ? 'Intel Notes:\n' + buyer.buyerIntelNotes + '\n' : '') +
+      (buyer.temperatureNotes ? 'Current Status: ' + buyer.temperatureNotes + '\n' : '') +
       'Buy box:\n' + (buyBoxSummary || 'Not filled in') +
       '\n\nRespond ONLY with valid JSON:\n{"matchScore":<0-100>,"matchStrength":"<STRONG|MODERATE|WEAK>","matchReasoning":"<2-3 sentences referencing actual numbers>","redFlags":["<concern>"],"outreachAngle":"<one sentence pitch angle>","estimatedOfferRange":"<e.g. $85k-$92k>"}\n\n80-100: near perfect. 60-79: good. 40-59: moderate. 20-39: weak. 0-19: no match.';
 

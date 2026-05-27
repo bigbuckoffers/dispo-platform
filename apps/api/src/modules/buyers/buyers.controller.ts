@@ -72,6 +72,11 @@ export class BuyersController {
     return this.intelService.generateAllMissingProfiles(+limit);
   }
 
+  @Post('generate-summaries')
+  async generateSummaries(@Query('limit') limit = 50) {
+    return this.intelService.generateAllMissingAiSummaries(+limit);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get full buyer profile' })
   findOne(

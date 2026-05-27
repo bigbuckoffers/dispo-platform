@@ -109,4 +109,44 @@ export class BuyerIntelligenceService {
     }
     return { generated, failed };
   }
+
+  async generateAiSummary(buyerId: string): Promise<string> {
+    const buyer = await this.prisma.buyer.findUnique({ where: { id: buyerId }, include: { buyBox: true } }) as any;
+    if (!buyer) throw new Error('Buyer not found');
+    const bb = buyer.buyBox;
+    const notes = (buyer.buyerIntelNotes || 'None').substring(0, 1200);
+    const prompt = `You are a senior real estate dispositions analyst. Write a 2-3 sentence buyer intelligence summary capturing: what markets they buy in, what deal types they want, price range, funding type, and current status.
+
+Buyer: ${buyer.firstName} ${buyer.lastName}${buyer.company ? ' / ' + buyer.company : ''}
+Market: ${buyer.marketPrimary || 'Unknown'}
+Secondary: ${(buyer.marketSecondary || []).join(', ') || 'None'}
+Strategies: ${(buyer.preferredStrategies || []).join(', ') || 'Unknown'}
+Funding: ${buyer.hasCash ? 'Cash' : ''}${buyer.hasHardMoney ? ' Hard Money' : ''}
+Buy states: ${(bb?.states || []).join(', ') || 'Unknown'}
+Price range: $${(bb?.minPrice || 0).toLocaleString()} - $${bb?.maxPrice ? bb.maxPrice.toLocaleString() : 'open'}
+Intel notes: ${notes}
+
+Write ONLY the 2-3 sentence summary.`;
+    const response = await this.getOpenAI().chat.completions.create({ model: 'gpt-4o-mini', messages: [{ role: 'user', content: prompt }], max_tokens: 200, temperature: 0.3 });
+    const summary = response.choices[0]?.message?.content?.trim() || '';
+    if (summary) await this.prisma.$executeRaw`UPDATE buyers SET "aiSummary" = ${summary} WHERE id = ${buyerId}::uuid`;
+    return summary;
+  }
+
+  async generateAllMissingAiSummaries(limit = 50): Promise<{ generated: number; failed: number }> {
+    const buyers = await this.prisma.buyer.findMany({ where: { isActive: true } as any, take: limit, orderBy: { compositeScore: 'desc' } }) as any[];
+    const missing = buyers.filter((b: any) => !b.aiSummary || b.aiSummary.trim() === '');
+    this.logger.log('[BuyerIntel] Generating aiSummary for ' + missing.length + ' buyers...');
+    let generated = 0, failed = 0;
+    for (let i = 0; i < missing.length; i += 5) {
+      const batch = missing.slice(i, i + 5);
+      await Promise.all(batch.map(async (buyer: any) => {
+        try { await this.generateAiSummary(buyer.id); generated++; }
+        catch (err: any) { this.logger.warn('[BuyerIntel] aiSummary failed for ' + buyer.id + ': ' + err.message); failed++; }
+      }));
+      if (i + 5 < missing.length) await new Promise(r => setTimeout(r, 1000));
+    }
+    return { generated, failed };
+  }
+
 }
