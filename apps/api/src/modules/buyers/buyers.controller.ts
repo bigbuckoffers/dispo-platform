@@ -58,6 +58,10 @@ export class BuyersController {
     return this.buyersService.getTopBuyers(orgId, +limit);
   }
 
+
+
+
+
   @Post('backfill-buy-boxes')
   async backfillBuyBoxes() {
     return this.intelService.backfillBuyBoxes();
@@ -192,15 +196,7 @@ export class BuyersController {
     return this.buyersService.remove(orgId, id, userId);
   }
 
-  @Post('backfill-buy-boxes')
-  async backfillBuyBoxes() {
-    return this.intelService.backfillBuyBoxes();
-  }
 
-  @Post('generate-profiles')
-  async generateProfiles(@Query('limit') limit = 50) {
-    return this.intelService.generateAllMissingProfiles(+limit);
-  }
 
   @Post(':id/generate-profile')
   async generateProfile(@Param('id') id: string) {
