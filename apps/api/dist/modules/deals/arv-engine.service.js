@@ -39,7 +39,7 @@ let ArvEngineService = class ArvEngineService {
         const rawComps = await this.scrapeRedfin(addr, deal.zipCode || '', deal.city || '', deal.state || '', propDetails);
         const narrativeComp = rawComps.find((r) => r._narrative);
         const claudeNarrative = narrativeComp ? narrativeComp._narrative : null;
-        const normalized = this.normalizeComps(actualComps);
+        const normalized = this.normalizeComps(rawComps.filter((r) => !r._narrative));
         const conflicts = this.detectSubjectConflicts(deal, normalized);
         if (conflicts.length > 0) {
             return {

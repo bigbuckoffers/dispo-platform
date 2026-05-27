@@ -70,7 +70,7 @@ export class ArvEngineService {
     const narrativeComp = rawComps.find((r: any) => r._narrative);
     const claudeNarrative = narrativeComp ? narrativeComp._narrative : null;
     // STEP 2: Normalize
-    const normalized = this.normalizeComps(actualComps);
+    const normalized = this.normalizeComps(rawComps.filter((r) => !r._narrative));
 
     // STEP 3: Detect subject data conflicts
     const conflicts = this.detectSubjectConflicts(deal, normalized);
