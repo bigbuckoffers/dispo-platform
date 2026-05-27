@@ -3,7 +3,8 @@ import { PrismaService } from "../../shared/prisma/prisma.service";
 import OpenAI from "openai";
 
 const MARKET_TO_STATE: Record<string, string> = {
-  birmingham: "AL", huntsville: "AL", montgomery: "AL",
+  birmingham: "AL", huntsville: "AL", montgomery: "AL", bessemer: "AL", hoover: "AL", vestavia: "AL",
+  "35206": "AL", "35207": "AL", "35208": "AL", "35209": "AL", "35210": "AL", "35211": "AL", "35212": "AL", "35213": "AL", "35214": "AL", "35215": "AL", "35216": "AL", "35217": "AL", "35218": "AL", "35219": "AL", "35220": "AL", "35221": "AL", "35222": "AL", "35223": "AL", "35224": "AL",  "35226": "AL", "35228": "AL", "35233": "AL", "35234": "AL", "35235": "AL", "35242": "AL", "35243": "AL",
   jacksonville: "FL", orlando: "FL", tampa: "FL", miami: "FL", clearwater: "FL",
   "central florida": "FL", "orange county": "FL",
   dallas: "TX", houston: "TX", "san antonio": "TX", austin: "TX", killeen: "TX", gordonville: "TX",
