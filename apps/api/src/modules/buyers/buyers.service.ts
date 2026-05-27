@@ -117,7 +117,7 @@ export class BuyersService {
     await this.findOne(orgId, id);
     const buyer = await this.prisma.buyer.update({
       where: { id },
-      data: dto,
+      data: dto as any,
     });
     return buyer;
   }
