@@ -8,6 +8,7 @@ import { JwtAuthGuard } from '../../shared/guards/jwt-auth.guard';
 import { RolesGuard } from '../../shared/guards/roles.guard';
 import { Roles, CurrentUser, OrgId } from '../../shared/decorators';
 import { BuyersService } from './buyers.service';
+import { BuyerIntelligenceService } from './buyer-intelligence.service';
 import { CreateBuyerDto } from './dto/create-buyer.dto';
 import { UpdateBuyerDto } from './dto/update-buyer.dto';
 import { UpdateBuyBoxDto } from './dto/update-buy-box.dto';
@@ -18,7 +19,10 @@ import { ListBuyersDto } from './dto/list-buyers.dto';
 // // @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('buyers')
 export class BuyersController {
-  constructor(private readonly buyersService: BuyersService) {}
+  constructor(
+    private readonly buyersService: BuyersService,
+    private readonly intelService: BuyerIntelligenceService,
+  ) {}
 
   @Get()
   @ApiOperation({ summary: 'List buyers with filtering, sorting, pagination' })
@@ -176,5 +180,21 @@ export class BuyersController {
     @CurrentUser('id') userId: string,
   ) {
     return this.buyersService.remove(orgId, id, userId);
+  }
+
+  @Post('backfill-buy-boxes')
+  async backfillBuyBoxes() {
+    return this.intelService.backfillBuyBoxes();
+  }
+
+  @Post('generate-profiles')
+  async generateProfiles(@Query('limit') limit = 50) {
+    return this.intelService.generateAllMissingProfiles(+limit);
+  }
+
+  @Post(':id/generate-profile')
+  async generateProfile(@Param('id') id: string) {
+    const profile = await this.intelService.generateBuyerProfile(id);
+    return { profile };
   }
 }
