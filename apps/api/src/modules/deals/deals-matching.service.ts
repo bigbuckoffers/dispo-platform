@@ -102,10 +102,14 @@ export class DealsMatchingService {
     return buyers.filter(buyer => {
       const bb = buyer.buyBox;
       if (bb && bb.states && bb.states.length > 0) {
-        const stateMatch = bb.states.includes(deal.state);
-        const primaryMatch = buyer.marketPrimary && (buyer.marketPrimary.toLowerCase().includes((deal.state || '').toLowerCase()) || buyer.marketPrimary.toLowerCase().includes((deal.city || '').toLowerCase()));
-        const secondaryMatch = buyer.marketSecondary && buyer.marketSecondary.some((m: string) => m.toLowerCase().includes((deal.state || '').toLowerCase()) || m.toLowerCase().includes((deal.city || '').toLowerCase()));
-        if (!stateMatch && !primaryMatch && !secondaryMatch) return false;
+        const dealState = (deal.state || '').toLowerCase();
+        const dealCity = (deal.city || '').toLowerCase();
+        const stateMatch = bb.states.some((s: string) => s.toLowerCase() === dealState);
+        const primaryMatch = buyer.marketPrimary && (buyer.marketPrimary.toLowerCase().includes(dealState) || buyer.marketPrimary.toLowerCase().includes(dealCity));
+        const secondaryMatch = buyer.marketSecondary && buyer.marketSecondary.some((m: string) => m.toLowerCase().includes(dealState) || m.toLowerCase().includes(dealCity));
+        const profileMatch = buyer.aiBuyerProfile && (buyer.aiBuyerProfile.toLowerCase().includes(dealState) || buyer.aiBuyerProfile.toLowerCase().includes(dealCity));
+        const intelMatch = buyer.buyerIntelNotes && (buyer.buyerIntelNotes.toLowerCase().includes(dealState) || buyer.buyerIntelNotes.toLowerCase().includes(dealCity));
+        if (!stateMatch && !primaryMatch && !secondaryMatch && !profileMatch && !intelMatch) return false;
       }
       if (bb && bb.maxPrice && price > 0 && price > bb.maxPrice * 1.5) return false;
       if (bb && bb.minPrice && price > 0 && price < bb.minPrice * 0.5) return false;
@@ -171,7 +175,7 @@ export class DealsMatchingService {
   }
 
   async getMatchesForDeal(dealId: string, limit = 50) {
-    return this.prisma.matchResult.findMany({ where: { dealId }, orderBy: { rank: 'asc' }, take: limit, include: { buyer: { select: { id: true, firstName: true, lastName: true, email: true, phone: true, company: true, tier: true, investorType: true, reliabilityScore: true, liquidityScore: true, activityScore: true, compositeScore: true, marketPrimary: true, marketSecondary: true, preferredStrategies: true, buyerIntelNotes: true, aiSummary: true, temperatureNotes: true, dealBreakers: true, hasCash: true, hasHardMoney: true, buyBox: { select: { states: true, zipCodes: true, minPrice: true, maxPrice: true, propertyTypes: true, investmentStrategy: true, rehabTolerance: true } } } } } });
+    return this.prisma.matchResult.findMany({ where: { dealId }, orderBy: { rank: 'asc' }, take: limit, include: { buyer: { select: { id: true, firstName: true, lastName: true, email: true, phone: true, company: true, tier: true, investorType: true, reliabilityScore: true, liquidityScore: true, activityScore: true, compositeScore: true, marketPrimary: true, marketSecondary: true, preferredStrategies: true, buyerIntelNotes: true, aiSummary: true, temperatureNotes: true, dealBreakers: true, hasCash: true, hasHardMoney: true, aiBuyerProfile: true, buyBox: { select: { states: true, zipCodes: true, minPrice: true, maxPrice: true, propertyTypes: true, investmentStrategy: true, rehabTolerance: true } } } } } });
   }
 
   private calculateSniperScore(matches: any[], deal: any): number {
