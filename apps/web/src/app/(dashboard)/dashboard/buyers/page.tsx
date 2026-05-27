@@ -7,20 +7,25 @@ export default function BuyersPage() {
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
   const [tier, setTier] = useState('');
-  useEffect(() => { load(); }, [search, tier]);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  useEffect(() => { load(); }, [search, tier, page]);
   async function load() {
     setLoading(true); setError('');
     try {
-      const p = new URLSearchParams({ page:'1', limit:'100' });
+      const p = new URLSearchParams({ page:String(page), limit:'100' });
       if (search) p.set('search', search);
       if (tier) p.set('tier', tier);
       const r = await fetch(`${API}/buyers?${p}`);
       if (!r.ok) throw new Error(`API error ${r.status}`);
       const j = await r.json();
       setBuyers(j.data ?? j);
+      setTotal(j.meta?.total ?? (j.data ?? j).length);
     } catch(e:any) { setError(e.message); }
     finally { setLoading(false); }
   }
+  function handleSearch(v: string) { setSearch(v); setPage(1); }
+  function handleTier(v: string) { setTier(v); setPage(1); }
   const tb: any = {
     TIER_1:'bg-yellow-500/20 text-yellow-300 border border-yellow-500/40',
     TIER_2:'bg-blue-500/20 text-blue-300 border border-blue-500/40',
@@ -33,13 +38,13 @@ export default function BuyersPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold">Buyer CRM</h1>
-          <p className="text-gray-400 text-sm mt-1">{buyers.length} buyers</p>
+          <p className="text-gray-400 text-sm mt-1">{total} buyers</p>
         </div>
       </div>
       <div className="flex gap-3 mb-6">
-        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search buyers..."
+        <input value={search} onChange={e => handleSearch(e.target.value)} placeholder="Search buyers..."
           className="bg-gray-800 border border-gray-700 text-white placeholder-gray-500 rounded-lg px-4 py-2 text-sm w-72 focus:outline-none focus:border-blue-500" />
-        <select value={tier} onChange={e => setTier(e.target.value)}
+        <select value={tier} onChange={e => handleTier(e.target.value)}
           className="bg-gray-800 border border-gray-700 text-white rounded-lg px-4 py-2 text-sm focus:outline-none">
           <option value="">All Tiers</option>
           <option value="TIER_1">Tier 1</option>
@@ -85,6 +90,22 @@ export default function BuyersPage() {
           </tbody>
         </table>
       </div>
+      {total > 100 && (
+        <div className="flex items-center justify-between mt-4">
+          <p className="text-gray-400 text-sm">Showing {(page-1)*100+1}–{Math.min(page*100, total)} of {total} buyers</p>
+          <div className="flex gap-2">
+            <button onClick={() => setPage(p => Math.max(1, p-1))} disabled={page === 1}
+              className="px-4 py-2 bg-gray-800 border border-gray-700 text-gray-300 rounded-lg text-sm disabled:opacity-40 hover:bg-gray-700">
+              ← Previous
+            </button>
+            <span className="px-4 py-2 text-gray-400 text-sm">Page {page} of {Math.ceil(total/100)}</span>
+            <button onClick={() => setPage(p => p+1)} disabled={page >= Math.ceil(total/100)}
+              className="px-4 py-2 bg-gray-800 border border-gray-700 text-gray-300 rounded-lg text-sm disabled:opacity-40 hover:bg-gray-700">
+              Next →
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
