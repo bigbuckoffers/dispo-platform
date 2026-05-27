@@ -1,11 +1,12 @@
 'use client';
 import { useState, useMemo, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Building2, Users, Zap, Plus, Filter, RefreshCw, Camera, ChevronRight, BarChart3, ChevronDown, ChevronUp, TrendingUp, Clock, Target , Trash2 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { formatCurrency } from '@/lib/format';
 import Link from 'next/link';
+import toast from 'react-hot-toast';
 import AddDealModal from '@/components/deal/AddDealModal';
 
 function tier(s: number) {
@@ -121,6 +122,9 @@ const HDRS = ['Score','Address','Beds','Sqft','Asking','70% Val','Public Val','A
 
 export default function DealsPage() {
   const [showAddDeal, setShowAddDeal] = useState(false);
+  const [matchingAll, setMatchingAll] = useState(false);
+  const [matchingDealId, setMatchingDealId] = useState<string | null>(null);
+  const qc = useQueryClient();
   const [sortBy, setSortBy] = useState('dealPriorityScore');
   const [showFilters, setShowFilters] = useState(false);
   const [showGaps, setShowGaps] = useState(false);
@@ -130,6 +134,24 @@ export default function DealsPage() {
     queryFn:()=>api.get(`/deals?page=1&limit=100&sort=${sortBy}`).then(r=>r.data),
   });
   const deals = dealsData?.data||[];
+
+  const matchAllDeals = async () => {
+    if (matchingAll) return;
+    setMatchingAll(true);
+    try {
+      const activeDeals = deals.filter((d: any) => !['DEAD','CLOSED'].includes(d.status));
+      await Promise.all(activeDeals.map((d: any) => api.post('/deals/' + d.id + '/match-buyers').catch(() => {})));
+      await refetch();
+      toast.success('Buyer counts updated for all deals');
+    } catch { toast.error('Match all failed'); }
+    finally { setMatchingAll(false); }
+  };
+
+  const runMatch = useMutation({
+    mutationFn: (dealId: string) => { setMatchingDealId(dealId); return api.post('/deals/' + dealId + '/trigger-matching').then(r => r.data); },
+    onSuccess: (data: any) => { setMatchingDealId(null); refetch(); if (data?.matchCount > 0) toast.success('Found ' + data.matchCount + ' matched buyers!'); else toast('No buyers matched'); },
+    onError: () => { setMatchingDealId(null); toast.error('Matching failed'); },
+  });
 
   // Auto-fetch RentCast AVM for deals missing public value
   useEffect(() => {
@@ -188,6 +210,10 @@ export default function DealsPage() {
         <div className="flex items-center gap-2">
           <button onClick={()=>refetch()} className="p-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-400"><RefreshCw size={14}/></button>
           <button onClick={()=>setShowFilters(!showFilters)} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs ${showFilters?'bg-blue-600 text-white':'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}><Filter size={12}/> Sort</button>
+          <button onClick={()=>matchAllDeals()} disabled={matchingAll} className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs rounded-lg border border-gray-700 disabled:opacity-50">
+            {matchingAll ? <RefreshCw size={12} className="animate-spin"/> : <Users size={12}/>}
+            {matchingAll ? 'Matching...' : 'Match All Deals'}
+          </button>
           <button onClick={()=>setShowAddDeal(true)} className="flex items-center gap-1.5 px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs rounded-lg font-medium"><Plus size={14}/> Add Deal</button>
         </div>
       </div>
@@ -443,6 +469,11 @@ export default function DealsPage() {
                         )}
                       </div>
 
+                    </div>
+                        <button onClick={e=>{e.preventDefault();e.stopPropagation();runMatch.mutate(deal.id);}} disabled={matchingDealId===deal.id} title="Run AI Matching" className="ml-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold transition whitespace-nowrap bg-violet-900/40 text-violet-300 border border-violet-700/40 hover:bg-violet-800/60 disabled:opacity-50">
+                          {matchingDealId===deal.id?<RefreshCw size={9} className="animate-spin"/>:<Zap size={9}/>}
+                          {matchingDealId===deal.id?'Running...':'AI Match'}
+                        </button>
                     </div>
                     {/* Delete button - shows on row hover */}
                     <div className="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
