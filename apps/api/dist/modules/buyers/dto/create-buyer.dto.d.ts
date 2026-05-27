@@ -52,7 +52,6 @@ export declare class CreateBuyerDto {
     aiSummary?: string;
     proofOfFundsUrl?: string;
     maxEmd?: number;
-    buyBox?: any;
     rawImportData?: any;
     seriousnessScore?: number;
     buyBox?: CreateBuyBoxDto;

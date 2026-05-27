@@ -61,7 +61,6 @@ export class CreateBuyerDto {
   @ApiPropertyOptional() @IsString() @IsOptional() aiSummary?: string;
   @ApiPropertyOptional() @IsString() @IsOptional() proofOfFundsUrl?: string;
   @ApiPropertyOptional() @IsNumber() @IsOptional() maxEmd?: number;
-  @ApiPropertyOptional() @IsObject() @IsOptional() buyBox?: any;
   @ApiPropertyOptional() @IsOptional() rawImportData?: any;
   @ApiPropertyOptional() @IsOptional() seriousnessScore?: number;
 
