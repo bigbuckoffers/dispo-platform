@@ -247,89 +247,56 @@ Find comps now and return the JSON.`;
     if (!deal) throw new Error('Deal not found');
     if (!deal.address || !deal.city || !deal.state) throw new Error('Deal missing address');
 
-    // Build Zillow search URL
-    const addressSlug = [deal.address, deal.city, deal.state, deal.zipCode]
-      .filter(Boolean).join(' ').replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-]/g, '');
-    const zillowUrl = `https://www.zillow.com/homes/${encodeURIComponent(`${deal.address}, ${deal.city}, ${deal.state} ${deal.zipCode || ''}`)}`;
-    const searchUrl = `https://www.zillow.com/search/GetSearchPageState.htm?searchQueryState={"pagination":{},"isMapVisible":false,"filterState":{"sort":{"value":"globalrelevanceex"}},"mapBounds":{}}&wants={"cat1":["listResults","mapResults"]}&requestId=1&address=${encodeURIComponent(`${deal.address}, ${deal.city}, ${deal.state}`)}`;
+    const fullAddr = `${deal.address}, ${deal.city}, ${deal.state} ${deal.zipCode || ''}`.trim();
+    const zillowUrl = `https://www.zillow.com/homes/${encodeURIComponent(fullAddr)}`;
 
-    const scraperKey = process.env.SCRAPER_API_KEY || '2937e26b28b93482446a9d030142aa50';
+    const searchPrompt = `Use your web_search tool right now to search for: Zillow Zestimate "${deal.address}" ${deal.city} ${deal.state} ${deal.zipCode || ''}. Find the current Zillow Zestimate value for this specific property.`;
 
+    let researchText = '';
     try {
-      // Use ScraperAPI to fetch Zillow property page
-      const targetUrl = `https://www.zillow.com/homes/${encodeURIComponent(`${deal.address},-${deal.city},-${deal.state}_rb/`)}`;
-      const scraperUrl = `http://api.scraperapi.com?api_key=${scraperKey}&url=${encodeURIComponent(zillowUrl)}&render=true`;
+      const r1 = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY || '', 'anthropic-version': '2023-06-01' },
+        body: JSON.stringify({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 1000,
+          tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 3 }],
+          messages: [{ role: 'user', content: searchPrompt }],
+        }),
+      });
+      const d1 = await r1.json();
+      researchText = (d1.content || []).filter((b: any) => b.type === 'text').map((b: any) => b.text).join(' ');
+      console.log('Zestimate research:', researchText.substring(0, 300));
+    } catch(e: any) { console.log('Zestimate search error:', e.message); }
 
-      const response = await fetch(scraperUrl, { signal: AbortSignal.timeout(30000) });
-      const html = await response.text();
-      console.log('Zillow scrape status:', response.status, 'html length:', html.length);
-      console.log('Zillow html snippet:', html.substring(0, 500));
-      const zestimateRaw = html.match(/zestimate/gi);
-      console.log('Zestimate mentions in HTML:', zestimateRaw?.length || 0);
-
-      // Extract Zestimate from HTML
-      let zestimate: number | null = null;
-      let zillowLink = zillowUrl;
-
-      // Try to find Zestimate in the page HTML
-      const patterns = [
-        /"zestimate":(\d+)/,
-        /"zestimate":\s*(\d+)/,
-        /Zestimate<\/div><div[^>]*>\$([0-9,]+)/,
-        /zestimate[^>]*>\$([0-9,]+)/i,
-        /"price":(\d+).*?"zestimate"/,
-      ];
-
-      // Log zestimate context for debugging
-      const zIdx = html.indexOf('zestimate');
-      if (zIdx > 0) {
-        console.log('Zestimate context 1:', JSON.stringify(html.substring(zIdx-20, zIdx+150)));
-      }
-      const zIdx2 = html.indexOf('Zestimate');
-      if (zIdx2 > 0) {
-        console.log('Zestimate context 2:', JSON.stringify(html.substring(zIdx2-20, zIdx2+150)));
-      }
-
-      for (const pattern of patterns) {
-        const match = html.match(pattern);
-        if (match) {
-          const val = parseInt(match[1].replace(/,/g, ''));
-          if (val > 10000 && val < 50000000) {
-            zestimate = val;
-            break;
-          }
-        }
-      }
-
-      // Also try JSON data embedded in page
-      const jsonMatch = html.match(/<!--({"queryState".*?)-->/s) ||
-                        html.match(/window\.__PRELOADED_STATE__\s*=\s*({.*?});/s) ||
-                        html.match(/"hdpData":\s*({.*?"zestimate".*?})/s);
-
-      if (!zestimate && jsonMatch) {
-        try {
-          const data = JSON.parse(jsonMatch[1]);
-          const z = data?.hdpData?.homeInfo?.zestimate ||
-                    data?.props?.pageProps?.gdpClientCache?.['Gdp:*']?.property?.zestimate ||
-                    data?.zestimate;
-          if (z && z > 10000) zestimate = z;
-        } catch {}
-      }
-
-      if (zestimate) {
-        await this.prisma.deal.update({
-          where: { id },
-          data: { zillowEstimate: zestimate, zillowUrl: zillowLink }
+    let zestimate: number | null = null;
+    if (researchText && researchText.length > 20) {
+      try {
+        const r2 = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY || '', 'anthropic-version': '2023-06-01' },
+          body: JSON.stringify({
+            model: 'claude-haiku-4-5-20251001',
+            max_tokens: 100,
+            system: 'You are a JSON-only API. Output ONLY valid JSON. No prose.',
+            messages: [{ role: 'user', content: `Extract the Zillow Zestimate dollar amount from this text. Return ONLY: {"zestimate": 450000} or {"zestimate": null} if not found.\n\nText: ${researchText.substring(0, 1000)}` }],
+          }),
         });
-        return { success: true, zestimate, zillowUrl: zillowLink, source: 'scraperapi' };
-      }
-
-      // If no Zestimate found, still save the URL
-      await this.prisma.deal.update({ where: { id }, data: { zillowUrl: zillowLink } });
-      return { success: false, message: 'Zestimate not found on page — Zillow URL saved. Try adding manually.', zillowUrl: zillowLink };
-
-    } catch (err: any) {
-      return { success: false, message: err.message || 'Scrape failed', zillowUrl };
+        const d2 = await r2.json();
+        const raw = (d2.content || []).filter((b: any) => b.type === 'text').map((b: any) => b.text).join('');
+        console.log('Zestimate extract:', raw);
+        const clean = raw.replace(/```json|```/g, '').trim();
+        const parsed = JSON.parse(clean.substring(clean.indexOf('{'), clean.lastIndexOf('}') + 1));
+        if (parsed.zestimate && parsed.zestimate > 10000) zestimate = parsed.zestimate;
+      } catch(e: any) { console.log('Zestimate extract error:', e.message); }
     }
+
+    if (zestimate) {
+      await this.prisma.deal.update({ where: { id }, data: { zillowEstimate: zestimate, zillowUrl } });
+      return { success: true, zestimate, zillowUrl, source: 'ai_web_search' };
+    }
+    await this.prisma.deal.update({ where: { id }, data: { zillowUrl } });
+    return { success: false, message: 'Zestimate not found — Zillow URL saved.', zillowUrl };
   }
+
 }

@@ -228,74 +228,59 @@ Find comps now and return the JSON.`;
             throw new Error('Deal not found');
         if (!deal.address || !deal.city || !deal.state)
             throw new Error('Deal missing address');
-        const addressSlug = [deal.address, deal.city, deal.state, deal.zipCode]
-            .filter(Boolean).join(' ').replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-]/g, '');
-        const zillowUrl = `https://www.zillow.com/homes/${encodeURIComponent(`${deal.address}, ${deal.city}, ${deal.state} ${deal.zipCode || ''}`)}`;
-        const searchUrl = `https://www.zillow.com/search/GetSearchPageState.htm?searchQueryState={"pagination":{},"isMapVisible":false,"filterState":{"sort":{"value":"globalrelevanceex"}},"mapBounds":{}}&wants={"cat1":["listResults","mapResults"]}&requestId=1&address=${encodeURIComponent(`${deal.address}, ${deal.city}, ${deal.state}`)}`;
-        const scraperKey = process.env.SCRAPER_API_KEY || '2937e26b28b93482446a9d030142aa50';
+        const fullAddr = `${deal.address}, ${deal.city}, ${deal.state} ${deal.zipCode || ''}`.trim();
+        const zillowUrl = `https://www.zillow.com/homes/${encodeURIComponent(fullAddr)}`;
+        const searchPrompt = `Use your web_search tool right now to search for: Zillow Zestimate "${deal.address}" ${deal.city} ${deal.state} ${deal.zipCode || ''}. Find the current Zillow Zestimate value for this specific property.`;
+        let researchText = '';
         try {
-            const targetUrl = `https://www.zillow.com/homes/${encodeURIComponent(`${deal.address},-${deal.city},-${deal.state}_rb/`)}`;
-            const scraperUrl = `http://api.scraperapi.com?api_key=${scraperKey}&url=${encodeURIComponent(zillowUrl)}&render=true`;
-            const response = await fetch(scraperUrl, { signal: AbortSignal.timeout(30000) });
-            const html = await response.text();
-            console.log('Zillow scrape status:', response.status, 'html length:', html.length);
-            console.log('Zillow html snippet:', html.substring(0, 500));
-            const zestimateRaw = html.match(/zestimate/gi);
-            console.log('Zestimate mentions in HTML:', zestimateRaw?.length || 0);
-            let zestimate = null;
-            let zillowLink = zillowUrl;
-            const patterns = [
-                /"zestimate":(\d+)/,
-                /"zestimate":\s*(\d+)/,
-                /Zestimate<\/div><div[^>]*>\$([0-9,]+)/,
-                /zestimate[^>]*>\$([0-9,]+)/i,
-                /"price":(\d+).*?"zestimate"/,
-            ];
-            const zIdx = html.indexOf('zestimate');
-            if (zIdx > 0) {
-                console.log('Zestimate context 1:', JSON.stringify(html.substring(zIdx - 20, zIdx + 150)));
-            }
-            const zIdx2 = html.indexOf('Zestimate');
-            if (zIdx2 > 0) {
-                console.log('Zestimate context 2:', JSON.stringify(html.substring(zIdx2 - 20, zIdx2 + 150)));
-            }
-            for (const pattern of patterns) {
-                const match = html.match(pattern);
-                if (match) {
-                    const val = parseInt(match[1].replace(/,/g, ''));
-                    if (val > 10000 && val < 50000000) {
-                        zestimate = val;
-                        break;
-                    }
-                }
-            }
-            const jsonMatch = html.match(/<!--({"queryState".*?)-->/s) ||
-                html.match(/window\.__PRELOADED_STATE__\s*=\s*({.*?});/s) ||
-                html.match(/"hdpData":\s*({.*?"zestimate".*?})/s);
-            if (!zestimate && jsonMatch) {
-                try {
-                    const data = JSON.parse(jsonMatch[1]);
-                    const z = data?.hdpData?.homeInfo?.zestimate ||
-                        data?.props?.pageProps?.gdpClientCache?.['Gdp:*']?.property?.zestimate ||
-                        data?.zestimate;
-                    if (z && z > 10000)
-                        zestimate = z;
-                }
-                catch { }
-            }
-            if (zestimate) {
-                await this.prisma.deal.update({
-                    where: { id },
-                    data: { zillowEstimate: zestimate, zillowUrl: zillowLink }
+            const r1 = await fetch('https://api.anthropic.com/v1/messages', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY || '', 'anthropic-version': '2023-06-01' },
+                body: JSON.stringify({
+                    model: 'claude-haiku-4-5-20251001',
+                    max_tokens: 1000,
+                    tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 3 }],
+                    messages: [{ role: 'user', content: searchPrompt }],
+                }),
+            });
+            const d1 = await r1.json();
+            researchText = (d1.content || []).filter((b) => b.type === 'text').map((b) => b.text).join(' ');
+            console.log('Zestimate research:', researchText.substring(0, 300));
+        }
+        catch (e) {
+            console.log('Zestimate search error:', e.message);
+        }
+        let zestimate = null;
+        if (researchText && researchText.length > 20) {
+            try {
+                const r2 = await fetch('https://api.anthropic.com/v1/messages', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY || '', 'anthropic-version': '2023-06-01' },
+                    body: JSON.stringify({
+                        model: 'claude-haiku-4-5-20251001',
+                        max_tokens: 100,
+                        system: 'You are a JSON-only API. Output ONLY valid JSON. No prose.',
+                        messages: [{ role: 'user', content: `Extract the Zillow Zestimate dollar amount from this text. Return ONLY: {"zestimate": 450000} or {"zestimate": null} if not found.\n\nText: ${researchText.substring(0, 1000)}` }],
+                    }),
                 });
-                return { success: true, zestimate, zillowUrl: zillowLink, source: 'scraperapi' };
+                const d2 = await r2.json();
+                const raw = (d2.content || []).filter((b) => b.type === 'text').map((b) => b.text).join('');
+                console.log('Zestimate extract:', raw);
+                const clean = raw.replace(/```json|```/g, '').trim();
+                const parsed = JSON.parse(clean.substring(clean.indexOf('{'), clean.lastIndexOf('}') + 1));
+                if (parsed.zestimate && parsed.zestimate > 10000)
+                    zestimate = parsed.zestimate;
             }
-            await this.prisma.deal.update({ where: { id }, data: { zillowUrl: zillowLink } });
-            return { success: false, message: 'Zestimate not found on page — Zillow URL saved. Try adding manually.', zillowUrl: zillowLink };
+            catch (e) {
+                console.log('Zestimate extract error:', e.message);
+            }
         }
-        catch (err) {
-            return { success: false, message: err.message || 'Scrape failed', zillowUrl };
+        if (zestimate) {
+            await this.prisma.deal.update({ where: { id }, data: { zillowEstimate: zestimate, zillowUrl } });
+            return { success: true, zestimate, zillowUrl, source: 'ai_web_search' };
         }
+        await this.prisma.deal.update({ where: { id }, data: { zillowUrl } });
+        return { success: false, message: 'Zestimate not found — Zillow URL saved.', zillowUrl };
     }
 };
 exports.DealsService = DealsService;

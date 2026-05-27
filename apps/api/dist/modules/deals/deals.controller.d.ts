@@ -1118,7 +1118,7 @@ export declare class DealsController {
         message?: undefined;
     } | {
         success: boolean;
-        message: any;
+        message: string;
         zillowUrl: string;
         zestimate?: undefined;
         source?: undefined;
