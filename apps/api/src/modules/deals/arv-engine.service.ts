@@ -130,17 +130,15 @@ export class ArvEngineService {
   }
 
   private async scrapeRedfin(fullAddr: string, zip: string, city: string, state: string, propDetails: string): Promise<any[]> {
-    // Use Anthropic API with web search to find real sold comps
     const today = new Date().toISOString().split('T')[0];
-    const prompt = `Search Redfin and Zillow for homes sold in the last 12 months near ${fullAddr} in zip code ${zip}. Today is ${today}.
+    const oneYearAgo = new Date(Date.now() - 365*24*60*60*1000).toISOString().split('T')[0];
 
-Respond with ONLY a raw JSON array, nothing else. No explanation. No markdown. Start with [ end with ].
+    // CALL 1: Web search - get raw research (prose is fine)
+    const searchPrompt = `Search Redfin and Zillow for single family homes that SOLD in the last 12 months near ${fullAddr} in zip code ${zip}, ${state}. Today is ${today}. Find as many sold listings as possible with their sale price, square footage, beds, baths, and sale date. I need at least 3-5 comps.`;
 
-Format: [{"address":"full street address","saleDate":"YYYY-MM-DD","salePrice":150000,"sqft":1200,"beds":3,"baths":2,"renovationEvidence":null,"subdivisionProof":null,"sourcePortal":"Redfin","sourceUrl":""}]
-
-Return every sold home you find. If nothing found return [].`
+    let researchText = '';
     try {
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
+      const r1 = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -149,65 +147,68 @@ Return every sold home you find. If nothing found return [].`
         },
         body: JSON.stringify({
           model: 'claude-haiku-4-5-20251001',
-          max_tokens: 4000,
-          system: 'You are a JSON-only API. Never write prose. Your entire response must be a valid JSON array starting with [ and ending with ]. No text before or after the array.',
+          max_tokens: 3000,
           tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 5 }],
-          messages: [{ role: 'user', content: prompt }],
+          messages: [{ role: 'user', content: searchPrompt }],
         }),
       });
-
-      const data = await response.json() as any;
-      console.log('Anthropic ARV search status:', response.status, 'stop_reason:', data.stop_reason);
-
-      // Extract text from response
-      const textBlocks = (data.content || []).filter((b: any) => b.type === 'text');
-      const fullText = textBlocks.map((b: any) => b.text).join('');
-      console.log('ARV search response preview:', fullText.substring(0, 300));
-
-      // Store narrative for display
-      (this as any)._lastArvNarrative = fullText;
-      // Try multiple JSON extraction patterns
-      const patterns = [/[\{[\s\S]*?\}\]/g, /[[\s\S]*?]/g];
-      for (const pattern of patterns) {
-        const matches = fullText.match(pattern) || [];
-        for (const match of matches) {
-          try {
-            const comps = JSON.parse(match);
-            if (Array.isArray(comps) && comps.length > 0 && comps[0].address) {
-              console.log(`Found ${comps.length} raw comps via web search`);
-              return comps;
-            }
-          } catch(e) {}
-        }
-      }
-      // Return narrative if no JSON found
-      if (fullText.length > 200) {
-        return [{ _narrative: fullText, address: '', salePrice: 0, saleDate: '', sqft: 0, beds: 0, baths: 0, sourcePortal: 'Claude', sourceUrl: '' }];
-      }
-      return [];
+      const d1 = await r1.json();
+      console.log('ARV call1 status:', r1.status);
+      researchText = (d1.content || []).filter((b: any) => b.type === 'text').map((b: any) => b.text).join(' ');
+      console.log('ARV research preview:', researchText.substring(0, 200));
     } catch(e: any) {
-      console.log('Anthropic web search error:', e.message);
+      console.log('ARV call1 error:', e.message);
       return [];
     }
-  }
 
-    private normalizeComps(raw: any[]): RawComp[] {
-    return raw.map(c => ({
-      address: (c.address || '').trim(),
-      saleDate: c.saleDate || '',
-      salePrice: Number(c.salePrice) || 0,
-      sqft: Number(c.sqft) || 0,
-      beds: Number(c.beds) || 0,
-      baths: Number(c.baths) || 0,
-      yearBuilt: c.yearBuilt ? Number(c.yearBuilt) : undefined,
-      lotSize: c.lotSize ? Number(c.lotSize) : undefined,
-      propertyType: c.propertyType || 'SINGLE_FAMILY',
-      subdivision: c.subdivision || undefined,
-      renovationEvidence: c.renovationEvidence || undefined,
-      sourcePortal: c.sourcePortal || 'Unknown',
-      sourceUrl: c.sourceUrl || '',
-      scrapedAt: c.scrapedAt || new Date().toISOString(),
-    })).filter(c => c.salePrice > 0 && c.address);
+    if (!researchText || researchText.length < 50) return [];
+
+    // CALL 2: Extract JSON from the research text (no web search, just extraction)
+    const extractPrompt = `Extract sold home data from this research and return ONLY a JSON array.
+
+Research: ${researchText}
+
+Return ONLY this JSON array format, no other text:
+[{"address":"123 Main St, Birmingham AL 35206","saleDate":"2025-06-01","salePrice":150000,"sqft":1200,"beds":3,"baths":2,"renovationEvidence":null,"subdivisionProof":null,"sourcePortal":"Redfin","sourceUrl":""}]
+
+Rules:
+- Only include homes that SOLD (not listed, not for sale)
+- saleDate must be after ${oneYearAgo}
+- salePrice must be a number, not null
+- If no valid sold homes found, return []
+- Return ONLY the JSON array, nothing else`;
+
+    try {
+      const r2 = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': process.env.ANTHROPIC_API_KEY || '',
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 2000,
+          system: 'You are a JSON extraction API. Output ONLY valid JSON. No prose, no explanation, no markdown.',
+          messages: [{ role: 'user', content: extractPrompt }],
+        }),
+      });
+      const d2 = await r2.json();
+      console.log('ARV call2 status:', r2.status);
+      const raw = (d2.content || []).filter((b: any) => b.type === 'text').map((b: any) => b.text).join('');
+      console.log('ARV call2 preview:', raw.substring(0, 300));
+
+      const clean = raw.replace(/```json|```/g, '').trim();
+      const arrStart = clean.indexOf('[');
+      const arrEnd = clean.lastIndexOf(']');
+      if (arrStart === -1 || arrEnd === -1) return [];
+      const parsed = JSON.parse(clean.substring(arrStart, arrEnd + 1));
+      console.log('ARV parsed comps:', parsed.length);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch(e: any) {
+      console.log('ARV call2 error:', e.message);
+      return [];
+    }
   }
 
   private detectSubjectConflicts(deal: any, comps: RawComp[]): string[] {

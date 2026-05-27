@@ -36,7 +36,7 @@ export declare class ArvEngineService {
         outputState: OutputState;
         reason: string;
         conflicts: string[];
-        rawCompCount: number;
+        rawCompCount: any;
         validatedComps: any[];
         arvLow: any;
         arvMedian: any;
@@ -62,7 +62,7 @@ export declare class ArvEngineService {
             city: string;
             state: string;
         };
-        rawCompCount: number;
+        rawCompCount: any;
         validatedCompCount: number;
         validatedComps: ValidatedComp[];
         arvLow: number;
@@ -78,7 +78,6 @@ export declare class ArvEngineService {
         conflicts?: undefined;
     }>;
     private scrapeRedfin;
-    private normalizeComps;
     private detectSubjectConflicts;
     private validateAndScoreComps;
     private determineOutputState;
