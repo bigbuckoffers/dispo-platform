@@ -137,6 +137,8 @@ model Buyer {
   buyerIntelNotes    String?
   aiExtractedInsights Json?
   aiSummary          String?
+  temperatureNotes   String?
+  aiTemperatureAnalysis String?
   lastAiAnalysisAt   DateTime?
 
   // Reliability tracking
@@ -485,7 +487,9 @@ model Deal {
   otherDocumentUrls             String[]
 
   // AI / Scoring
-  aiSummary                     String?
+  aiSummary          String?
+  temperatureNotes   String?
+  aiTemperatureAnalysis String?
   buyerFacingSummary            String?
   internalSummary               String?
   aiDealMathSummary             String?
