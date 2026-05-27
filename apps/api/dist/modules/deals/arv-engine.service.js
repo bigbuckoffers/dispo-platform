@@ -87,7 +87,7 @@ let ArvEngineService = class ArvEngineService {
     async scrapeRedfin(fullAddr, zip, city, state, propDetails) {
         const today = new Date().toISOString().split('T')[0];
         const oneYearAgo = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-        const searchPrompt = `Search Redfin and Zillow for single family homes that SOLD in the last 12 months near ${fullAddr} in zip code ${zip}, ${state}. Today is ${today}. Find as many sold listings as possible with their sale price, square footage, beds, baths, and sale date. I need at least 3-5 comps.`;
+        const searchPrompt = `Use your web_search tool right now to search for: recently sold homes ${zip} ${city} ${state} site:redfin.com OR site:zillow.com. Then search again for: ${zip} sold homes 2025 2026. Find single family homes that SOLD in the last 12 months near ${fullAddr}. For each sold home list: full address, sale price, square footage, beds, baths, sale date. I need at least 3-5 sold comps. Today is ${today}.`;
         let researchText = '';
         try {
             const r1 = await fetch('https://api.anthropic.com/v1/messages', {
