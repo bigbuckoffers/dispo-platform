@@ -86,12 +86,13 @@ let ArvEngineService = class ArvEngineService {
     }
     async scrapeRedfin(fullAddr, zip, city, state, propDetails) {
         const today = new Date().toISOString().split('T')[0];
-        const prompt = `Search for recently sold single family homes near ${fullAddr} in the last 12 months. Today is ${today}. Same zip code preferred. No foreclosures or auction sales.
+        const prompt = `Search Redfin and Zillow for homes sold in the last 12 months near ${fullAddr} in zip code ${zip}. Today is ${today}.
 
-Return ONLY a valid JSON array, no other text:
-[{"address":"123 Main St, Birmingham AL 35206","saleDate":"2025-06-01","salePrice":185000,"sqft":1450,"beds":3,"baths":2,"renovationEvidence":"updated kitchen, new roof","subdivisionProof":"MLS shows East Lake subdivision","sourcePortal":"Redfin","sourceUrl":"https://redfin.com/..."}]
+Respond with ONLY a raw JSON array, nothing else. No explanation. No markdown. Start with [ end with ].
 
-If fewer than 2 homes found, return []`;
+Format: [{"address":"full street address","saleDate":"YYYY-MM-DD","salePrice":150000,"sqft":1200,"beds":3,"baths":2,"renovationEvidence":null,"subdivisionProof":null,"sourcePortal":"Redfin","sourceUrl":""}]
+
+Return every sold home you find. If nothing found return [].`;
         try {
             const response = await fetch('https://api.anthropic.com/v1/messages', {
                 method: 'POST',
