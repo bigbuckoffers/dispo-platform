@@ -307,7 +307,7 @@ __decorate([
 ], CreateBuyerDto.prototype, "maxEmd", void 0);
 __decorate([
     (0, swagger_1.ApiPropertyOptional)(),
-    IsObject(),
+    (0, class_validator_1.IsObject)(),
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", Object)
 ], CreateBuyerDto.prototype, "buyBox", void 0);

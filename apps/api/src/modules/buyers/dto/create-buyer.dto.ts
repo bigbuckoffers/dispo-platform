@@ -1,7 +1,7 @@
 // create-buyer.dto.ts
 import {
   IsString, IsEmail, IsOptional, IsEnum, IsBoolean, IsArray,
-  IsNumber, Min, Max, ValidateNested, IsUrl,
+  IsNumber, IsObject, Min, Max, ValidateNested, IsUrl,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
