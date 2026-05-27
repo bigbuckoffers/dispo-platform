@@ -64,7 +64,7 @@ export class BuyerIntelligenceService {
   }
 
   async generateBuyerProfile(buyerId: string): Promise<string> {
-    const buyer = await this.prisma.buyer.findUnique({ where: { id: buyerId }, include: { buyBox: true } });
+    const buyer = await this.prisma.buyer.findUnique({ where: { id: buyerId }, include: { buyBox: true } }) as any;
     if (!buyer) throw new Error("Buyer " + buyerId + " not found");
     const bb = buyer.buyBox as any;
     const context = [
@@ -79,7 +79,7 @@ export class BuyerIntelligenceService {
       bb ? "Buy states: " + (bb.states?.join(", ") || "none") + " | Price: $" + (bb.minPrice || 0).toLocaleString() + "-$" + (bb.maxPrice ? bb.maxPrice.toLocaleString() : "open") : null,
       buyer.buyerIntelNotes ? "Intel notes: " + buyer.buyerIntelNotes : null,
       buyer.aiSummary ? "Conversation: " + buyer.aiSummary : null,
-      (buyer as any).temperatureNotes ? "Status: " + (buyer as any).temperatureNotes : null,
+      buyer.temperatureNotes ? "Status: " + buyer.temperatureNotes : null,
     ].filter(Boolean).join("\n");
 
     const response = await this.getOpenAI().chat.completions.create({
