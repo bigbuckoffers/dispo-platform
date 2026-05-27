@@ -225,8 +225,9 @@ Rules:
         subdivisionProof: r.subdivisionProof || undefined,
         sourcePortal: String(r.sourcePortal || 'Unknown'),
         sourceUrl: String(r.sourceUrl || ''),
+        scrapedAt: new Date().toISOString(),
       }))
-      .filter((r: RawComp) => r.salePrice > 0);
+      .filter((r: any) => r.salePrice > 0);
   }
 
     private detectSubjectConflicts(deal: any, comps: RawComp[]): string[] {

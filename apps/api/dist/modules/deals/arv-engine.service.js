@@ -175,6 +175,7 @@ Rules:
             subdivisionProof: r.subdivisionProof || undefined,
             sourcePortal: String(r.sourcePortal || 'Unknown'),
             sourceUrl: String(r.sourceUrl || ''),
+            scrapedAt: new Date().toISOString(),
         }))
             .filter((r) => r.salePrice > 0);
     }
