@@ -26,11 +26,24 @@ export default function MessagesPage() {
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
+  const buyerParam = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('buyer') : null;
   const [loadingMsgs, setLoadingMsgs] = useState(false);
   const [search, setSearch] = useState('');
   const bottomRef = useRef<any>(null);
 
   useEffect(() => { loadConversations(); }, []);
+  useEffect(() => {
+    if (buyerParam && conversations.length > 0) {
+      const conv = conversations.find((c:any) => c.buyer.id === buyerParam);
+      if (conv) setSelected(conv);
+      else {
+        // No conversation yet — create a placeholder so user can send first message
+        fetch(`${API}/buyers/${buyerParam}`).then(r=>r.json()).then(buyer => {
+          setSelected({ id: null, buyer, lastMessageBody: null, lastMessageAt: null, unreadCount: 0 });
+        });
+      }
+    }
+  }, [buyerParam, conversations]);
   useEffect(() => { if (selected) loadMessages(selected.buyer.id); }, [selected]);
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
