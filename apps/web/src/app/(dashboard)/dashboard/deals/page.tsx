@@ -117,8 +117,8 @@ const SC: Record<string,string> = {
 };
 
 // 11 columns — status badge inside address, next action at end
-const COLS = '64px 64px 200px 72px 64px 90px 90px 90px 80px 80px 72px 150px';
-const HDRS = ['Score','Sniper','Address','Beds','Sqft','Asking','70% Val','Public Val','ARV','Deadline','Buyers','Next Action'];
+const COLS = '64px 64px 200px 72px 64px 90px 90px 90px 80px 80px 72px 80px 130px';
+const HDRS = ['Score','Sniper','Address','Beds','Sqft','Asking','70% Val','Public Val','ARV','Deadline','Buyers','AI Match','Next Action'];
 
 export default function DealsPage() {
   const [showAddDeal, setShowAddDeal] = useState(false);
@@ -450,6 +450,14 @@ export default function DealsPage() {
 
 
 
+                      {/* AI Match */}
+                      <div className="px-2 flex items-center justify-center">
+                        <button onClick={e=>{e.preventDefault();e.stopPropagation();runMatch.mutate(deal.id);}} disabled={matchingDealId===deal.id} className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-semibold bg-violet-900/40 text-violet-300 border border-violet-700/40 hover:bg-violet-800/60 disabled:opacity-50 transition whitespace-nowrap">
+                          {matchingDealId===deal.id ? <RefreshCw size={9} className="animate-spin"/> : <Zap size={9}/>}
+                          {matchingDealId===deal.id ? 'Running...' : 'AI Match'}
+                        </button>
+                      </div>
+
                       {/* Next Action */}
                       <div className="px-2 flex items-center gap-1.5 relative group/na">
                         <Link href={`/dashboard/deals/${deal.id}`} className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold transition whitespace-nowrap ${na.c}`}>
@@ -465,10 +473,6 @@ export default function DealsPage() {
                             ))}
                           </div>
                         )}
-                        <button onClick={e=>{e.preventDefault();e.stopPropagation();runMatch.mutate(deal.id);}} disabled={matchingDealId===deal.id} className="ml-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-violet-900/40 text-violet-300 border border-violet-700/40 hover:bg-violet-800/60 disabled:opacity-50 transition">
-                          {matchingDealId===deal.id ? <RefreshCw size={9} className="animate-spin"/> : <Zap size={9}/>}
-                          {matchingDealId===deal.id ? 'Running...' : 'AI Match'}
-                        </button>
                       </div>
 
                     </div>
