@@ -158,7 +158,7 @@ export default function IntakePage({ params }: { params: { token: string } }) {
 
         {/* STEP 1 — Who are you + buying status */}
         {step === 1 && (
-          <div className="space-y-5">
+          <div className="space-y-5 pb-32">
             <div>
               <h2 className="text-xl font-bold text-white mb-1">Hey! Let's get you set up 👋</h2>
               <p className="text-gray-400 text-sm">We use AI to match wholesale deals directly to your buy box. This takes about 2 minutes.</p>
