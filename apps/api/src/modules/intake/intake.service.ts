@@ -85,11 +85,7 @@ export class IntakeService {
     const submittedData = sub.submittedData as any;
     if (submittedData?.freeformNotes) {
       const existing = sub.buyer.buyerIntelNotes || '';
-      const newNotes = existing ? existing + '
-
-[Intake Form]
-' + submittedData.freeformNotes : '[Intake Form]
-' + submittedData.freeformNotes;
+      const newNotes = existing ? existing + '\n\n[Intake Form]\n' + submittedData.freeformNotes : '[Intake Form]\n' + submittedData.freeformNotes;
       await this.prisma.buyer.update({
         where: { id: sub.buyerId },
         data: { buyerIntelNotes: newNotes },
