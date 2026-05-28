@@ -94,7 +94,38 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
   }, [buyer]);
   const recalculate = useMutation({ mutationFn: () => api.post(`/buyers/${id}/recalculate-scores`).then(r=>r.data), onSuccess: () => { qc.invalidateQueries({queryKey:['buyer',id]}); toast.success('Recalculated'); } });
   const saveIntel = async () => { setSaving(true); try { await api.put(`/buyers/${id}`,{buyerIntelNotes:intelText,dealBreakers}); qc.invalidateQueries({queryKey:['buyer',id]}); toast.success('Saved'); } catch { toast.error('Failed'); } finally { setSaving(false); } };
-  const saveBuyBox = async () => { setSavingBb(true); try { await api.put(`/buyers/${id}`, { marketPrimary: bbForm.marketPrimary||null, marketSecondary: bbForm.marketSecondary?bbForm.marketSecondary.split(',').map((s:string)=>s.trim()).filter(Boolean):[], preferredStrategies: bbForm.strategies?bbForm.strategies.split(',').map((s:string)=>s.trim()).filter(Boolean):[], notes: bbForm.funding||null, temperatureNotes: bbForm.privateNotes||null, avgCloseSpeedDays: bbForm.closeSpeed?parseInt(bbForm.closeSpeed):null }); (() => { const bb: any = { states: bbForm.states?bbForm.states.split(',').map((s:string)=>s.trim()).filter(Boolean):[], zipCodes: bbForm.zipCodes?bbForm.zipCodes.split(',').map((s:string)=>s.trim()).filter(Boolean):[] }; bb.minPrice = bbForm.minPrice ? parseInt(bbForm.minPrice) : null; bb.maxPrice = bbForm.maxPrice ? parseInt(bbForm.maxPrice) : null; bb.rehabTolerance = bbForm.rehabTolerance || null; bb.minBeds = bbForm.minBeds ? parseInt(bbForm.minBeds) : null; return api.put(`/buyers/${id}/buy-box`, bb); })(); await qc.invalidateQueries({queryKey:['buyer',id]});
+  const saveBuyBox = async () => { setSavingBb(true); try {
+    // Build structured temperature notes with all status fields
+    const statusData = {
+      buyingStatus: bbForm.buyingStatus||null,
+      buyerTemperature: bbForm.buyerTemperature||null,
+      monthlyCapacity: bbForm.monthlyCapacity||null,
+      resumeDate: bbForm.resumeDate||null,
+      occupancy: bbForm.occupancy||null,
+      hoaOk: bbForm.hoaOk||null,
+      minArv: bbForm.minArv||null,
+      minProfit: bbForm.minProfit||null,
+      maxRehab: bbForm.maxRehab||null,
+      minCashFlow: bbForm.minCashFlow||null,
+      hardNoCriteria: bbForm.hardNoCriteria||null,
+      maxEmd: bbForm.maxEmd||null,
+      inspectionDays: bbForm.inspectionDays||null,
+      preferredContact: bbForm.preferredContact||null,
+      dealSendFreq: bbForm.dealSendFreq||null,
+      excludedAreas: bbForm.excludedAreas||null,
+      privateNotes: bbForm.privateNotes||null,
+    };
+    const existingNotes = bbForm.privateNotes || '';
+    const structuredNote = JSON.stringify(statusData);
+    await api.put(`/buyers/${id}`, {
+      marketPrimary: bbForm.marketPrimary||null,
+      marketSecondary: bbForm.marketSecondary?bbForm.marketSecondary.split(',').map((s:string)=>s.trim()).filter(Boolean):[],
+      preferredStrategies: bbForm.strategies?bbForm.strategies.split(',').map((s:string)=>s.trim()).filter(Boolean):[],
+      notes: bbForm.funding||null,
+      temperatureNotes: structuredNote,
+      avgCloseSpeedDays: bbForm.closeSpeed?parseInt(bbForm.closeSpeed):null,
+    });
+    (() => { const bb: any = { states: bbForm.states?bbForm.states.split(',').map((s:string)=>s.trim()).filter(Boolean):[], zipCodes: bbForm.zipCodes?bbForm.zipCodes.split(',').map((s:string)=>s.trim()).filter(Boolean):[] }; bb.minPrice = bbForm.minPrice ? parseInt(bbForm.minPrice) : null; bb.maxPrice = bbForm.maxPrice ? parseInt(bbForm.maxPrice) : null; bb.rehabTolerance = bbForm.rehabTolerance || null; bb.minBeds = bbForm.minBeds ? parseInt(bbForm.minBeds) : null; bb.minBaths = bbForm.minBaths ? parseInt(bbForm.minBaths) : null; return api.put(`/buyers/${id}/buy-box`, bb); })(); await qc.invalidateQueries({queryKey:['buyer',id]});
         const fresh = await api.get(`/buyers/${id}`).then(r=>r.data);
         qc.setQueryData(['buyer', id], fresh);
         setBbForm({ marketPrimary: fresh.marketPrimary||'', marketSecondary: (fresh.marketSecondary||[]).join(', '), states: (fresh.buyBox?.states||[]).join(', '), zipCodes: (fresh.buyBox?.zipCodes||[]).join(', '), minPrice: fresh.buyBox?.minPrice||'', maxPrice: fresh.buyBox?.maxPrice||'', rehabTolerance: fresh.buyBox?.rehabTolerance||'', minBeds: fresh.buyBox?.minBeds||'', strategies: (fresh.preferredStrategies||[]).join(', '), funding: fresh.notes||'', privateNotes: fresh.temperatureNotes||'', closeSpeed: fresh.avgCloseSpeedDays||'' });
