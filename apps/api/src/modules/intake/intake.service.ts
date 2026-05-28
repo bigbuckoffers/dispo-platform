@@ -40,21 +40,26 @@ export class IntakeService {
   async submitIntake(token: string, data: any) {
     const buyer = await this.prisma.buyer.findUnique({ where: { intakeToken: token } });
     if (!buyer) throw new NotFoundException('Invalid or expired link');
-
-    await this.prisma.buyerIntakeSubmission.create({
-      data: {
-        buyerId: buyer.id,
-        status: 'PENDING',
-        submittedData: data,
-      },
+    const isComplete = !data._partial;
+    const status = isComplete ? 'SUBMITTED' : 'IN_PROGRESS';
+    const existing = await this.prisma.buyerIntakeSubmission.findFirst({
+      where: { buyerId: buyer.id, status: { in: ['IN_PROGRESS', 'PENDING'] } },
+      orderBy: { createdAt: 'desc' },
     });
-
+    if (existing) {
+      await this.prisma.buyerIntakeSubmission.update({
+        where: { id: existing.id },
+        data: { submittedData: data, status },
+      });
+    } else {
+      await this.prisma.buyerIntakeSubmission.create({
+        data: { buyerId: buyer.id, status, submittedData: data },
+      });
+    }
     await this.prisma.buyer.update({
       where: { id: buyer.id },
       data: { intakeSubmittedAt: new Date() },
     });
-
-    // Send notification to org owner
     if (isComplete) {
       try {
         const org = await this.prisma.organization.findFirst({ include: { members: { include: { user: true }, take: 1 } } });
