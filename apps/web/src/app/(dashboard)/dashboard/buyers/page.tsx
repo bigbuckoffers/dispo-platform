@@ -37,6 +37,38 @@ export default function BuyersPage() {
   const [total, setTotal] = useState(0);
   const [tab, setTab] = useState<'all'|'review'|'reviewed'>('all');
 
+  const exportCsv = async () => {
+    const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
+    let all: any[] = [];
+    let p = 1;
+    while (true) {
+      const res = await fetch(`${API}/buyers?page=${p}&limit=200`);
+      const data = await res.json();
+      const rows = data.data || data.buyers || [];
+      all = [...all, ...rows];
+      if (rows.length < 200) break;
+      p++;
+    }
+    const headers = ['First Name','Last Name','Email','Phone','Tier','Score','Markets','Strategies','Funding','Min Price','Max Price','Min Beds','Notes'];
+    const rows = all.map((b: any) => {
+      const bb = b.buyBox || {};
+      return [
+        b.firstName||'', b.lastName||'', b.email||'', b.phone||'',
+        b.tier||'', b.compositeScore||'',
+        (bb.states||[]).join(';'), (bb.strategies||b.preferredStrategies||[]).join(';'),
+        (bb.fundingTypes||[]).join(';'), bb.minPrice||'', bb.maxPrice||'',
+        bb.minBeds||'', b.buyerIntelNotes||''
+      ].map((v: any) => `"${String(v).replace(/"/g,'""')}"`).join(',');
+    });
+    const csv = [headers.join(','), ...rows].join('
+');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `buyers_${new Date().toISOString().slice(0,10)}.csv`;
+    a.click(); URL.revokeObjectURL(url);
+  };
+
   useEffect(() => { load(); }, [search, tier, page]);
   useEffect(() => { loadAll(); }, []);
   useEffect(() => {
@@ -113,6 +145,7 @@ export default function BuyersPage() {
             <option value="">All Tiers</option><option value="TIER_1">Tier 1</option><option value="TIER_2">Tier 2</option><option value="TIER_3">Tier 3</option>
           </select>
           <button onClick={load} className="bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-300 px-4 py-2 rounded-lg text-sm">Refresh</button>
+          <button onClick={exportCsv} className="bg-emerald-900/40 hover:bg-emerald-800/60 border border-emerald-700/40 text-emerald-300 px-4 py-2 rounded-lg text-sm font-medium transition">⬇ Export CSV</button>
         </div>
       )}
       {error && <div className="bg-red-900/30 border border-red-500/30 text-red-300 rounded-lg p-4 mb-6 text-sm">Error: {error}</div>}
