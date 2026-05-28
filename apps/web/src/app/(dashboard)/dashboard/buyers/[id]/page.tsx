@@ -97,6 +97,17 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
     }
   }, [buyer]);
   const recalculate = useMutation({ mutationFn: () => api.post(`/buyers/${id}/recalculate-scores`).then(r=>r.data), onSuccess: () => { qc.invalidateQueries({queryKey:['buyer',id]}); toast.success('Recalculated'); } });
+  const sendIntakeLink = async () => {
+    try {
+      const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
+      const r = await fetch(`${API}/intake/generate/${id}`, { method: 'POST' });
+      const d = await r.json();
+      const link = `https://dispo-platform-web.vercel.app/intake/${d}`;
+      await navigator.clipboard.writeText(link);
+      toast.success('Intake link copied! Send it via text or email.');
+    } catch { toast.error('Failed to generate link'); }
+  };
+
   const deleteBuyer = async () => {
     if (!confirm('Delete this buyer permanently? This cannot be undone.')) return;
     try { await api.delete(`/buyers/${id}`); toast.success('Buyer deleted'); window.location.href = '/dashboard/buyers'; }
@@ -226,7 +237,7 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
       </div>
       <div className="flex flex-col gap-2 items-end">
         <div className={`border rounded-xl p-3 text-center min-w-28 ${cpBg}`}><p className="text-gray-500 text-xs">Likely to Close</p><p className={`text-2xl font-bold ${cpColor}`}>{closeProbability}%</p></div>
-        <button onClick={()=>recalculate.mutate()} disabled={recalculate.isPending} className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs rounded-lg transition"><RefreshCw size={11} className={recalculate.isPending?'animate-spin':''} />Recalculate</button><button onClick={markReviewed} className={`flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg transition border font-medium ${ (buyer.tags||[]).includes('profile_reviewed') ? 'bg-green-600 text-white border-green-500' : 'bg-yellow-500 hover:bg-yellow-400 text-black border-yellow-400' }`}><CheckCircle size={11} />{(buyer.tags||[]).includes('profile_reviewed')?'✓ Reviewed':'Mark Reviewed'}</button><button onClick={()=>window.location.href=`/dashboard/messages?buyer=${id}`} className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-900/40 hover:bg-blue-800/60 border border-blue-700/40 text-blue-300 text-xs rounded-lg transition">💬 Message</button><button onClick={deleteBuyer} className="flex items-center gap-1.5 px-3 py-1.5 bg-red-900/30 hover:bg-red-900/60 border border-red-700/40 text-red-400 text-xs rounded-lg transition">🗑 Delete</button>
+        <button onClick={()=>recalculate.mutate()} disabled={recalculate.isPending} className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs rounded-lg transition"><RefreshCw size={11} className={recalculate.isPending?'animate-spin':''} />Recalculate</button><button onClick={markReviewed} className={`flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg transition border font-medium ${ (buyer.tags||[]).includes('profile_reviewed') ? 'bg-green-600 text-white border-green-500' : 'bg-yellow-500 hover:bg-yellow-400 text-black border-yellow-400' }`}><CheckCircle size={11} />{(buyer.tags||[]).includes('profile_reviewed')?'✓ Reviewed':'Mark Reviewed'}</button><button onClick={()=>window.location.href=`/dashboard/messages?buyer=${id}`} className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-900/40 hover:bg-blue-800/60 border border-blue-700/40 text-blue-300 text-xs rounded-lg transition">💬 Message</button><button onClick={sendIntakeLink} className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-900/40 hover:bg-purple-800/60 border border-purple-700/40 text-purple-300 text-xs rounded-lg transition">🔗 Send Intake Link</button><button onClick={deleteBuyer} className="flex items-center gap-1.5 px-3 py-1.5 bg-red-900/30 hover:bg-red-900/60 border border-red-700/40 text-red-400 text-xs rounded-lg transition">🗑 Delete</button>
       </div>
     </div>
     <SECTION title="AI Buyer Intelligence Summary" icon={Brain} iconColor="text-purple-400" badge={aiConfidence?aiConfidence+'% confidence':undefined}>
