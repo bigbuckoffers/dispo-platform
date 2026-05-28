@@ -9,6 +9,13 @@ export class IntakeService {
   constructor(private prisma: PrismaService, private notifications: NotificationsService) {}
 
   async generateToken(buyerId: string): Promise<string> {
+    // Return existing token if buyer already has one
+    const existing = await this.prisma.buyer.findUnique({
+      where: { id: buyerId },
+      select: { intakeToken: true },
+    });
+    if (existing?.intakeToken) return existing.intakeToken;
+    // Generate new token only if none exists
     const token = crypto.randomBytes(16).toString('hex');
     await this.prisma.buyer.update({
       where: { id: buyerId },
