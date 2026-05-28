@@ -56,8 +56,10 @@ export class MessagesService {
   }
 
   async handleInbound(data: any) {
+    this.logger.log(`Inbound webhook data: ${JSON.stringify(data)}`);
     const { Body, From, To, MessageSid } = data;
     if (!Body || !From) return { success: false };
+    try {
     const phone = From.replace(/\s/g, '');
     const buyer = await this.prisma.buyer.findFirst({ where: { phone } });
     let buyerId: string;
@@ -83,6 +85,10 @@ export class MessagesService {
     });
     this.logger.log(`Inbound SMS from ${From}: ${Body}`);
     return { success: true };
+    } catch (e) {
+      this.logger.error(`Inbound webhook error: ${e.message}`, e.stack);
+      throw e;
+    }
   }
 
   async sendBulk(orgId: string, buyerIds: string[], body: string, delayMs: number = 12000) {
