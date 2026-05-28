@@ -77,6 +77,13 @@ export default function BuyersPage() {
 
   const tb: any = { TIER_1:'bg-yellow-500/20 text-yellow-300 border border-yellow-500/40', TIER_2:'bg-blue-500/20 text-blue-300 border border-blue-500/40', TIER_3:'bg-gray-500/20 text-gray-300 border border-gray-500/40' };
   const tl: any = { TIER_1:'🔥 T1', TIER_2:'T2', TIER_3:'T3' };
+  const tierTooltips: any = {
+    VIP: 'VIP — Has closed a deal with us before',
+    TIER_1: 'T1 — Verified funds, confirmed buy box, fast closer, highly responsive',
+    TIER_2: 'T2 — Buy box confirmed, engaged, has not yet closed with us',
+    TIER_3: 'T3 — Has shown interest, buy box partially known, unverified',
+    TIER_4: 'T4 — Cold, dormant, or low engagement',
+  };
   const sc = (n: number) => n>=80?'text-green-400':n>=60?'text-yellow-400':'text-red-400';
   const bname = (b: any) => (!b.firstName||b.firstName==='Unknown') ? (b.phone||b.email?.split('@')[0]||'Unknown') : b.lastName==='Buyer' ? b.firstName : `${b.firstName} ${b.lastName}`.trim();
   const reviewed = [...allBuyers].filter(b => (b.tags||[]).includes('profile_reviewed')).sort((a,b) => (b.compositeScore||0)-(a.compositeScore||0));
@@ -119,7 +126,7 @@ export default function BuyersPage() {
               : buyers.map((b:any)=>(
                 <tr key={b.id} className="border-b border-gray-800/50 hover:bg-gray-800/30 cursor-pointer" onClick={()=>window.location.href=`/dashboard/buyers/${b.id}`}>
                   <td className="px-4 py-3"><div className="font-medium">{bname(b)}</div><div className="text-gray-400 text-xs">{b.email?.includes('@import.dispoai.com')?(b.phone||''):b.email}</div></td>
-                  <td className="px-4 py-3"><span className={`px-2 py-1 rounded text-xs font-medium ${tb[b.tier]||tb.TIER_3}`}>{tl[b.tier]||b.tier}</span></td>
+                  <td className="px-4 py-3"><span title={tierTooltips[b.tier]||b.tier} className={`px-2 py-1 rounded text-xs font-medium cursor-help ${tb[b.tier]||tb.TIER_3}`}>{tl[b.tier]||b.tier}</span></td>
                   <td className="px-4 py-3"><span className={sc(b.reliabilityScore)}>{b.reliabilityScore}</span></td>
                   <td className="px-4 py-3"><span className={sc(b.liquidityScore)}>{b.liquidityScore}</span></td>
                   <td className="px-4 py-3"><span className={sc(b.activityScore)}>{b.activityScore}</span></td>

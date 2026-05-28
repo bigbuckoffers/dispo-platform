@@ -208,7 +208,7 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
           <span className={`text-xs ${rel.color}`}>Rel: {rel.label}</span>
         </div>
         {aiTags.length>0 && <div className="flex flex-wrap gap-1.5 mt-2">{aiTags.map(tag=><span key={tag} className="text-xs px-2 py-0.5 bg-gray-800 border border-gray-700/50 text-gray-300 rounded-full">{tag}</span>)}</div>}
-          <div className="flex items-center gap-2 mt-2 flex-wrap"><span className="text-gray-500 text-xs">Tier:</span>{[['VIP','⭐ VIP','bg-yellow-500/20 text-yellow-300 border-yellow-500/40'],['TIER_1','🔥 T1','bg-orange-500/20 text-orange-300 border-orange-500/40'],['TIER_2','T2','bg-blue-500/20 text-blue-300 border-blue-500/40'],['TIER_3','T3','bg-gray-500/20 text-gray-300 border-gray-500/40'],['TIER_4','T4','bg-gray-600/20 text-gray-400 border-gray-600/40']].map(([val,label,cls])=>(<button key={val} onClick={()=>changeTier(val)} disabled={savingTier} className={`text-xs px-2 py-0.5 rounded-full border transition ${cls} ${buyer.tier===val?'ring-1 ring-white/30 opacity-100':'opacity-60 hover:opacity-100 font-medium'}`}>{label}{buyer.tier===val?' ✓':''}</button>))}</div>
+          <div className="flex items-center gap-2 mt-2 flex-wrap"><span className="text-gray-500 text-xs">Tier:</span>{[['VIP','⭐ VIP','bg-yellow-500/20 text-yellow-300 border-yellow-500/40','Has closed a deal with us before'],['TIER_1','🔥 T1','bg-orange-500/20 text-orange-300 border-orange-500/40','Verified funds, confirmed buy box, fast closer, highly responsive'],['TIER_2','T2','bg-blue-500/20 text-blue-300 border-blue-500/40','Buy box confirmed, engaged, has not yet closed with us'],['TIER_3','T3','bg-gray-500/20 text-gray-300 border-gray-500/40','Has shown interest, buy box partially known, unverified'],['TIER_4','T4','bg-gray-600/20 text-gray-400 border-gray-600/40','Cold, dormant, or low engagement']].map(([val,label,cls,tip])=>(<button key={val} title={tip} onClick={()=>changeTier(val)} disabled={savingTier} className={`text-xs px-2 py-0.5 rounded-full border transition cursor-help ${cls} ${buyer.tier===val?'ring-1 ring-white/30 opacity-100':'opacity-60 hover:opacity-100 font-medium'}`}>{label}{buyer.tier===val?' ✓':''}</button>))}</div>
       </div>
       <div className="flex flex-col gap-2 items-end">
         <div className={`border rounded-xl p-3 text-center min-w-28 ${cpBg}`}><p className="text-gray-500 text-xs">Likely to Close</p><p className={`text-2xl font-bold ${cpColor}`}>{closeProbability}%</p></div>
@@ -252,6 +252,7 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
                 <option value="buying_soon">Buying Soon</option>
                 <option value="paused">Paused</option>
                 <option value="not_buying">Not Buying</option>
+                <option value="wholesaler">Wholesaler / JV Partner</option>
               </select>
             </div>
             <div>
