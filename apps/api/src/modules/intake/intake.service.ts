@@ -81,6 +81,20 @@ export class IntakeService {
         data: buyerFields,
       });
     }
+    // Save freeform notes to buyerIntelNotes
+    const submittedData = sub.submittedData as any;
+    if (submittedData?.freeformNotes) {
+      const existing = sub.buyer.buyerIntelNotes || '';
+      const newNotes = existing ? existing + '
+
+[Intake Form]
+' + submittedData.freeformNotes : '[Intake Form]
+' + submittedData.freeformNotes;
+      await this.prisma.buyer.update({
+        where: { id: sub.buyerId },
+        data: { buyerIntelNotes: newNotes },
+      });
+    }
 
     if (buyBoxFields && Object.keys(buyBoxFields).length > 0) {
       await this.prisma.buyBox.upsert({
