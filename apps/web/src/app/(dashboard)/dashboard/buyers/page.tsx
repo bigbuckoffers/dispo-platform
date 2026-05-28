@@ -39,6 +39,11 @@ export default function BuyersPage() {
 
   useEffect(() => { load(); }, [search, tier, page]);
   useEffect(() => { loadAll(); }, []);
+  useEffect(() => {
+    const onFocus = () => loadAll();
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
+  }, []);
 
   async function load() {
     setLoading(true); setError('');
