@@ -150,6 +150,12 @@ model Buyer {
   ghostCount         Int         @default(0)
   closeRate          Float?
   avgCloseSpeedDays  Int?
+  buyingStatus       String?
+  monthlyCapacity    String?
+  preferredContact   String?
+  dealSendFreq       String?
+  hoaOk              String?
+  proofOfFunds       String?
   emdFailureCount    Int         @default(0)
 
   // Scoring
@@ -237,6 +243,12 @@ model BuyBox {
   
   // Assignment
   maxAssignmentFee   Float?
+  minProfit          Float?
+  maxEmd             Float?
+  inspectionDays     Int?
+  hardNoCriteria     String?
+  excludedAreas      String?
+  occupancy          String?
   
   updatedAt          DateTime @updatedAt
   buyer              Buyer    @relation(fields: [buyerId], references: [id], onDelete: Cascade)
