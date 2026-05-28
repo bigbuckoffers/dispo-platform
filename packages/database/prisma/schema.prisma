@@ -36,6 +36,7 @@ model Organization {
   auditLogs    AuditLog[]
   apiKeys      ApiKey[]
 
+  conversations Conversation[]
   @@map("organizations")
 }
 
@@ -100,6 +101,7 @@ model Buyer {
   // Verification
   proofOfFundsUrl    String?
   proofOfFundsExpiry DateTime?
+  proofOfFundsWaived  Boolean     @default(false)
   preferredTitleCo   String?
   preferredLender    String?
   assignedRepId      String?     @db.Uuid
@@ -137,6 +139,8 @@ model Buyer {
   buyerIntelNotes    String?
   aiExtractedInsights Json?
   aiSummary          String?
+  temperatureNotes   String?
+  aiTemperatureAnalysis String?
   lastAiAnalysisAt   DateTime?
 
   // Reliability tracking
@@ -146,6 +150,12 @@ model Buyer {
   ghostCount         Int         @default(0)
   closeRate          Float?
   avgCloseSpeedDays  Int?
+  buyingStatus       String?
+  monthlyCapacity    String?
+  preferredContact   String?
+  dealSendFreq       String?
+  hoaOk              String?
+  proofOfFunds       String?
   emdFailureCount    Int         @default(0)
 
   // Scoring
@@ -188,6 +198,10 @@ model Buyer {
   @@index([compositeScore(sort: Desc)])
   @@index([tier])
   @@index([isActive, isSuspended])
+  conversations Conversation[]
+  intakeToken     String?      @unique
+  intakeSubmittedAt DateTime?
+  intakeSubmissions BuyerIntakeSubmission[]
   @@map("buyers")
 }
 
@@ -199,6 +213,8 @@ model BuyBox {
   states             String[] @default([])
   counties           String[] @default([])
   zipCodes           String[] @default([])
+  anyZipOk           Boolean  @default(false)
+  anyPrice           Boolean  @default(false)
   radiusMiles        Float?
   geoPolygon         Json?    // GeoJSON polygon for custom area
   
@@ -227,6 +243,12 @@ model BuyBox {
   
   // Assignment
   maxAssignmentFee   Float?
+  minProfit          Float?
+  maxEmd             Float?
+  inspectionDays     Int?
+  hardNoCriteria     String?
+  excludedAreas      String?
+  occupancy          String?
   
   updatedAt          DateTime @updatedAt
   buyer              Buyer    @relation(fields: [buyerId], references: [id], onDelete: Cascade)
@@ -440,8 +462,6 @@ model Deal {
   aiStrengths                   Json?
   aiRedFlags                    Json?
   aiBuyerProfile                String?
-  temperatureNotes              String?
-  aiTemperatureAnalysis         String?
   aiPitch                       String?
   aiDispoScoreBonus             Int?      @default(0)
   aiDealScoreBonus              Int?      @default(0)
@@ -487,7 +507,9 @@ model Deal {
   otherDocumentUrls             String[]
 
   // AI / Scoring
-  aiSummary                     String?
+  aiSummary          String?
+  temperatureNotes   String?
+  aiTemperatureAnalysis String?
   buyerFacingSummary            String?
   internalSummary               String?
   aiDealMathSummary             String?
@@ -1171,4 +1193,54 @@ model DealSource {
   @@index([organizationId])
   @@index([phone])
   @@index([email])
+}
+
+model BuyerIntakeSubmission {
+  id             String   @id @default(uuid()) @db.Uuid
+  buyerId        String   @db.Uuid
+  buyer          Buyer    @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+  status         String   @default("IN_PROGRESS") // IN_PROGRESS | SUBMITTED | APPROVED | REJECTED
+  submittedData  Json
+  reviewedAt     DateTime?
+  createdAt      DateTime @default(now())
+
+  @@index([buyerId])
+  @@index([status])
+  @@map("buyer_intake_submissions")
+}
+
+
+
+model Conversation {
+  id             String       @id @default(uuid()) @db.Uuid
+  organizationId String       @db.Uuid
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  buyerId        String       @db.Uuid
+  buyer          Buyer        @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+  lastMessageAt  DateTime     @default(now())
+  lastMessageBody String?
+  unreadCount    Int          @default(0)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  smsMessages    SmsMessage[]
+
+  @@unique([organizationId, buyerId])
+  @@index([organizationId, lastMessageAt])
+  @@map("conversations")
+}
+
+model SmsMessage {
+  id             String       @id @default(uuid()) @db.Uuid
+  conversationId String       @db.Uuid
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  body           String
+  direction      String       // INBOUND | OUTBOUND
+  status         String       @default("QUEUED") // QUEUED | SENT | DELIVERED | FAILED
+  twilioSid      String?
+  fromNumber     String?
+  toNumber       String?
+  createdAt      DateTime     @default(now())
+
+  @@index([conversationId, createdAt])
+  @@map("sms_messages")
 }
