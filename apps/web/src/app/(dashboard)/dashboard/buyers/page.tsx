@@ -40,14 +40,20 @@ export default function BuyersPage() {
   const exportCsv = async () => {
     const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
     let all: any[] = [];
-    let p = 1;
-    while (true) {
-      const res = await fetch(`${API}/buyers?page=${p}&limit=200`);
-      const data = await res.json();
-      const rows = data.data || data.buyers || [];
-      all = [...all, ...rows];
-      if (rows.length < 200) break;
-      p++;
+    if (tab === 'all') {
+      let p = 1;
+      while (true) {
+        const res = await fetch(`${API}/buyers?page=${p}&limit=200`);
+        const data = await res.json();
+        const rows = data.data || data.buyers || [];
+        all = [...all, ...rows];
+        if (rows.length < 200) break;
+        p++;
+      }
+    } else if (tab === 'review') {
+      all = allBuyers.filter((b: any) => profileScore(b) < 70 && !(b.tags||[]).includes('profile_reviewed'));
+    } else if (tab === 'reviewed') {
+      all = allBuyers.filter((b: any) => (b.tags||[]).includes('profile_reviewed'));
     }
     const headers = ['First Name','Last Name','Email','Phone','Tier','Score','Markets','Strategies','Funding','Min Price','Max Price','Min Beds','Notes'];
     const rows = all.map((b: any) => {
