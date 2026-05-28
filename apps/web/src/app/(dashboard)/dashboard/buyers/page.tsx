@@ -326,7 +326,7 @@ export default function BuyersPage() {
           </div>
         </div>
       )}
-    </div>
       {showCreate && <CreateBuyerModal onClose={() => setShowCreate(false)} onCreated={() => { setShowCreate(false); load(); loadAll(); }} />}
+    </div>
   );
 }
