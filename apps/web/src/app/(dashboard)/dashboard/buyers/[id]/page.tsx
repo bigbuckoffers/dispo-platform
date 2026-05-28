@@ -384,101 +384,243 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
     {(strengths.length>0||risks.length>0)&&(<div className="grid grid-cols-1 md:grid-cols-2 gap-4">{strengths.length>0&&(<SECTION title="Buyer Strengths" icon={ThumbsUp} iconColor="text-green-400"><div className="space-y-1.5">{strengths.map((s,i)=><div key={i} className="flex items-center gap-2 text-xs text-gray-300"><CheckCircle size={11} className="text-green-400 flex-shrink-0" />{s}</div>)}</div></SECTION>)}{risks.length>0&&(<SECTION title="Risk Factors" icon={AlertCircle} iconColor="text-red-400"><div className="space-y-1.5">{risks.map((r,i)=><div key={i} className="flex items-center gap-2 text-xs text-gray-300"><AlertCircle size={11} className="text-red-400 flex-shrink-0" />{r}</div>)}</div></SECTION>)}</div>)}
     {(dealBreakers.length>0||(buyer.dealBreakers?.length||0)>0)&&(<SECTION title="Avoids / Deal Breakers" icon={XCircle} iconColor="text-red-400"><div className="grid grid-cols-2 gap-2">{(dealBreakers.length>0?dealBreakers:buyer.dealBreakers||[]).map((d:string,i:number)=><div key={i} className="flex items-center gap-2 bg-red-500/5 border border-red-500/20 rounded-lg px-3 py-2"><XCircle size={12} className="text-red-400 flex-shrink-0" /><span className="text-red-300 text-xs">{d}</span></div>)}</div></SECTION>)}
     <SECTION title={'Profile Completeness — '+completeness+'/100'} icon={Target} iconColor="text-blue-400"><div className="space-y-3"><div className="h-2 bg-gray-800 rounded-full overflow-hidden"><div className={`h-full rounded-full ${completeness>=80?'bg-green-500':completeness>=50?'bg-yellow-500':'bg-red-500'}`} style={{width:completeness+'%'}} /></div>{missing.length>0&&<div><p className="text-gray-500 text-xs mb-2">Most important missing info:</p><div className="space-y-1">{missing.slice(0,5).map((m,i)=><div key={m} className="flex items-center gap-2 text-xs"><span className="w-4 h-4 rounded-full bg-gray-800 text-gray-500 flex items-center justify-center flex-shrink-0">{i+1}</span><span className="text-amber-400">{m}</span></div>)}</div></div>}<div className="grid grid-cols-2 gap-1.5">{checks.filter(c=>c.done).map(c=><div key={c.label} className="flex items-center gap-1.5 text-xs text-green-400"><CheckCircle size={11} />{c.label}</div>)}</div></div></SECTION>
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <SECTION title="Buy Box" icon={Building2} iconColor="text-blue-400">
-        {!editingBuyBox ? (
-          <div className="space-y-0">
-            <Row label="Primary Market" value={buyer.marketPrimary} verified={!!buyer.marketPrimary} />
-            <Row label="Secondary Markets" value={buyer.marketSecondary?.join(', ')} verified={false} />
-            <Row label="States" value={buyer.buyBox?.states?.join(', ')} verified={false} />
-            <Row label="Zip Codes" value={buyer.buyBox?.zipCodes?.join(', ')} verified={false} />
-            <Row label="Price Range" value={(buyer.buyBox?.minPrice||buyer.buyBox?.maxPrice)?(buyer.buyBox?.minPrice?formatCurrency(buyer.buyBox.minPrice):'—')+' – '+(buyer.buyBox?.maxPrice?formatCurrency(buyer.buyBox.maxPrice):'—'):null} verified={false} />
-            <Row label="Rehab Tolerance" value={buyer.buyBox?.rehabTolerance} verified={false} />
-            <Row label="Min Beds" value={buyer.buyBox?.minBeds?buyer.buyBox.minBeds+'+':null} verified={false} />
-            <Row label="Strategy" value={buyer.preferredStrategies?.join(', ')} verified={false} />
-            <Row label="Funding" value={buyer.notes} verified={false} />
-            <button onClick={()=>setEditingBuyBox(true)} className="mt-3 text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1"><span>✏️</span>Edit Buy Box</button>
+    <SECTION title="Buy Box — Call Form" icon={Building2} iconColor="text-blue-400">
+      <div className="space-y-6">
+
+        {/* Buyer Status */}
+        <div>
+          <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg px-3 py-2 mb-3">
+            <p className="text-yellow-400 text-xs font-medium">📞 Ask: "Are you actively looking at deals right now, or more on pause unless something really strong comes through?"</p>
           </div>
-        ) : (
-          <div className="space-y-3">
-            {[['Primary Market','marketPrimary','text'],['Secondary Markets (comma sep)','marketSecondary','text'],['States (comma sep)','states','text'],['Zip Codes (comma sep)','zipCodes','text'],['Min Price','minPrice','number'],['Max Price','maxPrice','number'],['Min Beds','minBeds','number'],['Strategies (comma sep)','strategies','text'],['Funding Type','funding','text']].map(([label,key,type])=>(
-              <div key={key as string}>
-                <label className="text-gray-500 text-xs block mb-1">{label as string}</label>
-                <input type={type as string} value={bbForm[key as string]||''} onChange={e=>setBbForm((p:any)=>({...p,[key as string]:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500" />
-              </div>
-            ))}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-gray-500 text-xs block mb-1">Buying Status</label>
+              <select value={bbForm.buyingStatus||''} onChange={e=>setBbForm((p:any)=>({...p,buyingStatus:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500">
+                <option value="">Unknown</option>
+                <option value="actively_buying">Actively Buying</option>
+                <option value="buying_soon">Buying Soon</option>
+                <option value="paused">Paused</option>
+                <option value="not_buying">Not Buying</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-gray-500 text-xs block mb-1">Temperature</label>
+              <select value={bbForm.buyerTemperature||''} onChange={e=>setBbForm((p:any)=>({...p,buyerTemperature:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500">
+                <option value="">Unknown</option>
+                <option value="hot">🔥 Hot</option>
+                <option value="warm">Warm</option>
+                <option value="cold">Cold</option>
+                <option value="dead">Dead</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-gray-500 text-xs block mb-1">Deals/Month Capacity</label>
+              <input type="number" value={bbForm.monthlyCapacity||''} onChange={e=>setBbForm((p:any)=>({...p,monthlyCapacity:e.target.value}))} placeholder="e.g. 2" className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500" />
+            </div>
+            <div>
+              <label className="text-gray-500 text-xs block mb-1">If Paused — Resume Date</label>
+              <input type="text" value={bbForm.resumeDate||''} onChange={e=>setBbForm((p:any)=>({...p,resumeDate:e.target.value}))} placeholder="e.g. July 2026" className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500" />
+            </div>
+          </div>
+        </div>
+
+        {/* Market */}
+        <div>
+          <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg px-3 py-2 mb-3">
+            <p className="text-yellow-400 text-xs font-medium">📞 Ask: "What are your main markets? Any zip codes or neighborhoods you don't want us sending?"</p>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-gray-500 text-xs block mb-1">Primary Market</label>
+              <input value={bbForm.marketPrimary||''} onChange={e=>setBbForm((p:any)=>({...p,marketPrimary:e.target.value}))} placeholder="e.g. Birmingham" className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500" />
+            </div>
+            <div>
+              <label className="text-gray-500 text-xs block mb-1">Secondary Markets</label>
+              <input value={bbForm.marketSecondary||''} onChange={e=>setBbForm((p:any)=>({...p,marketSecondary:e.target.value}))} placeholder="comma separated" className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500" />
+            </div>
+            <div>
+              <label className="text-gray-500 text-xs block mb-1">States</label>
+              <input value={bbForm.states||''} onChange={e=>setBbForm((p:any)=>({...p,states:e.target.value}))} placeholder="e.g. AL, FL" className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500" />
+            </div>
+            <div>
+              <label className="text-gray-500 text-xs block mb-1">Zip Codes</label>
+              <input value={bbForm.zipCodes||''} onChange={e=>setBbForm((p:any)=>({...p,zipCodes:e.target.value}))} placeholder="comma separated" className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500" />
+            </div>
+            <div className="col-span-2">
+              <label className="text-gray-500 text-xs block mb-1">Excluded Areas</label>
+              <input value={bbForm.excludedAreas||''} onChange={e=>setBbForm((p:any)=>({...p,excludedAreas:e.target.value}))} placeholder="e.g. no hoods, no rural" className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500" />
+            </div>
+          </div>
+        </div>
+
+        {/* Property */}
+        <div>
+          <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg px-3 py-2 mb-3">
+            <p className="text-yellow-400 text-xs font-medium">📞 Ask: "What property types are you buying? Okay with tenant-occupied or prefer vacant? Anything you never want us sending?"</p>
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <label className="text-gray-500 text-xs block mb-1">Min Beds</label>
+              <input type="number" value={bbForm.minBeds||''} onChange={e=>setBbForm((p:any)=>({...p,minBeds:e.target.value}))} placeholder="e.g. 3" className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500" />
+            </div>
+            <div>
+              <label className="text-gray-500 text-xs block mb-1">Min Baths</label>
+              <input type="number" value={bbForm.minBaths||''} onChange={e=>setBbForm((p:any)=>({...p,minBaths:e.target.value}))} placeholder="e.g. 1" className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500" />
+            </div>
+            <div>
+              <label className="text-gray-500 text-xs block mb-1">Min Sqft</label>
+              <input type="number" value={bbForm.minSqft||''} onChange={e=>setBbForm((p:any)=>({...p,minSqft:e.target.value}))} placeholder="e.g. 1000" className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500" />
+            </div>
+            <div className="col-span-2">
+              <label className="text-gray-500 text-xs block mb-1">Occupancy</label>
+              <select value={bbForm.occupancy||''} onChange={e=>setBbForm((p:any)=>({...p,occupancy:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none">
+                <option value="">No preference</option>
+                <option value="vacant_only">Vacant Only</option>
+                <option value="tenant_ok">Tenant OK</option>
+                <option value="section8_ok">Section 8 OK</option>
+                <option value="no_tenants">No Tenants</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-gray-500 text-xs block mb-1">HOA OK?</label>
+              <select value={bbForm.hoaOk||''} onChange={e=>setBbForm((p:any)=>({...p,hoaOk:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none">
+                <option value="">Unknown</option>
+                <option value="yes">Yes</option>
+                <option value="no">No HOA</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* Price */}
+        <div>
+          <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg px-3 py-2 mb-3">
+            <p className="text-yellow-400 text-xs font-medium">📞 Ask: "What price range are you most comfortable buying in? Is there a minimum profit or spread you need before it's worth your time?"</p>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-gray-500 text-xs block mb-1">Min Purchase Price</label>
+              <input type="number" value={bbForm.minPrice||''} onChange={e=>setBbForm((p:any)=>({...p,minPrice:e.target.value}))} placeholder="e.g. 30000" className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500" />
+            </div>
+            <div>
+              <label className="text-gray-500 text-xs block mb-1">Max Purchase Price</label>
+              <input type="number" value={bbForm.maxPrice||''} onChange={e=>setBbForm((p:any)=>({...p,maxPrice:e.target.value}))} placeholder="e.g. 150000" className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500" />
+            </div>
+            <div>
+              <label className="text-gray-500 text-xs block mb-1">Min ARV</label>
+              <input type="number" value={bbForm.minArv||''} onChange={e=>setBbForm((p:any)=>({...p,minArv:e.target.value}))} placeholder="e.g. 100000" className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500" />
+            </div>
+            <div>
+              <label className="text-gray-500 text-xs block mb-1">Min Projected Profit</label>
+              <input type="number" value={bbForm.minProfit||''} onChange={e=>setBbForm((p:any)=>({...p,minProfit:e.target.value}))} placeholder="e.g. 25000" className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500" />
+            </div>
+            <div>
+              <label className="text-gray-500 text-xs block mb-1">Max Rehab Budget</label>
+              <input type="number" value={bbForm.maxRehab||''} onChange={e=>setBbForm((p:any)=>({...p,maxRehab:e.target.value}))} placeholder="e.g. 50000" className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500" />
+            </div>
+            <div>
+              <label className="text-gray-500 text-xs block mb-1">Min Cash Flow (rentals)</label>
+              <input type="number" value={bbForm.minCashFlow||''} onChange={e=>setBbForm((p:any)=>({...p,minCashFlow:e.target.value}))} placeholder="e.g. 300" className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500" />
+            </div>
+          </div>
+        </div>
+
+        {/* Strategy + Rehab */}
+        <div>
+          <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg px-3 py-2 mb-3">
+            <p className="text-yellow-400 text-xs font-medium">📞 Ask: "What's your main strategy right now? What rehab level are you comfortable with? Any automatic nos — foundation, fire, flood, mold, title issues?"</p>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-gray-500 text-xs block mb-1">Strategies</label>
+              <input value={bbForm.strategies||''} onChange={e=>setBbForm((p:any)=>({...p,strategies:e.target.value}))} placeholder="e.g. Fix & Flip, Buy & Hold" className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500" />
+            </div>
             <div>
               <label className="text-gray-500 text-xs block mb-1">Rehab Tolerance</label>
               <select value={bbForm.rehabTolerance||''} onChange={e=>setBbForm((p:any)=>({...p,rehabTolerance:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none">
                 <option value="">Unknown</option>
-                <option value="COSMETIC_ONLY">Turnkey/Cosmetic Only</option>
-                <option value="LIGHT">Light/Cosmetic</option>
+                <option value="COSMETIC_ONLY">Turnkey / Cosmetic Only</option>
+                <option value="LIGHT">Light Rehab</option>
                 <option value="MEDIUM">Medium Rehab</option>
                 <option value="HEAVY">Heavy Rehab</option>
                 <option value="FULL_GUT">Full Gut</option>
               </select>
             </div>
-            <div className="flex gap-2 pt-1">
-              <button onClick={saveBuyBox} disabled={savingBb} className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs rounded-lg transition disabled:opacity-50">{savingBb?'Saving...':'Save Buy Box'}</button>
-              <button onClick={()=>setEditingBuyBox(false)} className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-300 text-xs rounded-lg transition">Cancel</button>
+            <div className="col-span-2">
+              <label className="text-gray-500 text-xs block mb-1">Hard No Criteria</label>
+              <input value={bbForm.hardNoCriteria||''} onChange={e=>setBbForm((p:any)=>({...p,hardNoCriteria:e.target.value}))} placeholder="e.g. no foundation issues, no fire damage, no mold" className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500" />
             </div>
           </div>
-        )}
-      </SECTION>
-      <div className="space-y-4">
-        <SECTION title="Reliability Breakdown" icon={Shield} iconColor="text-green-400"><div className="space-y-3"><SBar label="Close Rate" score={buyer.closeCount>0?Math.min(100,buyer.closeCount*20):40} color="bg-green-500" /><SBar label="EMD Performance" score={buyer.emdFailureCount===0?75:Math.max(10,75-buyer.emdFailureCount*20)} color="bg-blue-500" /><SBar label="No Retrade Risk" score={buyer.retradeCount===0?80:Math.max(10,80-buyer.retradeCount*20)} color="bg-yellow-500" /><SBar label="No Ghost Risk" score={buyer.ghostCount===0?80:Math.max(10,80-buyer.ghostCount*20)} color="bg-purple-500" /><div className="grid grid-cols-3 gap-2 pt-1">{[['Closed',buyer.closeCount??0],['Cancelled',buyer.cancelCount??0],['Retraded',buyer.retradeCount??0]].map(([l,v])=><div key={l as string} className="bg-gray-800 rounded p-2 text-center"><span className="text-gray-500 block text-xs">{l}</span><p className="text-white font-bold text-lg">{v}</p></div>)}</div></div></SECTION>
-        <SECTION title="Liquidity Breakdown" icon={DollarSign} iconColor="text-blue-400">
-          {!editingLiquidity ? (
-            <div className="space-y-2">
-              <div className="flex justify-between items-center py-1.5 border-b border-gray-800/50">
-                <span className="text-gray-500 text-xs">Proof of Funds</span>
-                <div className="flex items-center gap-2">
-                  {buyer.proofOfFundsUrl === 'VERIFIED_BY_TEAM' ? (
-                    <span className="text-xs text-green-400 font-medium">✓ Verified by Team</span>
-                  ) : buyer.proofOfFundsUrl ? (
-                    <a href={buyer.proofOfFundsUrl} target="_blank" className="text-xs text-green-400 font-medium">✓ View POF</a>
-                  ) : (
-                    <span className="text-xs text-red-400 font-medium">✗ Not uploaded</span>
-                  )}
-                  <span className="text-xs px-1.5 py-0.5 rounded bg-yellow-500/10 text-yellow-500">~</span>
-                </div>
-              </div>
-              {!buyer.proofOfFundsUrl && (
-                <button onClick={async () => { await api.put(`/buyers/${id}`, { proofOfFundsUrl: 'VERIFIED_BY_TEAM' }); qc.invalidateQueries({queryKey:['buyer',id]}); toast.success('Marked as verified by team'); }}
-                  className="text-xs text-green-400 hover:text-green-300 flex items-center gap-1 py-1">
-                  ✓ Mark as Verified by Team (we know they can close)
-                </button>
-              )}
-              <Row label="Funding Type" value={buyer.notes} verified={false} />
-              <Row label="Close Speed" value={buyer.avgCloseSpeedDays?buyer.avgCloseSpeedDays+' days avg':'Unknown'} verified={buyer.closeCount>0} />
-              <Row label="Preferred Title Co" value={buyer.preferredTitleCo} verified={false} />
-              <Row label="Preferred Lender" value={buyer.preferredLender} verified={false} />
-              <SBar label="Overall Liquidity" score={buyer.liquidityScore||50} color="bg-blue-500" />
-              <div className="flex gap-2 pt-2">
-                <label className={`px-3 py-1.5 text-xs rounded-lg cursor-pointer transition flex items-center gap-1.5 ${uploadingPof?'bg-gray-700 text-gray-500':'bg-green-600/20 hover:bg-green-600/30 text-green-400 border border-green-500/30'}`}>
-                  <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png" onChange={uploadPof} disabled={uploadingPof} />
-                  {uploadingPof?'Uploading...':'📄 Upload POF'}
-                </label>
-                <button onClick={()=>setEditingLiquidity(true)} className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1">✏️ Edit</button>
-              </div>
+        </div>
+
+        {/* Funding */}
+        <div>
+          <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg px-3 py-2 mb-3">
+            <p className="text-yellow-400 text-xs font-medium">📞 Ask: "How are you typically funding deals? Do you have proof of funds we can keep on file? How fast can you close?"</p>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-gray-500 text-xs block mb-1">Funding Type</label>
+              <input value={bbForm.funding||''} onChange={e=>setBbForm((p:any)=>({...p,funding:e.target.value}))} placeholder="e.g. Cash, Hard Money, DSCR" className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500" />
             </div>
-          ) : (
-            <div className="space-y-3">
-              {[['Close Speed (days)','closeSpeed','number'],['Preferred Title Company','titleCo','text'],['Max EMD Available','maxEmd','text'],['Preferred Lender','lender','text']].map(([label,key,type])=>(
-                <div key={key as string}>
-                  <label className="text-gray-500 text-xs block mb-1">{label as string}</label>
-                  <input type={type as string} value={liqForm[key as string]||''} onChange={e=>setLiqForm((p:any)=>({...p,[key as string]:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500" />
-                </div>
-              ))}
-              <div className="flex gap-2 pt-1">
-                <button onClick={saveLiquidity} disabled={savingLiq} className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs rounded-lg disabled:opacity-50">{savingLiq?'Saving...':'Save'}</button>
-                <button onClick={()=>setEditingLiquidity(false)} className="px-3 py-1.5 bg-gray-700 text-gray-300 text-xs rounded-lg">Cancel</button>
-              </div>
+            <div>
+              <label className="text-gray-500 text-xs block mb-1">Close Speed (days)</label>
+              <input type="number" value={bbForm.closeSpeed||''} onChange={e=>setBbForm((p:any)=>({...p,closeSpeed:e.target.value}))} placeholder="e.g. 14" className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500" />
             </div>
-          )}
-        </SECTION>
+            <div>
+              <label className="text-gray-500 text-xs block mb-1">Max EMD</label>
+              <input type="number" value={bbForm.maxEmd||''} onChange={e=>setBbForm((p:any)=>({...p,maxEmd:e.target.value}))} placeholder="e.g. 2500" className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500" />
+            </div>
+            <div>
+              <label className="text-gray-500 text-xs block mb-1">Inspection Period (days)</label>
+              <input type="number" value={bbForm.inspectionDays||''} onChange={e=>setBbForm((p:any)=>({...p,inspectionDays:e.target.value}))} placeholder="e.g. 7" className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500" />
+            </div>
+          </div>
+        </div>
+
+        {/* Deal Send Preferences */}
+        <div>
+          <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg px-3 py-2 mb-3">
+            <p className="text-yellow-400 text-xs font-medium">📞 Ask: "How do you prefer we send deals — text, call, email? Do you want every match or only the strongest ones? What do you want first — photos, numbers, comps?"</p>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-gray-500 text-xs block mb-1">Preferred Contact</label>
+              <select value={bbForm.preferredContact||''} onChange={e=>setBbForm((p:any)=>({...p,preferredContact:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none">
+                <option value="">Unknown</option>
+                <option value="sms">Text / SMS</option>
+                <option value="call">Phone Call</option>
+                <option value="email">Email</option>
+                <option value="facebook">Facebook</option>
+                <option value="whatsapp">WhatsApp</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-gray-500 text-xs block mb-1">Deal Send Frequency</label>
+              <select value={bbForm.dealSendFreq||''} onChange={e=>setBbForm((p:any)=>({...p,dealSendFreq:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none">
+                <option value="">Unknown</option>
+                <option value="every_match">Every Match</option>
+                <option value="only_best">Only Best Deals</option>
+                <option value="call_first">Call Me First</option>
+                <option value="do_not_blast">Do Not Blast</option>
+              </select>
+            </div>
+            <div className="col-span-2">
+              <label className="text-gray-500 text-xs block mb-1">Private Notes</label>
+              <textarea value={bbForm.privateNotes||''} onChange={e=>setBbForm((p:any)=>({...p,privateNotes:e.target.value}))} placeholder="Anything else to know about this buyer..." rows={3} className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500 resize-none" />
+            </div>
+          </div>
+        </div>
+
+        {/* Save */}
+        <div className="flex items-center gap-3 pt-2 border-t border-gray-800">
+          <button onClick={saveBuyBox} disabled={savingBb} className="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm rounded-lg transition disabled:opacity-50 font-medium">{savingBb?'Saving...':'💾 Save Buy Box'}</button>
+          <button onClick={markReviewed} className={`px-4 py-2 text-sm rounded-lg transition border font-medium ${ (buyer.tags||[]).includes('profile_reviewed') ? 'bg-green-600 text-white border-green-500' : 'bg-yellow-500 hover:bg-yellow-400 text-black border-yellow-400' }`}><CheckCircle size={13} className="inline mr-1" />{(buyer.tags||[]).includes('profile_reviewed')?'✓ Reviewed':'Mark Reviewed'}</button>
+        </div>
+
       </div>
-    </div>
+    </SECTION>
+
     <SECTION title={'Buying Seriousness — '+(buyer.seriousnessScore??50)+'/100'} icon={Activity} iconColor="text-amber-400"><div className="space-y-3"><SBar label="Seriousness" score={buyer.seriousnessScore??50} color="bg-amber-500" /><div className="space-y-1.5">{(buyer.buyerIntelNotes?.length||0)>100&&<div className="flex items-center gap-2 text-xs text-gray-300"><CheckCircle size={11} className="text-green-400" />Has detailed conversation history</div>}{buyer.marketPrimary&&<div className="flex items-center gap-2 text-xs text-gray-300"><CheckCircle size={11} className="text-green-400" />Confirmed market: {buyer.marketPrimary}</div>}{!buyer.closeCount&&<div className="flex items-center gap-2 text-xs text-amber-400"><AlertCircle size={11} />No verified close history</div>}{!buyer.buyBox?.zipCodes?.length&&<div className="flex items-center gap-2 text-xs text-amber-400"><AlertCircle size={11} />Zip codes not confirmed</div>}</div></div></SECTION>
     <SECTION title="Deal History & Analytics" icon={BarChart2} iconColor="text-green-400">
       {!editingHistory ? (
