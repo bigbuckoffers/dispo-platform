@@ -86,6 +86,23 @@ export default function MessagesPage() {
   const bottomRef = useRef<any>(null);
 
   useEffect(() => { loadConversations(); }, []);
+
+  // Auto-open buyer from URL param
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const buyerParam = params.get('buyer');
+    if (!buyerParam) return;
+    const conv = conversations.find((c:any) => c.buyer.id === buyerParam);
+    if (conv) {
+      setSelected(conv);
+    } else {
+      fetch(`${API}/buyers/${buyerParam}`).then(r=>r.json()).then(b => {
+        const placeholder = { id: null, buyer: { id: b.id, firstName: b.firstName, lastName: b.lastName, phone: b.phone, tier: b.tier }, lastMessageBody: null, lastMessageAt: null, unreadCount: 0 };
+        setSelected(placeholder);
+        setBuyer(b);
+      }).catch(()=>{});
+    }
+  }, [conversations]);
   useEffect(() => { if (selected) { loadMessages(selected.buyer.id); loadBuyer(selected.buyer.id); } }, [selected]);
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
   useEffect(() => { if (buyer) { setNotes(buyer.buyerIntelNotes || ''); loadDeals(); } }, [buyer]);
