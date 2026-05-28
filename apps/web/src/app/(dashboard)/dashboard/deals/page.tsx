@@ -117,8 +117,8 @@ const SC: Record<string,string> = {
 };
 
 // 11 columns — status badge inside address, next action at end
-const COLS = '64px 200px 72px 64px 90px 90px 90px 80px 80px 72px 64px 150px';
-const HDRS = ['Score','Address','Beds','Sqft','Asking','70% Val','Public Val','ARV','Deadline','Buyers','Sniper','Next Action'];
+const COLS = '64px 64px 200px 72px 64px 90px 90px 90px 80px 80px 72px 150px';
+const HDRS = ['Score','Sniper','Address','Beds','Sqft','Asking','70% Val','Public Val','ARV','Deadline','Buyers','Next Action'];
 
 export default function DealsPage() {
   const [showAddDeal, setShowAddDeal] = useState(false);
@@ -362,6 +362,20 @@ export default function DealsPage() {
                         </div>
                       </div>
 
+                      {/* Sniper Score */}
+                      <div className="px-2 flex flex-col items-center justify-center">
+                        {(deal.sniperScore||0) > 0 ? (
+                          <>
+                            <span className={`text-sm font-bold leading-none ${(deal.sniperScore||0)>=70?'text-emerald-400':(deal.sniperScore||0)>=50?'text-amber-400':'text-gray-500'}`}>
+                              {deal.sniperScore}
+                            </span>
+                            <span className={`text-[9px] leading-tight ${(deal.sniperScore||0)>=70?'text-emerald-700':(deal.sniperScore||0)>=50?'text-amber-700':'text-gray-600'}`}>
+                              {(deal.sniperScore||0)>=70?'🎯 Hot':(deal.sniperScore||0)>=50?'Warm':'Low'}
+                            </span>
+                          </>
+                        ) : <span className="text-gray-700 text-xs">—</span>}
+                      </div>
+
                       {/* Address */}
                       <Link href={`/dashboard/deals/${deal.id}`} className="px-2 flex flex-col justify-center group/row min-w-0">
                         <p className="text-white font-semibold text-xs group-hover/row:text-blue-300 transition truncate leading-tight">{deal.address||'No address'}</p>
@@ -435,22 +449,6 @@ export default function DealsPage() {
 
 
 
-
-
-
-                      {/* Sniper Score */}
-                      <div className="px-2 flex flex-col items-center justify-center">
-                        {(deal.sniperScore||0) > 0 ? (
-                          <>
-                            <span className={`text-sm font-bold leading-none ${(deal.sniperScore||0)>=70?'text-emerald-400':(deal.sniperScore||0)>=50?'text-amber-400':'text-gray-500'}`}>
-                              {deal.sniperScore}
-                            </span>
-                            <span className={`text-[9px] leading-tight ${(deal.sniperScore||0)>=70?'text-emerald-700':(deal.sniperScore||0)>=50?'text-amber-700':'text-gray-600'}`}>
-                              {(deal.sniperScore||0)>=70?'🎯 Hot':(deal.sniperScore||0)>=50?'Warm':'Low'}
-                            </span>
-                          </>
-                        ) : <span className="text-gray-700 text-xs">—</span>}
-                      </div>
 
                       {/* Next Action */}
                       <div className="px-2 flex items-center gap-1.5 relative group/na">
