@@ -11,6 +11,8 @@ export class CreateBuyBoxDto {
   @IsArray() @IsOptional() states?: string[];
   @IsArray() @IsOptional() counties?: string[];
   @IsArray() @IsOptional() zipCodes?: string[];
+  @ApiPropertyOptional() @IsBoolean() @IsOptional() anyZipOk?: boolean;
+  @ApiPropertyOptional() @IsBoolean() @IsOptional() anyPrice?: boolean;
   @IsNumber() @IsOptional() @Min(0) radiusMiles?: number;
   @IsArray() @IsOptional() propertyTypes?: string[];
   @IsNumber() @IsOptional() @Min(0) minPrice?: number;
@@ -63,6 +65,7 @@ export class CreateBuyerDto {
   @ApiPropertyOptional() @IsEnum(BuyerTier) @IsOptional() tier?: BuyerTier;
   @ApiPropertyOptional() @IsString() @IsOptional() aiTemperatureAnalysis?: string;
   @ApiPropertyOptional() @IsString() @IsOptional() proofOfFundsUrl?: string;
+  @ApiPropertyOptional() @IsBoolean() @IsOptional() proofOfFundsWaived?: boolean;
   @ApiPropertyOptional() @IsNumber() @IsOptional() maxEmd?: number;
   @ApiPropertyOptional() @IsOptional() rawImportData?: any;
   @ApiPropertyOptional() @IsOptional() seriousnessScore?: number;

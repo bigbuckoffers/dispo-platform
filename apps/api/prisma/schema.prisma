@@ -100,6 +100,7 @@ model Buyer {
   // Verification
   proofOfFundsUrl    String?
   proofOfFundsExpiry DateTime?
+  proofOfFundsWaived  Boolean     @default(false)
   preferredTitleCo   String?
   preferredLender    String?
   assignedRepId      String?     @db.Uuid
@@ -201,6 +202,8 @@ model BuyBox {
   states             String[] @default([])
   counties           String[] @default([])
   zipCodes           String[] @default([])
+  anyZipOk           Boolean  @default(false)
+  anyPrice           Boolean  @default(false)
   radiusMiles        Float?
   geoPolygon         Json?    // GeoJSON polygon for custom area
   
