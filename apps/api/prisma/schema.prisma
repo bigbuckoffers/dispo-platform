@@ -1197,19 +1197,7 @@ model BuyerIntakeSubmission {
   @@map("buyer_intake_submissions")
 }
 
-model BuyerIntakeSubmission {
-  id             String   @id @default(uuid()) @db.Uuid
-  buyerId        String   @db.Uuid
-  buyer          Buyer    @relation(fields: [buyerId], references: [id], onDelete: Cascade)
-  status         String   @default("PENDING") // PENDING | APPROVED | REJECTED
-  submittedData  Json
-  reviewedAt     DateTime?
-  createdAt      DateTime @default(now())
 
-  @@index([buyerId])
-  @@index([status])
-  @@map("buyer_intake_submissions")
-}
 
 model Conversation {
   id             String       @id @default(uuid()) @db.Uuid
