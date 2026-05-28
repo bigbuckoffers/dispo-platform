@@ -143,6 +143,10 @@ export default function BuyersPage() {
           Needs Review <span className="ml-1 text-xs bg-orange-500/30 text-orange-300 px-1.5 py-0.5 rounded-full">{loadingAll ? '...' : needsReview.length}</span>
         </button>
       </div>
+      <div className="flex justify-end px-1 mb-2">
+        <button onClick={exportCsv} className="bg-emerald-900/40 hover:bg-emerald-800/60 border border-emerald-700/40 text-emerald-300 px-4 py-2 rounded-lg text-sm font-medium transition">⬇ Export CSV</button>
+      </div>
+
       {tab==='all' && (
         <div className="flex gap-3 mb-6">
           <input value={search} onChange={e=>{setSearch(e.target.value);setPage(1);}} placeholder="Search buyers..." className="bg-gray-800 border border-gray-700 text-white placeholder-gray-500 rounded-lg px-4 py-2 text-sm w-72 focus:outline-none focus:border-blue-500" />
@@ -150,7 +154,6 @@ export default function BuyersPage() {
             <option value="">All Tiers</option><option value="TIER_1">Tier 1</option><option value="TIER_2">Tier 2</option><option value="TIER_3">Tier 3</option>
           </select>
           <button onClick={load} className="bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-300 px-4 py-2 rounded-lg text-sm">Refresh</button>
-          <button onClick={exportCsv} className="bg-emerald-900/40 hover:bg-emerald-800/60 border border-emerald-700/40 text-emerald-300 px-4 py-2 rounded-lg text-sm font-medium transition">⬇ Export CSV</button>
         </div>
       )}
       {error && <div className="bg-red-900/30 border border-red-500/30 text-red-300 rounded-lg p-4 mb-6 text-sm">Error: {error}</div>}
