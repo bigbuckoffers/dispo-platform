@@ -204,7 +204,7 @@ export default function IntakePage({ params }: { params: { token: string } }) {
 
         {/* STEP 2 — Markets */}
         {step === 2 && (
-          <div className="space-y-5">
+          <div className="space-y-5 pb-32">
             <div>
               <h2 className="text-xl font-bold text-white mb-1">Where do you buy? 📍</h2>
               <Question>Tell us your markets so we only send you deals in areas you actually want.</Question>
@@ -238,7 +238,7 @@ export default function IntakePage({ params }: { params: { token: string } }) {
 
         {/* STEP 3 — Property + Price */}
         {step === 3 && (
-          <div className="space-y-5">
+          <div className="space-y-5 pb-32">
             <div>
               <h2 className="text-xl font-bold text-white mb-1">What are you buying? 🏠</h2>
               <Question>Property types, price range, and what you need out of each deal.</Question>
@@ -303,7 +303,7 @@ export default function IntakePage({ params }: { params: { token: string } }) {
 
         {/* STEP 4 — Strategy + Rehab */}
         {step === 4 && (
-          <div className="space-y-5">
+          <div className="space-y-5 pb-32">
             <div>
               <h2 className="text-xl font-bold text-white mb-1">Strategy & Rehab 🔨</h2>
               <Question>What's your investment approach and how much work can you handle?</Question>
@@ -343,7 +343,7 @@ export default function IntakePage({ params }: { params: { token: string } }) {
 
         {/* STEP 5 — Funding + Close */}
         {step === 5 && (
-          <div className="space-y-5">
+          <div className="space-y-5 pb-32">
             <div>
               <h2 className="text-xl font-bold text-white mb-1">Funding & Closing 💰</h2>
               <Question>How you fund deals and how fast you can move helps us prioritize you for new listings.</Question>
@@ -387,7 +387,7 @@ export default function IntakePage({ params }: { params: { token: string } }) {
 
         {/* STEP 6 — Preferences + Freeform */}
         {step === 6 && (
-          <div className="space-y-5">
+          <div className="space-y-5 pb-32">
             <div>
               <h2 className="text-xl font-bold text-white mb-1">Almost done! 🎯</h2>
               <Question>How you want us to work with you, and anything else we should know.</Question>
