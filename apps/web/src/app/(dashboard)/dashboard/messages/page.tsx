@@ -104,6 +104,15 @@ export default function MessagesPage() {
     }
   }, [conversations]);
   useEffect(() => { if (selected) { if (selected.id) loadMessages(selected.buyer.id); loadBuyer(selected.buyer.id); } }, [selected]);
+  useEffect(() => {
+    if (!selected?.id) return;
+    const interval = setInterval(() => loadMessages(selected.buyer.id), 10000);
+    return () => clearInterval(interval);
+  }, [selected]);
+  useEffect(() => {
+    const interval = setInterval(loadConversations, 15000);
+    return () => clearInterval(interval);
+  }, []);
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
   useEffect(() => { if (buyer) { setNotes(buyer.buyerIntelNotes || ''); loadDeals(); } }, [buyer]);
 
