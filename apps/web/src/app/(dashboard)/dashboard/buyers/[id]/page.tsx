@@ -101,11 +101,17 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
     try {
       const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
       const r = await fetch(`${API}/intake/generate/${id}`, { method: 'POST' });
-      const d = await r.json();
-      const link = `https://dispo-platform-web.vercel.app/intake/${d}`;
-      await navigator.clipboard.writeText(link);
-      toast.success('Intake link copied! Send it via text or email.');
-    } catch { toast.error('Failed to generate link'); }
+      const text = await r.text();
+      if (!r.ok) { toast.error('API error ' + r.status); return; }
+      const cleanToken = text.replace(/"/g, '').trim();
+      const link = `https://dispo-platform-web.vercel.app/intake/${cleanToken}`;
+      try {
+        await navigator.clipboard.writeText(link);
+        toast.success('Intake link copied! Paste it into a text to send.');
+      } catch {
+        window.prompt('Copy this intake link:', link);
+      }
+    } catch (e: any) { toast.error('Failed: ' + e.message); }
   };
 
   const deleteBuyer = async () => {
