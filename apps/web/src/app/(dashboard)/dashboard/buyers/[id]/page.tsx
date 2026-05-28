@@ -119,7 +119,6 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
       excludedAreas: bbForm.excludedAreas||null,
       privateNotes: bbForm.privateNotes||null,
     };
-    const existingNotes = bbForm.privateNotes || '';
     const structuredNote = JSON.stringify(statusData);
     await api.put(`/buyers/${id}`, {
       marketPrimary: bbForm.marketPrimary||null,
@@ -132,7 +131,11 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
     (() => { const bb: any = { states: bbForm.states?bbForm.states.split(',').map((s:string)=>s.trim()).filter(Boolean):[], zipCodes: bbForm.zipCodes?bbForm.zipCodes.split(',').map((s:string)=>s.trim()).filter(Boolean):[] }; bb.minPrice = bbForm.minPrice ? parseInt(bbForm.minPrice) : null; bb.maxPrice = bbForm.maxPrice ? parseInt(bbForm.maxPrice) : null; bb.rehabTolerance = bbForm.rehabTolerance || null; bb.minBeds = bbForm.minBeds ? parseInt(bbForm.minBeds) : null; bb.minBaths = bbForm.minBaths ? parseInt(bbForm.minBaths) : null; return api.put(`/buyers/${id}/buy-box`, bb); })(); await qc.invalidateQueries({queryKey:['buyer',id]});
         const fresh = await api.get(`/buyers/${id}`).then(r=>r.data);
         qc.setQueryData(['buyer', id], fresh);
-        setBbForm({ marketPrimary: fresh.marketPrimary||'', marketSecondary: (fresh.marketSecondary||[]).join(', '), states: (fresh.buyBox?.states||[]).join(', '), zipCodes: (fresh.buyBox?.zipCodes||[]).join(', '), minPrice: fresh.buyBox?.minPrice||'', maxPrice: fresh.buyBox?.maxPrice||'', rehabTolerance: fresh.buyBox?.rehabTolerance||'', minBeds: fresh.buyBox?.minBeds||'', strategies: (fresh.preferredStrategies||[]).join(', '), funding: fresh.notes||'', privateNotes: fresh.temperatureNotes||'', closeSpeed: fresh.avgCloseSpeedDays||'' });
+        (() => {
+          let sd: any = {};
+          try { if (fresh.temperatureNotes) sd = JSON.parse(fresh.temperatureNotes); } catch {}
+          setBbForm({ marketPrimary: fresh.marketPrimary||'', marketSecondary: (fresh.marketSecondary||[]).join(', '), states: (fresh.buyBox?.states||[]).join(', '), zipCodes: (fresh.buyBox?.zipCodes||[]).join(', '), minPrice: fresh.buyBox?.minPrice||'', maxPrice: fresh.buyBox?.maxPrice||'', rehabTolerance: fresh.buyBox?.rehabTolerance||'', minBeds: fresh.buyBox?.minBeds||'', strategies: (fresh.preferredStrategies||[]).join(', '), funding: fresh.notes||'', closeSpeed: fresh.avgCloseSpeedDays||'', buyingStatus: sd.buyingStatus||'', buyerTemperature: sd.buyerTemperature||'', monthlyCapacity: sd.monthlyCapacity||'', resumeDate: sd.resumeDate||'', occupancy: sd.occupancy||'', hoaOk: sd.hoaOk||'', minArv: sd.minArv||'', minProfit: sd.minProfit||'', maxRehab: sd.maxRehab||'', minCashFlow: sd.minCashFlow||'', hardNoCriteria: sd.hardNoCriteria||'', maxEmd: sd.maxEmd||'', inspectionDays: sd.inspectionDays||'', preferredContact: sd.preferredContact||'', dealSendFreq: sd.dealSendFreq||'', excludedAreas: sd.excludedAreas||'', privateNotes: sd.privateNotes||'' });
+        })();
         setEditingBuyBox(false); toast.success('Buy box saved'); } catch (e:any) { toast.error('Failed: '+e?.message); } finally { setSavingBb(false); } };
   const saveLiquidity = async () => { setSavingLiq(true); try { await api.put(`/buyers/${id}`, { avgCloseSpeedDays: liqForm.closeSpeed?parseInt(liqForm.closeSpeed):null, preferredTitleCo: liqForm.titleCo, preferredLender: liqForm.lender }); qc.invalidateQueries({queryKey:['buyer',id]}); setEditingLiquidity(false); toast.success('Liquidity saved'); } catch { toast.error('Failed'); } finally { setSavingLiq(false); } };
   const saveHistory = async () => { setSavingHist(true); try { await api.put(`/buyers/${id}`, { closeCount: parseInt(histForm.closeCount)||0, cancelCount: parseInt(histForm.cancelCount)||0, retradeCount: parseInt(histForm.retradeCount)||0, ghostCount: parseInt(histForm.ghostCount)||0 }); qc.invalidateQueries({queryKey:['buyer',id]}); setEditingHistory(false); toast.success('History saved'); } catch { toast.error('Failed'); } finally { setSavingHist(false); } };
