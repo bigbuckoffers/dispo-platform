@@ -58,7 +58,11 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
     if (buyer?.temperatureNotes) setTempNote(buyer.temperatureNotes);
     if (buyer?.dealBreakers?.length) setDealBreakers(buyer.dealBreakers);
     if (buyer) {
-      setBbForm({ marketPrimary: buyer.marketPrimary||'', marketSecondary: (buyer.marketSecondary||[]).join(', '), states: (buyer.buyBox?.states||[]).join(', '), zipCodes: (buyer.buyBox?.zipCodes||[]).join(', '), minPrice: buyer.buyBox?.minPrice||'', maxPrice: buyer.buyBox?.maxPrice||'', rehabTolerance: buyer.buyBox?.rehabTolerance||'', minBeds: buyer.buyBox?.minBeds||'', strategies: (buyer.preferredStrategies||[]).join(', '), funding: buyer.notes||'', privateNotes: buyer.temperatureNotes||'', closeSpeed: buyer.avgCloseSpeedDays||'' });
+      (() => {
+        let statusData: any = {};
+        try { if (buyer.temperatureNotes) statusData = JSON.parse(buyer.temperatureNotes); } catch {}
+        setBbForm({ marketPrimary: buyer.marketPrimary||'', marketSecondary: (buyer.marketSecondary||[]).join(', '), states: (buyer.buyBox?.states||[]).join(', '), zipCodes: (buyer.buyBox?.zipCodes||[]).join(', '), minPrice: buyer.buyBox?.minPrice||'', maxPrice: buyer.buyBox?.maxPrice||'', rehabTolerance: buyer.buyBox?.rehabTolerance||'', minBeds: buyer.buyBox?.minBeds||'', strategies: (buyer.preferredStrategies||[]).join(', '), funding: buyer.notes||'', closeSpeed: buyer.avgCloseSpeedDays||'', buyingStatus: statusData.buyingStatus||'', buyerTemperature: statusData.buyerTemperature||'', monthlyCapacity: statusData.monthlyCapacity||'', resumeDate: statusData.resumeDate||'', occupancy: statusData.occupancy||'', hoaOk: statusData.hoaOk||'', minArv: statusData.minArv||'', minProfit: statusData.minProfit||'', maxRehab: statusData.maxRehab||'', minCashFlow: statusData.minCashFlow||'', hardNoCriteria: statusData.hardNoCriteria||'', maxEmd: statusData.maxEmd||'', inspectionDays: statusData.inspectionDays||'', preferredContact: statusData.preferredContact||'', dealSendFreq: statusData.dealSendFreq||'', excludedAreas: statusData.excludedAreas||'', privateNotes: statusData.privateNotes||'' });
+      })();
       setLiqForm({ closeSpeed: buyer.avgCloseSpeedDays||'', titleCo: buyer.preferredTitleCo||'', maxEmd: buyer.maxEmd||'', lender: buyer.preferredLender||'' });
       setHistForm({ closeCount: buyer.closeCount||0, cancelCount: buyer.cancelCount||0, retradeCount: buyer.retradeCount||0, ghostCount: buyer.ghostCount||0, avgFee: buyer.avgAssignmentFee||'' });
     }
