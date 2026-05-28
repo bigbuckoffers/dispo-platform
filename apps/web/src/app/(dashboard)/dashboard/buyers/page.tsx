@@ -79,7 +79,7 @@ export default function BuyersPage() {
   const tl: any = { TIER_1:'🔥 T1', TIER_2:'T2', TIER_3:'T3' };
   const sc = (n: number) => n>=80?'text-green-400':n>=60?'text-yellow-400':'text-red-400';
   const bname = (b: any) => (!b.firstName||b.firstName==='Unknown') ? (b.phone||b.email?.split('@')[0]||'Unknown') : b.lastName==='Buyer' ? b.firstName : `${b.firstName} ${b.lastName}`.trim();
-  const needsReview = [...allBuyers].filter(b => profileScore(b) < 70).sort((a,b) => (b.compositeScore||0)-(a.compositeScore||0));
+  const needsReview = [...allBuyers].filter(b => profileScore(b) < 70 && !(b.tags||[]).includes('profile_reviewed')).sort((a,b) => (b.compositeScore||0)-(a.compositeScore||0));
 
   return (
     <div className="min-h-screen bg-gray-950 text-white p-6">
