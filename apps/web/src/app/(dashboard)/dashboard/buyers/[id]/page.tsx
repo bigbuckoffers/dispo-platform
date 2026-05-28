@@ -439,7 +439,6 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
             <p className="text-yellow-400 text-xs font-medium">📞 Ask: "How are you typically funding deals? Do you have proof of funds we can keep on file? How fast can you close?"</p>
           </div>
           <div className="mb-2"><label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={!!bbForm.proofOfFundsWaived} onChange={e=>setBbForm((p:any)=>({...p,proofOfFundsWaived:e.target.checked}))} className="accent-blue-500" /><span className="text-gray-400 text-xs">Waive proof of funds — trusted buyer, not required</span></label></div>
-          </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-gray-500 text-xs block mb-1">Funding Type</label>
