@@ -37,6 +37,13 @@ export default function BuyersPage() {
   const [total, setTotal] = useState(0);
   const [tab, setTab] = useState<'all'|'review'|'reviewed'>('all');
 
+  const deleteBuyer = async (id: string, name: string) => {
+    if (!confirm(`Delete ${name}? This cannot be undone.`)) return;
+    const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
+    await fetch(`${API}/buyers/${id}`, { method: 'DELETE' });
+    load(); loadAll();
+  };
+
   const exportCsv = async () => {
     const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
     let all: any[] = [];
@@ -165,7 +172,7 @@ export default function BuyersPage() {
               {loading ? [...Array(5)].map((_,i)=><tr key={i} className="border-b border-gray-800/50">{[...Array(7)].map((_,j)=><td key={j} className="px-4 py-3"><div className="h-4 bg-gray-800 rounded animate-pulse"/></td>)}</tr>)
               : buyers.length===0 ? <tr><td colSpan={7} className="px-4 py-12 text-center text-gray-500">No buyers found.</td></tr>
               : buyers.map((b:any)=>(
-                <tr key={b.id} className="border-b border-gray-800/50 hover:bg-gray-800/30 cursor-pointer" onClick={()=>window.location.href=`/dashboard/buyers/${b.id}`}>
+                <tr key={b.id} className="border-b border-gray-800/50 hover:bg-gray-800/30 cursor-pointer group/row" onClick={()=>window.location.href=`/dashboard/buyers/${b.id}`}>
                   <td className="px-4 py-3"><div className="font-medium">{bname(b)}</div><div className="text-gray-400 text-xs">{b.email?.includes('@import.dispoai.com')?(b.phone||''):b.email}</div></td>
                   <td className="px-4 py-3"><span title={tierTooltips[b.tier]||b.tier} className={`px-2 py-1 rounded text-xs font-medium cursor-help ${tb[b.tier]||tb.TIER_3}`}>{tl[b.tier]||b.tier}</span></td>
                   <td className="px-4 py-3"><span className={sc(b.reliabilityScore)}>{b.reliabilityScore}</span></td>
@@ -173,6 +180,7 @@ export default function BuyersPage() {
                   <td className="px-4 py-3"><span className={sc(b.activityScore)}>{b.activityScore}</span></td>
                   <td className="px-4 py-3"><span className={`font-bold ${sc(b.compositeScore)}`}>{b.compositeScore}</span></td>
                   <td className="px-4 py-3 text-gray-400 text-xs">{b.buyBox?.states?.join(', ')||'—'}</td>
+                  <td className="px-4 py-3 text-right" onClick={e=>e.stopPropagation()}><button onClick={()=>deleteBuyer(b.id,bname(b))} className="opacity-0 group-hover/row:opacity-100 text-red-500 hover:text-red-400 transition px-2 py-1 rounded hover:bg-red-500/10 text-xs">🗑</button></td>
                 </tr>
               ))}
             </tbody>
@@ -195,7 +203,7 @@ export default function BuyersPage() {
                   const ps=profileScore(b); const miss=missingFields(b);
                   const bc=ps>=70?'bg-green-500':ps>=40?'bg-yellow-500':'bg-red-500';
                   return (
-                    <tr key={b.id} className="border-b border-gray-800/50 hover:bg-gray-800/30 cursor-pointer" onClick={()=>window.location.href=`/dashboard/buyers/${b.id}`}>
+                    <tr key={b.id} className="border-b border-gray-800/50 hover:bg-gray-800/30 cursor-pointer group/row" onClick={()=>window.location.href=`/dashboard/buyers/${b.id}`}>
                       <td className="px-4 py-3"><div className="font-medium">{bname(b)}</div><div className="text-gray-400 text-xs">{b.phone||''}</div></td>
                       <td className="px-4 py-3"><span className={`font-bold ${sc(b.compositeScore)}`}>{b.compositeScore}</span></td>
                       <td className="px-4 py-3">
@@ -211,6 +219,7 @@ export default function BuyersPage() {
                         </div>
                       </td>
                       <td className="px-4 py-3 text-gray-400 text-xs">{b.buyBox?.states?.join(', ')||b.marketPrimary||'—'}</td>
+                      <td className="px-4 py-3 text-right" onClick={e=>e.stopPropagation()}><button onClick={()=>deleteBuyer(b.id,bname(b))} className="opacity-0 group-hover/row:opacity-100 text-red-500 hover:text-red-400 transition px-2 py-1 rounded hover:bg-red-500/10 text-xs">🗑</button></td>
                     </tr>
                   );
                 })}
@@ -246,7 +255,7 @@ export default function BuyersPage() {
                   const ps=profileScore(b); const miss=missingFields(b);
                   const bc=ps>=70?'bg-green-500':ps>=40?'bg-yellow-500':'bg-red-500';
                   return (
-                    <tr key={b.id} className="border-b border-gray-800/50 hover:bg-gray-800/30 cursor-pointer" onClick={()=>window.location.href=`/dashboard/buyers/${b.id}`}>
+                    <tr key={b.id} className="border-b border-gray-800/50 hover:bg-gray-800/30 cursor-pointer group/row" onClick={()=>window.location.href=`/dashboard/buyers/${b.id}`}>
                       <td className="px-4 py-3"><div className="font-medium">{bname(b)}</div><div className="text-gray-400 text-xs">{b.phone||''}</div></td>
                       <td className="px-4 py-3"><span className={`font-bold ${sc(b.compositeScore)}`}>{b.compositeScore}</span></td>
                       <td className="px-4 py-3">
@@ -262,6 +271,7 @@ export default function BuyersPage() {
                         </div>
                       </td>
                       <td className="px-4 py-3 text-gray-400 text-xs">{b.buyBox?.states?.join(', ')||b.marketPrimary||'—'}</td>
+                      <td className="px-4 py-3 text-right" onClick={e=>e.stopPropagation()}><button onClick={()=>deleteBuyer(b.id,bname(b))} className="opacity-0 group-hover/row:opacity-100 text-red-500 hover:text-red-400 transition px-2 py-1 rounded hover:bg-red-500/10 text-xs">🗑</button></td>
                     </tr>
                   );
                 })}

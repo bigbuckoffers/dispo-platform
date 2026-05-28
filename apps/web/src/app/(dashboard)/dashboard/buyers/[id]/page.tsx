@@ -61,7 +61,7 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
       (() => {
         let statusData: any = {};
         try { if (buyer.temperatureNotes) statusData = JSON.parse(buyer.temperatureNotes); } catch {}
-        setBbForm({ marketPrimary: buyer.marketPrimary||'', marketSecondary: (buyer.marketSecondary||[]).join(', '), states: (buyer.buyBox?.states||[]).join(', '), zipCodes: (buyer.buyBox?.zipCodes||[]).join(', '), minPrice: buyer.buyBox?.minPrice||'', maxPrice: buyer.buyBox?.maxPrice||'', rehabTolerance: buyer.buyBox?.rehabTolerance||'', minBeds: buyer.buyBox?.minBeds||'', strategies: (buyer.preferredStrategies||[]).join(', '), funding: buyer.notes||'', closeSpeed: buyer.avgCloseSpeedDays||'', buyingStatus: statusData.buyingStatus||'', buyerTemperature: statusData.buyerTemperature||'', monthlyCapacity: statusData.monthlyCapacity||'', resumeDate: statusData.resumeDate||'', occupancy: statusData.occupancy||'', hoaOk: statusData.hoaOk||'', minArv: statusData.minArv||'', minProfit: statusData.minProfit||'', maxRehab: statusData.maxRehab||'', minCashFlow: statusData.minCashFlow||'', hardNoCriteria: statusData.hardNoCriteria||'', maxEmd: statusData.maxEmd||'', inspectionDays: statusData.inspectionDays||'', preferredContact: statusData.preferredContact||'', dealSendFreq: statusData.dealSendFreq||'', excludedAreas: statusData.excludedAreas||'', privateNotes: statusData.privateNotes||'', propertyTypes: statusData.propertyTypes||'', minYearBuilt: statusData.minYearBuilt||'', maxYearBuilt: statusData.maxYearBuilt||'' });
+        setBbForm({ marketPrimary: buyer.marketPrimary||'', marketSecondary: (buyer.marketSecondary||[]).join(', '), states: (buyer.buyBox?.states||[]).join(', '), zipCodes: (buyer.buyBox?.zipCodes||[]).join(', '), minPrice: buyer.buyBox?.minPrice||'', maxPrice: buyer.buyBox?.maxPrice||'', rehabTolerance: buyer.buyBox?.rehabTolerance||'', minBeds: buyer.buyBox?.minBeds||'', strategies: (buyer.preferredStrategies||[]).join(', '), funding: buyer.notes||'', closeSpeed: buyer.avgCloseSpeedDays||'', buyingStatus: statusData.buyingStatus||'', buyerTemperature: statusData.buyerTemperature||'', monthlyCapacity: statusData.monthlyCapacity||'', resumeDate: statusData.resumeDate||'', occupancy: statusData.occupancy||'', hoaOk: statusData.hoaOk||'', minArv: statusData.minArv||'', minProfit: statusData.minProfit||'', maxRehab: statusData.maxRehab||'', minCashFlow: statusData.minCashFlow||'', hardNoCriteria: statusData.hardNoCriteria||'', maxEmd: statusData.maxEmd||'', inspectionDays: statusData.inspectionDays||'', preferredContact: statusData.preferredContact||'', dealSendFreq: statusData.dealSendFreq||'', excludedAreas: statusData.excludedAreas||'', privateNotes: statusData.privateNotes||'', propertyTypes: statusData.propertyTypes||'', minYearBuilt: statusData.minYearBuilt||'', maxYearBuilt: statusData.maxYearBuilt||'', anyZipOk: buyer.buyBox?.anyZipOk||false, anyPrice: buyer.buyBox?.anyPrice||false, proofOfFundsWaived: buyer.proofOfFundsWaived||false });
       })();
       setLiqForm({ closeSpeed: buyer.avgCloseSpeedDays||'', titleCo: buyer.preferredTitleCo||'', maxEmd: buyer.maxEmd||'', lender: buyer.preferredLender||'' });
       setHistForm({ closeCount: buyer.closeCount||0, cancelCount: buyer.cancelCount||0, retradeCount: buyer.retradeCount||0, ghostCount: buyer.ghostCount||0, avgFee: buyer.avgAssignmentFee||'' });
@@ -88,15 +88,19 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
       if (buyer.preferredStrategies?.length) pos.push('Strategy clearly defined: '+buyer.preferredStrategies[0]);
       if (buyer.buyBox?.rehabTolerance) pos.push('Rehab tolerance confirmed');
       if (buyer.notes) pos.push('Funding type identified: '+buyer.notes);
-      if (!buyer.proofOfFundsUrl) neg.push('No verified proof of funds');
-      if (!buyer.closeCount) neg.push('No verified close history on platform');
-      if (!buyer.buyBox?.zipCodes?.length) neg.push('Zip code preferences unconfirmed');
+      if (!buyer.proofOfFundsUrl && !buyer.proofOfFundsWaived) neg.push('No verified proof of funds');
+      if (!buyer.buyBox?.zipCodes?.length && !buyer.buyBox?.anyZipOk) neg.push('Zip code preferences unconfirmed');
       if (buyer.ghostCount>0) neg.push('Has ghosted '+buyer.ghostCount+' time(s)');
       if (buyer.cancelCount>0) neg.push('Has cancelled '+buyer.cancelCount+' deal(s)');
       setClosePosReasons(pos); setCloseNegReasons(neg);
     }
   }, [buyer]);
   const recalculate = useMutation({ mutationFn: () => api.post(`/buyers/${id}/recalculate-scores`).then(r=>r.data), onSuccess: () => { qc.invalidateQueries({queryKey:['buyer',id]}); toast.success('Recalculated'); } });
+  const deleteBuyer = async () => {
+    if (!confirm('Delete this buyer permanently? This cannot be undone.')) return;
+    try { await api.delete(`/buyers/${id}`); toast.success('Buyer deleted'); window.location.href = '/dashboard/buyers'; }
+    catch { toast.error('Failed to delete buyer'); }
+  };
   const saveIntel = async () => { setSaving(true); try { await api.put(`/buyers/${id}`,{buyerIntelNotes:intelText,dealBreakers}); qc.invalidateQueries({queryKey:['buyer',id]}); toast.success('Saved'); } catch { toast.error('Failed'); } finally { setSaving(false); } };
   const saveBuyBox = async () => { setSavingBb(true); try {
     // Build structured temperature notes with all status fields
@@ -136,7 +140,7 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
       avgCloseSpeedDays: bbForm.closeSpeed?parseInt(bbForm.closeSpeed):null,
       tags: updatedTags,
     });
-    (() => { const bb: any = { states: bbForm.states?bbForm.states.split(',').map((s:string)=>s.trim()).filter(Boolean):[], zipCodes: bbForm.zipCodes?bbForm.zipCodes.split(',').map((s:string)=>s.trim()).filter(Boolean):[] }; bb.minPrice = bbForm.minPrice ? parseInt(bbForm.minPrice) : null; bb.maxPrice = bbForm.maxPrice ? parseInt(bbForm.maxPrice) : null; bb.rehabTolerance = bbForm.rehabTolerance || null; bb.minBeds = bbForm.minBeds ? parseInt(bbForm.minBeds) : null; bb.minBaths = bbForm.minBaths ? parseInt(bbForm.minBaths) : null; return api.put(`/buyers/${id}/buy-box`, bb); })(); await qc.invalidateQueries({queryKey:['buyer',id]});
+    (() => { const bb: any = { states: bbForm.states?bbForm.states.split(',').map((s:string)=>s.trim()).filter(Boolean):[], zipCodes: bbForm.zipCodes?bbForm.zipCodes.split(',').map((s:string)=>s.trim()).filter(Boolean):[] }; bb.minPrice = bbForm.minPrice ? parseInt(bbForm.minPrice) : null; bb.maxPrice = bbForm.maxPrice ? parseInt(bbForm.maxPrice) : null; bb.rehabTolerance = bbForm.rehabTolerance || null; bb.minBeds = bbForm.minBeds ? parseInt(bbForm.minBeds) : null; bb.minBaths = bbForm.minBaths ? parseInt(bbForm.minBaths) : null; bb.anyZipOk = !!bbForm.anyZipOk; bb.anyPrice = !!bbForm.anyPrice; return api.put(`/buyers/${id}/buy-box`, bb); })(); if (bbForm.proofOfFundsWaived !== undefined) { await api.put(`/buyers/${id}`, {proofOfFundsWaived: !!bbForm.proofOfFundsWaived}); } await qc.invalidateQueries({queryKey:['buyer',id]});
         toast.success('Buy box saved ✓'); setEditingBuyBox(false); } catch (e:any) { toast.error('Failed: '+e?.message); } finally { setSavingBb(false); } };
   const saveLiquidity = async () => { setSavingLiq(true); try { await api.put(`/buyers/${id}`, { avgCloseSpeedDays: liqForm.closeSpeed?parseInt(liqForm.closeSpeed):null, preferredTitleCo: liqForm.titleCo, preferredLender: liqForm.lender }); qc.invalidateQueries({queryKey:['buyer',id]}); setEditingLiquidity(false); toast.success('Liquidity saved'); } catch { toast.error('Failed'); } finally { setSavingLiq(false); } };
   const saveHistory = async () => { setSavingHist(true); try { await api.put(`/buyers/${id}`, { closeCount: parseInt(histForm.closeCount)||0, cancelCount: parseInt(histForm.cancelCount)||0, retradeCount: parseInt(histForm.retradeCount)||0, ghostCount: parseInt(histForm.ghostCount)||0 }); qc.invalidateQueries({queryKey:['buyer',id]}); setEditingHistory(false); toast.success('History saved'); } catch { toast.error('Failed'); } finally { setSavingHist(false); } };
@@ -217,7 +221,7 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
       </div>
       <div className="flex flex-col gap-2 items-end">
         <div className={`border rounded-xl p-3 text-center min-w-28 ${cpBg}`}><p className="text-gray-500 text-xs">Likely to Close</p><p className={`text-2xl font-bold ${cpColor}`}>{closeProbability}%</p></div>
-        <button onClick={()=>recalculate.mutate()} disabled={recalculate.isPending} className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs rounded-lg transition"><RefreshCw size={11} className={recalculate.isPending?'animate-spin':''} />Recalculate</button><button onClick={markReviewed} className={`flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg transition border font-medium ${ (buyer.tags||[]).includes('profile_reviewed') ? 'bg-green-600 text-white border-green-500' : 'bg-yellow-500 hover:bg-yellow-400 text-black border-yellow-400' }`}><CheckCircle size={11} />{(buyer.tags||[]).includes('profile_reviewed')?'✓ Reviewed':'Mark Reviewed'}</button>
+        <button onClick={()=>recalculate.mutate()} disabled={recalculate.isPending} className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs rounded-lg transition"><RefreshCw size={11} className={recalculate.isPending?'animate-spin':''} />Recalculate</button><button onClick={markReviewed} className={`flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg transition border font-medium ${ (buyer.tags||[]).includes('profile_reviewed') ? 'bg-green-600 text-white border-green-500' : 'bg-yellow-500 hover:bg-yellow-400 text-black border-yellow-400' }`}><CheckCircle size={11} />{(buyer.tags||[]).includes('profile_reviewed')?'✓ Reviewed':'Mark Reviewed'}</button><button onClick={deleteBuyer} className="flex items-center gap-1.5 px-3 py-1.5 bg-red-900/30 hover:bg-red-900/60 border border-red-700/40 text-red-400 text-xs rounded-lg transition">🗑 Delete</button>
       </div>
     </div>
     <SECTION title="AI Buyer Intelligence Summary" icon={Brain} iconColor="text-purple-400" badge={aiConfidence?aiConfidence+'% confidence':undefined}>
@@ -301,7 +305,8 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
             </div>
             <div>
               <label className="text-gray-500 text-xs block mb-1">Zip Codes</label>
-              <input value={bbForm.zipCodes||''} onChange={e=>setBbForm((p:any)=>({...p,zipCodes:e.target.value}))} placeholder="comma separated" className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500" />
+              <input value={bbForm.zipCodes||''} onChange={e=>setBbForm((p:any)=>({...p,zipCodes:e.target.value}))} placeholder="comma separated" disabled={bbForm.anyZipOk} className={`w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500 ${bbForm.anyZipOk?'opacity-40':''}`} />
+              <label className="flex items-center gap-2 mt-1.5 cursor-pointer"><input type="checkbox" checked={!!bbForm.anyZipOk} onChange={e=>setBbForm((p:any)=>({...p,anyZipOk:e.target.checked}))} className="accent-blue-500" /><span className="text-gray-400 text-xs">Any zip OK — entire market</span></label>
             </div>
             <div className="col-span-2">
               <label className="text-gray-500 text-xs block mb-1">Excluded Areas</label>
@@ -374,12 +379,13 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-gray-500 text-xs block mb-1">Min Purchase Price</label>
-              <input type="number" value={bbForm.minPrice||''} onChange={e=>setBbForm((p:any)=>({...p,minPrice:e.target.value}))} placeholder="e.g. 30000" className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500" />
+              <input type="number" value={bbForm.minPrice||''} onChange={e=>setBbForm((p:any)=>({...p,minPrice:e.target.value}))} placeholder="e.g. 30000" disabled={bbForm.anyPrice} className={`w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500 ${bbForm.anyPrice?'opacity-40':''}`} />
             </div>
             <div>
               <label className="text-gray-500 text-xs block mb-1">Max Purchase Price</label>
-              <input type="number" value={bbForm.maxPrice||''} onChange={e=>setBbForm((p:any)=>({...p,maxPrice:e.target.value}))} placeholder="e.g. 150000" className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500" />
+              <input type="number" value={bbForm.maxPrice||''} onChange={e=>setBbForm((p:any)=>({...p,maxPrice:e.target.value}))} placeholder="e.g. 150000" disabled={bbForm.anyPrice} className={`w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500 ${bbForm.anyPrice?'opacity-40':''}`} />
             </div>
+            <div className="col-span-2"><label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={!!bbForm.anyPrice} onChange={e=>setBbForm((p:any)=>({...p,anyPrice:e.target.checked}))} className="accent-blue-500" /><span className="text-gray-400 text-xs">No price limit — buys at any price point</span></label></div>
             <div>
               <label className="text-gray-500 text-xs block mb-1">Min ARV</label>
               <input type="number" value={bbForm.minArv||''} onChange={e=>setBbForm((p:any)=>({...p,minArv:e.target.value}))} placeholder="e.g. 100000" className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500" />
@@ -431,6 +437,8 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
         <div>
           <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg px-3 py-2 mb-3">
             <p className="text-yellow-400 text-xs font-medium">📞 Ask: "How are you typically funding deals? Do you have proof of funds we can keep on file? How fast can you close?"</p>
+          </div>
+          <div className="mb-2"><label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={!!bbForm.proofOfFundsWaived} onChange={e=>setBbForm((p:any)=>({...p,proofOfFundsWaived:e.target.checked}))} className="accent-blue-500" /><span className="text-gray-400 text-xs">Waive proof of funds — trusted buyer, not required</span></label></div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
