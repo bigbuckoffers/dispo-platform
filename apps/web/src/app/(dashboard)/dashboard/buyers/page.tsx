@@ -366,109 +366,125 @@ export default function BuyersPage() {
       )}
       {tab==='submissions'&&(
         <div>
-          <div className="bg-purple-500/10 border border-purple-500/20 rounded-xl p-4 mb-4">
-            <p className="text-purple-300 text-sm font-medium">📬 {submissions.length} pending buy box submissions</p>
-            <p className="text-gray-400 text-xs mt-1">Review each field — green = new info, yellow = conflicts with existing data. Accept or keep your current value.</p>
+          <div className="bg-purple-500/10 border border-purple-500/20 rounded-xl p-4 mb-4 flex items-center justify-between">
+            <div>
+              <p className="text-purple-300 text-sm font-medium">📬 {submissions.length} pending buy box submissions</p>
+              <p className="text-gray-400 text-xs mt-1">Click Review to see full details and approve field by field.</p>
+            </div>
+            <button onClick={loadSubmissions} className="text-gray-500 text-xs hover:text-gray-300 transition">↺ Refresh</button>
           </div>
           {loadingSubs ? <div className="text-gray-500 text-sm p-8 text-center">Loading...</div>
           : submissions.length === 0 ? <div className="text-gray-500 text-sm p-8 text-center">No pending submissions</div>
-          : <div className="space-y-6">{submissions.map((sub:any) => {
-            const d = sub.submittedData;
-            const b = sub.buyer;
-            const bb = b?.buyBox || {};
-
-            // Build field diff
-            const fields = [
-              { key:'marketPrimary', label:'Primary Market', submitted: d.marketPrimary, current: b?.marketPrimary },
-              { key:'marketSecondary', label:'Other Markets', submitted: d.marketSecondary, current: (b?.marketSecondary||[]).join(', ') },
-              { key:'states', label:'States', submitted: d.states, current: (bb.states||[]).join(', ') },
-              { key:'zipCodes', label:'Zip Codes', submitted: d.zipCodes, current: (bb.zipCodes||[]).join(', ') },
-              { key:'anyZipOk', label:'Any Zip OK', submitted: d.anyZipOk ? 'Yes' : '', current: bb.anyZipOk ? 'Yes' : '' },
-              { key:'strategies', label:'Strategy', submitted: (d.strategies||[]).join(', '), current: (b?.preferredStrategies||[]).join(', ') },
-              { key:'rehabTolerance', label:'Rehab Tolerance', submitted: d.rehabTolerance?.replace(/_/g,' '), current: bb.rehabTolerance?.replace(/_/g,' ') },
-              { key:'propertyTypes', label:'Property Types', submitted: (d.propertyTypes||[]).join(', '), current: (bb.propertyTypes||[]).join(', ') },
-              { key:'price', label:'Price Range', submitted: d.anyPrice ? 'Any price' : (d.minPrice||d.maxPrice) ? `$${d.minPrice||0}–$${d.maxPrice||'∞'}` : '', current: bb.anyPrice ? 'Any price' : (bb.minPrice||bb.maxPrice) ? `$${bb.minPrice||0}–$${bb.maxPrice||'∞'}` : '' },
-              { key:'fundingTypes', label:'Funding', submitted: (d.fundingTypes||[]).join(', '), current: b?.notes },
-              { key:'closeSpeed', label:'Close Speed', submitted: d.closeSpeed ? d.closeSpeed+' days' : '', current: b?.avgCloseSpeedDays ? b.avgCloseSpeedDays+' days' : '' },
-              { key:'buyingStatus', label:'Buying Status', submitted: d.buyingStatus?.replace(/_/g,' '), current: '' },
-              { key:'monthlyCapacity', label:'Monthly Capacity', submitted: d.monthlyCapacity, current: '' },
-              { key:'hardNoCriteria', label:'Hard No Criteria', submitted: d.hardNoCriteria, current: bb.hardNoCriteria },
-              { key:'occupancy', label:'Occupancy', submitted: d.occupancy, current: '' },
-              { key:'hoaOk', label:'HOA OK', submitted: d.hoaOk, current: '' },
-              { key:'preferredContact', label:'Contact Preference', submitted: d.preferredContact, current: '' },
-              { key:'dealSendFreq', label:'Deal Frequency', submitted: d.dealSendFreq, current: '' },
-              { key:'freeformNotes', label:'Free-form Notes', submitted: d.freeformNotes, current: '' },
-            ].filter(f => f.submitted && f.submitted.toString().trim());
-
-            const decisions = fieldDecisions[sub.id] ? JSON.parse(fieldDecisions[sub.id]) : {};
-            const setDecision = (fieldKey: string, val: string) => {
-              const cur = fieldDecisions[sub.id] ? JSON.parse(fieldDecisions[sub.id]) : {};
-              cur[fieldKey] = val;
-              setFieldDecisions(prev => ({...prev, [sub.id]: JSON.stringify(cur)}));
-            };
-
-            const handleApprove = () => {
-              // Build approved data based on decisions
-              const approved: any = { ...d };
-              fields.forEach(field => {
-                const dec = decisions[field.key];
-                if (dec === 'keep') delete approved[field.key];
-              });
-              approveSubmission({...sub, submittedData: approved});
-            };
-
-            return (
-              <div key={sub.id} className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
-                {/* Header */}
-                <div className="flex items-center justify-between p-4 border-b border-gray-800">
-                  <div>
-                    <p className="font-semibold text-white">{b?.firstName} {b?.lastName} <span className="text-gray-500 text-xs ml-2">{b?.phone}</span></p>
-                    <p className="text-gray-500 text-xs mt-0.5">Submitted {new Date(sub.createdAt).toLocaleDateString()} · {fields.length} fields</p>
+          : <div className="divide-y divide-gray-800 bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+            {submissions.map((sub:any) => {
+              const b = sub.buyer;
+              const isSelected = selectedSub?.id === sub.id;
+              const statusColor = sub.status === 'SUBMITTED' ? 'text-green-400' : sub.status === 'IN_PROGRESS' ? 'text-yellow-400' : 'text-gray-400';
+              const statusLabel = sub.status === 'SUBMITTED' ? '✅ Submitted' : sub.status === 'IN_PROGRESS' ? '🟡 In Progress' : sub.status;
+              const fieldCount = Object.keys(sub.submittedData || {}).filter((k:string) => !k.startsWith('_') && (sub.submittedData as any)[k]).length;
+              return (
+                <div key={sub.id}>
+                  <div className="flex items-center justify-between px-4 py-3 hover:bg-gray-800/40 transition">
+                    <div className="flex items-center gap-4">
+                      <div className="w-8 h-8 rounded-full bg-purple-900/50 flex items-center justify-center text-purple-300 text-sm font-bold">{b?.firstName?.[0]||'?'}</div>
+                      <div>
+                        <p className="text-white text-sm font-medium">{b?.firstName} {b?.lastName} <span className="text-gray-500 text-xs ml-1">{b?.phone}</span></p>
+                        <p className="text-gray-500 text-xs">{new Date(sub.createdAt).toLocaleDateString()} at {new Date(sub.createdAt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})} · {fieldCount} fields · <span className={statusColor}>{statusLabel}</span></p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button onClick={()=>window.location.href=`/dashboard/buyers/${b?.id}`} className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs rounded-lg transition">Profile</button>
+                      <button onClick={()=>rejectSubmission(sub.id)} className="px-3 py-1.5 bg-red-900/30 hover:bg-red-900/60 text-red-400 text-xs rounded-lg transition">Reject</button>
+                      <button onClick={()=>{ setSelectedSub(isSelected ? null : sub); setFieldDecisions({}); }} className={`px-3 py-1.5 text-xs rounded-lg transition font-medium ${isSelected ? 'bg-gray-700 text-white' : 'bg-purple-700 hover:bg-purple-600 text-white'}`}>
+                        {isSelected ? '▲ Close' : '▼ Review'}
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex gap-2">
-                    <button onClick={()=>window.location.href=`/dashboard/buyers/${b?.id}`} className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs rounded-lg transition">Profile</button>
-                    <button onClick={()=>rejectSubmission(sub.id)} className="px-3 py-1.5 bg-red-900/30 hover:bg-red-900/60 text-red-400 text-xs rounded-lg transition">Reject</button>
-                    <button onClick={handleApprove} className="px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white text-xs rounded-lg font-medium transition">✓ Save Approved</button>
-                  </div>
-                </div>
-                {/* Field diff table */}
-                <div className="divide-y divide-gray-800/50">
-                  {fields.map((field:any) => {
-                    const hasConflict = field.current && field.current.trim() && field.current !== field.submitted;
-                    const isNew = !field.current || !field.current.trim();
-                    const dec = decisions[field.key] || (isNew ? 'accept' : hasConflict ? '' : 'accept');
+                  {isSelected && (() => {
+                    const d = sub.submittedData;
+                    const bb = b?.buyBox || {};
+                    const fields = [
+                      { key:'firstName', label:'First Name', submitted: d.firstName, current: b?.firstName },
+                      { key:'lastName', label:'Last Name', submitted: d.lastName, current: b?.lastName },
+                      { key:'phone', label:'Phone', submitted: d.phone, current: b?.phone },
+                      { key:'email', label:'Email', submitted: d.email, current: b?.email },
+                      { key:'marketPrimary', label:'Primary Market', submitted: d.marketPrimary, current: b?.marketPrimary },
+                      { key:'marketSecondary', label:'Other Markets', submitted: d.marketSecondary, current: (b?.marketSecondary||[]).join(', ') },
+                      { key:'states', label:'States', submitted: d.states, current: (bb.states||[]).join(', ') },
+                      { key:'zipCodes', label:'Zip Codes', submitted: d.zipCodes, current: (bb.zipCodes||[]).join(', ') },
+                      { key:'anyZipOk', label:'Any Zip OK', submitted: d.anyZipOk ? 'Yes' : null, current: bb.anyZipOk ? 'Yes' : null },
+                      { key:'strategies', label:'Strategy', submitted: (d.strategies||[]).join(', '), current: (b?.preferredStrategies||[]).join(', ') },
+                      { key:'rehabTolerance', label:'Rehab Tolerance', submitted: d.rehabTolerance?.replace(/_/g,' '), current: bb.rehabTolerance?.replace(/_/g,' ') },
+                      { key:'propertyTypes', label:'Property Types', submitted: (d.propertyTypes||[]).join(', '), current: (bb.propertyTypes||[]).join(', ') },
+                      { key:'price', label:'Price Range', submitted: d.anyPrice ? 'Any' : (d.minPrice||d.maxPrice) ? `$${d.minPrice||0}–$${d.maxPrice||'∞'}` : null, current: bb.anyPrice ? 'Any' : (bb.minPrice||bb.maxPrice) ? `$${bb.minPrice||0}–$${bb.maxPrice||'∞'}` : null },
+                      { key:'minArv', label:'Min ARV', submitted: d.minArv ? `$${d.minArv}` : null, current: bb.minArv ? `$${bb.minArv}` : null },
+                      { key:'minProfit', label:'Min Profit', submitted: d.minProfit ? `$${d.minProfit}` : null, current: bb.minProfit ? `$${bb.minProfit}` : null },
+                      { key:'fundingTypes', label:'Funding', submitted: (d.fundingTypes||[]).join(', '), current: b?.notes },
+                      { key:'closeSpeed', label:'Close Speed', submitted: d.closeSpeed ? `${d.closeSpeed} days` : null, current: b?.avgCloseSpeedDays ? `${b.avgCloseSpeedDays} days` : null },
+                      { key:'maxEmd', label:'Max EMD', submitted: d.maxEmd ? `$${d.maxEmd}` : null, current: bb.maxEmd ? `$${bb.maxEmd}` : null },
+                      { key:'inspectionDays', label:'Inspection Days', submitted: d.inspectionDays, current: bb.inspectionDays },
+                      { key:'buyingStatus', label:'Buying Status', submitted: d.buyingStatus?.replace(/_/g,' '), current: null },
+                      { key:'monthlyCapacity', label:'Monthly Capacity', submitted: d.monthlyCapacity, current: null },
+                      { key:'occupancy', label:'Occupancy', submitted: d.occupancy, current: null },
+                      { key:'hoaOk', label:'HOA OK', submitted: d.hoaOk, current: null },
+                      { key:'hardNoCriteria', label:'Hard No Criteria', submitted: d.hardNoCriteria, current: bb.hardNoCriteria },
+                      { key:'excludedAreas', label:'Excluded Areas', submitted: d.excludedAreas, current: bb.excludedAreas },
+                      { key:'preferredContact', label:'Contact Preference', submitted: d.preferredContact, current: null },
+                      { key:'dealSendFreq', label:'Deal Frequency', submitted: d.dealSendFreq, current: null },
+                      { key:'freeformNotes', label:'Buyer Notes', submitted: d.freeformNotes, current: null },
+                    ].filter((fi:any) => fi.submitted && fi.submitted.toString().trim());
+
+                    const decisions = fieldDecisions;
+                    const setDecision = (key: string, val: string) => setFieldDecisions((prev:any) => ({...prev, [key]: val}));
+
+                    const handleSave = () => {
+                      const approved = {...d};
+                      fields.forEach((fi:any) => { if (decisions[fi.key] === 'keep') { delete approved[fi.key]; } });
+                      approveSubmission({...sub, submittedData: approved});
+                      setSelectedSub(null);
+                      setFieldDecisions({});
+                    };
+
                     return (
-                      <div key={field.key} className={`px-4 py-3 flex items-start gap-3 ${hasConflict && !dec ? 'bg-yellow-500/5' : ''}`}>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-gray-500 text-xs mb-1">{field.label}</p>
-                          <div className="flex items-start gap-3 flex-wrap">
-                            <div className={`flex-1 min-w-0 px-2 py-1 rounded text-xs ${isNew ? 'bg-green-500/10 border border-green-500/20 text-green-300' : dec==='accept' ? 'bg-green-500/10 border border-green-500/20 text-green-300' : dec==='keep' ? 'bg-gray-800 text-gray-500 line-through' : 'bg-yellow-500/10 border border-yellow-500/20 text-yellow-300'}`}>
-                              <span className="text-gray-500 mr-1">New:</span>{field.submitted}
-                            </div>
-                            {hasConflict && (
-                              <div className="flex-1 min-w-0 px-2 py-1 rounded text-xs bg-gray-800 border border-gray-700 text-gray-400">
-                                <span className="text-gray-500 mr-1">Current:</span>{field.current}
-                              </div>
-                            )}
-                          </div>
+                      <div className="border-t border-gray-800 bg-gray-950 px-4 py-4">
+                        <div className="grid grid-cols-3 gap-1 text-xs font-medium text-gray-500 mb-2 px-2">
+                          <span>Field</span><span>Current</span><span>New Submission</span>
                         </div>
-                        {hasConflict && (
-                          <div className="flex gap-1 flex-shrink-0 mt-4">
-                            <button onClick={()=>setDecision(field.key,'accept')} className={`px-2 py-1 rounded text-xs transition ${dec==='accept'?'bg-green-600 text-white':'bg-gray-800 text-gray-400 hover:text-green-400'}`}>Use New</button>
-                            <button onClick={()=>setDecision(field.key,'keep')} className={`px-2 py-1 rounded text-xs transition ${dec==='keep'?'bg-gray-600 text-white':'bg-gray-800 text-gray-400 hover:text-gray-200'}`}>Keep Mine</button>
-                          </div>
-                        )}
-                        {isNew && <span className="text-green-500 text-xs flex-shrink-0 mt-4">✓ New</span>}
+                        <div className="space-y-1 mb-4">
+                          {fields.map((fi:any) => {
+                            const hasConflict = fi.current && fi.current.toString().trim() && fi.current !== fi.submitted;
+                            const isNew = !fi.current || !fi.current.toString().trim();
+                            const dec = decisions[fi.key] || (isNew ? 'use_new' : hasConflict ? 'use_new' : 'use_new');
+                            return (
+                              <div key={fi.key} className={`grid grid-cols-3 gap-2 items-center px-2 py-2 rounded-lg text-xs ${hasConflict ? 'bg-yellow-500/5 border border-yellow-500/10' : 'bg-gray-900/50'}`}>
+                                <span className="text-gray-400 font-medium">{fi.label}</span>
+                                <div className="flex items-center gap-1">
+                                  {fi.current ? <span className={`px-2 py-1 rounded text-xs ${dec==='keep' ? 'bg-blue-600/30 text-blue-300 ring-1 ring-blue-500' : 'bg-gray-800 text-gray-400'}`}>{fi.current}</span> : <span className="text-gray-600 text-xs italic">empty</span>}
+                                  {hasConflict && <button onClick={()=>setDecision(fi.key,'keep')} className={`px-1.5 py-0.5 rounded text-xs transition ${dec==='keep'?'bg-blue-600 text-white':'bg-gray-800 text-gray-500 hover:text-blue-400'}`}>Keep</button>}
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <span className={`px-2 py-1 rounded text-xs ${dec==='use_new'||isNew ? 'bg-green-600/30 text-green-300 ring-1 ring-green-500' : 'bg-gray-800 text-gray-400 line-through'}`}>{fi.submitted}</span>
+                                  {hasConflict && <button onClick={()=>setDecision(fi.key,'use_new')} className={`px-1.5 py-0.5 rounded text-xs transition ${dec==='use_new'?'bg-green-600 text-white':'bg-gray-800 text-gray-500 hover:text-green-400'}`}>Use</button>}
+                                  {isNew && <span className="text-green-500 text-xs">✓ New</span>}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        <div className="flex gap-2 justify-end">
+                          <button onClick={()=>{setSelectedSub(null);setFieldDecisions({});}} className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs rounded-lg transition">Cancel</button>
+                          <button onClick={handleSave} className="px-4 py-2 bg-green-600 hover:bg-green-500 text-white text-xs rounded-lg font-medium transition">✓ Save to Buy Box</button>
+                        </div>
                       </div>
                     );
-                  })}
+                  })()}
                 </div>
-              </div>
-            );
-          })}</div>}
+              );
+            })}
+          </div>}
         </div>
       )}
-      {tab==='reviewed'&&(
+            {tab==='reviewed'&&(
         <div>
           <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4 mb-4">
             <p className="text-green-300 text-sm font-medium">✅ {reviewed.length} buyers reviewed</p>
