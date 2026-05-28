@@ -35,7 +35,7 @@ export default function BuyersPage() {
   const [tier, setTier] = useState('');
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
-  const [tab, setTab] = useState<'all'|'review'>('all');
+  const [tab, setTab] = useState<'all'|'review'|'reviewed'>('all');
 
   useEffect(() => { load(); }, [search, tier, page]);
   useEffect(() => { loadAll(); }, []);
@@ -79,6 +79,7 @@ export default function BuyersPage() {
   const tl: any = { TIER_1:'🔥 T1', TIER_2:'T2', TIER_3:'T3' };
   const sc = (n: number) => n>=80?'text-green-400':n>=60?'text-yellow-400':'text-red-400';
   const bname = (b: any) => (!b.firstName||b.firstName==='Unknown') ? (b.phone||b.email?.split('@')[0]||'Unknown') : b.lastName==='Buyer' ? b.firstName : `${b.firstName} ${b.lastName}`.trim();
+  const reviewed = [...allBuyers].filter(b => (b.tags||[]).includes('profile_reviewed')).sort((a,b) => (b.compositeScore||0)-(a.compositeScore||0));
   const needsReview = [...allBuyers].filter(b => profileScore(b) < 70 && !(b.tags||[]).includes('profile_reviewed')).sort((a,b) => (b.compositeScore||0)-(a.compositeScore||0));
 
   return (
@@ -93,6 +94,9 @@ export default function BuyersPage() {
         </button>
         <button onClick={() => { setTab('review'); loadAll(); }} className={`px-5 py-2 rounded-lg text-sm font-medium transition-colors ${tab==='review'?'bg-orange-600 text-white':'text-gray-400 hover:text-white'}`}>
           Needs Review <span className="ml-1 text-xs bg-orange-500/30 text-orange-300 px-1.5 py-0.5 rounded-full">{loadingAll ? '...' : needsReview.length}</span>
+        </button>
+        <button onClick={() => { setTab('reviewed'); loadAll(); }} className={`px-5 py-2 rounded-lg text-sm font-medium transition-colors ${tab==='reviewed'?'bg-green-700 text-white':'text-gray-400 hover:text-white'}`}>
+          Reviewed <span className="ml-1 text-xs bg-green-500/30 text-green-300 px-1.5 py-0.5 rounded-full">{loadingAll ? '...' : reviewed.length}</span>
         </button>
       </div>
       {tab==='all' && (
@@ -174,6 +178,47 @@ export default function BuyersPage() {
             <button onClick={()=>setPage(p=>Math.max(1,p-1))} disabled={page===1} className="px-4 py-2 bg-gray-800 border border-gray-700 text-gray-300 rounded-lg text-sm disabled:opacity-40">← Prev</button>
             <span className="px-4 py-2 text-gray-400 text-sm">Page {page} of {Math.ceil(total/100)}</span>
             <button onClick={()=>setPage(p=>p+1)} disabled={page>=Math.ceil(total/100)} className="px-4 py-2 bg-gray-800 border border-gray-700 text-gray-300 rounded-lg text-sm disabled:opacity-40">Next →</button>
+          </div>
+        </div>
+      )}
+
+      {tab==='reviewed' && (
+        <div>
+          <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4 mb-6">
+            <p className="text-green-300 text-sm font-medium">✅ {reviewed.length} buyers have been reviewed</p>
+            <p className="text-gray-400 text-xs mt-1">These buyers have been manually reviewed. Click any buyer to update their profile or move them back to Needs Review.</p>
+          </div>
+          <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+            <table className="w-full text-sm">
+              <thead><tr className="border-b border-gray-800">{['Buyer','Score','Profile','Missing Info','Market'].map(h=><th key={h} className="text-left text-gray-400 font-medium px-4 py-3">{h}</th>)}</tr></thead>
+              <tbody>
+                {loadingAll ? [...Array(5)].map((_,i)=><tr key={i} className="border-b border-gray-800/50">{[...Array(5)].map((_,j)=><td key={j} className="px-4 py-3"><div className="h-4 bg-gray-800 rounded animate-pulse"/></td>)}</tr>)
+                : reviewed.length===0 ? <tr><td colSpan={5} className="px-4 py-12 text-center text-gray-500">No reviewed buyers yet.</td></tr>
+                : reviewed.map((b:any)=>{
+                  const ps=profileScore(b); const miss=missingFields(b);
+                  const bc=ps>=70?'bg-green-500':ps>=40?'bg-yellow-500':'bg-red-500';
+                  return (
+                    <tr key={b.id} className="border-b border-gray-800/50 hover:bg-gray-800/30 cursor-pointer" onClick={()=>window.location.href=`/dashboard/buyers/${b.id}`}>
+                      <td className="px-4 py-3"><div className="font-medium">{bname(b)}</div><div className="text-gray-400 text-xs">{b.phone||''}</div></td>
+                      <td className="px-4 py-3"><span className={`font-bold ${sc(b.compositeScore)}`}>{b.compositeScore}</span></td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <div className="w-20 bg-gray-700 rounded-full h-1.5"><div className={`${bc} h-1.5 rounded-full`} style={{width:`${ps}%`}}/></div>
+                          <span className="text-xs text-gray-400">{ps}%</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex flex-wrap gap-1">
+                          {miss.slice(0,3).map((m,i)=><span key={i} className="text-xs bg-gray-700 text-gray-400 border border-gray-600 px-2 py-0.5 rounded-full">{m}</span>)}
+                          {miss.length>3 && <span className="text-xs text-gray-500">+{miss.length-3} more</span>}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-gray-400 text-xs">{b.buyBox?.states?.join(', ')||b.marketPrimary||'—'}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         </div>
       )}
