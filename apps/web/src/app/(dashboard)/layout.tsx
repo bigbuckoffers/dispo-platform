@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { UserButton } from '@clerk/nextjs';
 import { motion } from 'framer-motion';
 import { LayoutDashboard, Users, Home, Zap, BarChart3, ShoppingBag, Bell, Settings, ChevronLeft, ChevronRight, MessageSquare } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { AuthProvider } from '@/components/AuthProvider';
 
 const NAV_ITEMS = [
@@ -21,6 +22,21 @@ const NAV_ITEMS = [
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const [unreadCount, setUnreadCount] = useState(0);
+  const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
+
+  useEffect(() => {
+    const fetchUnread = async () => {
+      try {
+        const r = await fetch(`${API}/notifications/unread-count`);
+        const d = await r.json();
+        setUnreadCount(d.count || 0);
+      } catch {}
+    };
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 30000);
+    return () => clearInterval(interval);
+  }, []);
   const [collapsed, setCollapsed] = useState(false);
   return (
     <AuthProvider>
@@ -60,7 +76,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <header className="h-16 bg-gray-900 border-b border-gray-800 flex items-center justify-between px-6 flex-shrink-0">
             <span className="text-sm text-gray-500">{NAV_ITEMS.find(n => pathname.startsWith(n.href))?.label ?? 'Dashboard'}</span>
             <div className="flex items-center gap-3">
-              <button className="relative p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800"><Bell size={18} /></button>
+              <button onClick={()=>window.location.href='/dashboard/notifications'} className="relative p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800">
+                <Bell size={18} />
+                {unreadCount > 0 && <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">{unreadCount > 9 ? '9+' : unreadCount}</span>}
+              </button>
               <UserButton afterSignOutUrl="/" />
             </div>
           </header>
