@@ -36,6 +36,7 @@ model Organization {
   auditLogs    AuditLog[]
   apiKeys      ApiKey[]
 
+  conversations Conversation[]
   @@map("organizations")
 }
 
@@ -191,6 +192,7 @@ model Buyer {
   @@index([compositeScore(sort: Desc)])
   @@index([tier])
   @@index([isActive, isSuspended])
+  conversations Conversation[]
   @@map("buyers")
 }
 
@@ -1176,4 +1178,38 @@ model DealSource {
   @@index([organizationId])
   @@index([phone])
   @@index([email])
+}
+
+model Conversation {
+  id             String       @id @default(uuid()) @db.Uuid
+  organizationId String       @db.Uuid
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  buyerId        String       @db.Uuid
+  buyer          Buyer        @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+  lastMessageAt  DateTime     @default(now())
+  lastMessageBody String?
+  unreadCount    Int          @default(0)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  smsMessages    SmsMessage[]
+
+  @@unique([organizationId, buyerId])
+  @@index([organizationId, lastMessageAt])
+  @@map("conversations")
+}
+
+model SmsMessage {
+  id             String       @id @default(uuid()) @db.Uuid
+  conversationId String       @db.Uuid
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  body           String
+  direction      String       // INBOUND | OUTBOUND
+  status         String       @default("QUEUED") // QUEUED | SENT | DELIVERED | FAILED
+  twilioSid      String?
+  fromNumber     String?
+  toNumber       String?
+  createdAt      DateTime     @default(now())
+
+  @@index([conversationId, createdAt])
+  @@map("sms_messages")
 }

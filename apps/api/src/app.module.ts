@@ -10,6 +10,7 @@ import { BuyersModule } from './modules/buyers/buyers.module';
 import { DealsModule } from './modules/deals/deals.module';
 import { MatchingModule } from './modules/matching/matching.module';
 import { DispoModule } from './modules/dispo/dispo.module';
+import { MessagesModule } from './modules/messages/messages.module';
 import { MarketplaceModule } from './modules/marketplace/marketplace.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
@@ -71,6 +72,7 @@ import { PlacesModule } from './modules/places/places.module';
     DealsModule,
     MatchingModule,
     DispoModule,
+    MessagesModule,
     MarketplaceModule,
     AnalyticsModule,
     NotificationsModule,
