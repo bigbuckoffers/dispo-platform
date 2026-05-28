@@ -123,6 +123,10 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
       maxYearBuilt: bbForm.maxYearBuilt||null,
     };
     const structuredNote = JSON.stringify(statusData);
+    // Sync wholesaler tag based on buying status
+    const currentTags = buyer.tags || [];
+    let updatedTags = currentTags.filter((t:string) => t !== 'wholesaler');
+    if (bbForm.buyingStatus === 'wholesaler') updatedTags = [...updatedTags, 'wholesaler'];
     await api.put(`/buyers/${id}`, {
       marketPrimary: bbForm.marketPrimary||null,
       marketSecondary: bbForm.marketSecondary?bbForm.marketSecondary.split(',').map((s:string)=>s.trim()).filter(Boolean):[],
@@ -130,6 +134,7 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
       notes: bbForm.funding||null,
       temperatureNotes: structuredNote,
       avgCloseSpeedDays: bbForm.closeSpeed?parseInt(bbForm.closeSpeed):null,
+      tags: updatedTags,
     });
     (() => { const bb: any = { states: bbForm.states?bbForm.states.split(',').map((s:string)=>s.trim()).filter(Boolean):[], zipCodes: bbForm.zipCodes?bbForm.zipCodes.split(',').map((s:string)=>s.trim()).filter(Boolean):[] }; bb.minPrice = bbForm.minPrice ? parseInt(bbForm.minPrice) : null; bb.maxPrice = bbForm.maxPrice ? parseInt(bbForm.maxPrice) : null; bb.rehabTolerance = bbForm.rehabTolerance || null; bb.minBeds = bbForm.minBeds ? parseInt(bbForm.minBeds) : null; bb.minBaths = bbForm.minBaths ? parseInt(bbForm.minBaths) : null; return api.put(`/buyers/${id}/buy-box`, bb); })(); await qc.invalidateQueries({queryKey:['buyer',id]});
         toast.success('Buy box saved ✓'); setEditingBuyBox(false); } catch (e:any) { toast.error('Failed: '+e?.message); } finally { setSavingBb(false); } };
