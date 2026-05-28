@@ -350,34 +350,100 @@ export default function BuyersPage() {
         <div>
           <div className="bg-purple-500/10 border border-purple-500/20 rounded-xl p-4 mb-4">
             <p className="text-purple-300 text-sm font-medium">📬 {submissions.length} pending buy box submissions</p>
-            <p className="text-gray-400 text-xs mt-1">Buyers who filled out their intake form. Review and approve to update their profiles.</p>
+            <p className="text-gray-400 text-xs mt-1">Review each field — green = new info, yellow = conflicts with existing data. Accept or keep your current value.</p>
           </div>
           {loadingSubs ? <div className="text-gray-500 text-sm p-8 text-center">Loading...</div>
           : submissions.length === 0 ? <div className="text-gray-500 text-sm p-8 text-center">No pending submissions</div>
-          : <div className="space-y-4">{submissions.map((sub:any) => {
+          : <div className="space-y-6">{submissions.map((sub:any) => {
             const d = sub.submittedData;
             const b = sub.buyer;
+            const bb = b?.buyBox || {};
+
+            // Build field diff
+            const fields = [
+              { key:'marketPrimary', label:'Primary Market', submitted: d.marketPrimary, current: b?.marketPrimary },
+              { key:'marketSecondary', label:'Other Markets', submitted: d.marketSecondary, current: (b?.marketSecondary||[]).join(', ') },
+              { key:'states', label:'States', submitted: d.states, current: (bb.states||[]).join(', ') },
+              { key:'zipCodes', label:'Zip Codes', submitted: d.zipCodes, current: (bb.zipCodes||[]).join(', ') },
+              { key:'anyZipOk', label:'Any Zip OK', submitted: d.anyZipOk ? 'Yes' : '', current: bb.anyZipOk ? 'Yes' : '' },
+              { key:'strategies', label:'Strategy', submitted: (d.strategies||[]).join(', '), current: (b?.preferredStrategies||[]).join(', ') },
+              { key:'rehabTolerance', label:'Rehab Tolerance', submitted: d.rehabTolerance?.replace(/_/g,' '), current: bb.rehabTolerance?.replace(/_/g,' ') },
+              { key:'propertyTypes', label:'Property Types', submitted: (d.propertyTypes||[]).join(', '), current: (bb.propertyTypes||[]).join(', ') },
+              { key:'price', label:'Price Range', submitted: d.anyPrice ? 'Any price' : (d.minPrice||d.maxPrice) ? `$${d.minPrice||0}–$${d.maxPrice||'∞'}` : '', current: bb.anyPrice ? 'Any price' : (bb.minPrice||bb.maxPrice) ? `$${bb.minPrice||0}–$${bb.maxPrice||'∞'}` : '' },
+              { key:'fundingTypes', label:'Funding', submitted: (d.fundingTypes||[]).join(', '), current: b?.notes },
+              { key:'closeSpeed', label:'Close Speed', submitted: d.closeSpeed ? d.closeSpeed+' days' : '', current: b?.avgCloseSpeedDays ? b.avgCloseSpeedDays+' days' : '' },
+              { key:'buyingStatus', label:'Buying Status', submitted: d.buyingStatus?.replace(/_/g,' '), current: '' },
+              { key:'monthlyCapacity', label:'Monthly Capacity', submitted: d.monthlyCapacity, current: '' },
+              { key:'hardNoCriteria', label:'Hard No Criteria', submitted: d.hardNoCriteria, current: bb.hardNoCriteria },
+              { key:'occupancy', label:'Occupancy', submitted: d.occupancy, current: '' },
+              { key:'hoaOk', label:'HOA OK', submitted: d.hoaOk, current: '' },
+              { key:'preferredContact', label:'Contact Preference', submitted: d.preferredContact, current: '' },
+              { key:'dealSendFreq', label:'Deal Frequency', submitted: d.dealSendFreq, current: '' },
+              { key:'freeformNotes', label:'Free-form Notes', submitted: d.freeformNotes, current: '' },
+            ].filter(f => f.submitted && f.submitted.toString().trim());
+
+            const decisions = fieldDecisions[sub.id] ? JSON.parse(fieldDecisions[sub.id]) : {};
+            const setDecision = (fieldKey: string, val: string) => {
+              const cur = fieldDecisions[sub.id] ? JSON.parse(fieldDecisions[sub.id]) : {};
+              cur[fieldKey] = val;
+              setFieldDecisions(prev => ({...prev, [sub.id]: JSON.stringify(cur)}));
+            };
+
+            const handleApprove = () => {
+              // Build approved data based on decisions
+              const approved: any = { ...d };
+              fields.forEach(field => {
+                const dec = decisions[field.key];
+                if (dec === 'keep') delete approved[field.key];
+              });
+              approveSubmission({...sub, submittedData: approved});
+            };
+
             return (
-              <div key={sub.id} className="bg-gray-900 border border-gray-800 rounded-xl p-4">
-                <div className="flex items-center justify-between mb-3">
+              <div key={sub.id} className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+                {/* Header */}
+                <div className="flex items-center justify-between p-4 border-b border-gray-800">
                   <div>
-                    <p className="font-semibold text-white">{b?.firstName} {b?.lastName} <span className="text-gray-500 text-xs ml-1">{b?.phone}</span></p>
-                    <p className="text-gray-500 text-xs">Submitted {new Date(sub.createdAt).toLocaleDateString()}</p>
+                    <p className="font-semibold text-white">{b?.firstName} {b?.lastName} <span className="text-gray-500 text-xs ml-2">{b?.phone}</span></p>
+                    <p className="text-gray-500 text-xs mt-0.5">Submitted {new Date(sub.createdAt).toLocaleDateString()} · {fields.length} fields</p>
                   </div>
                   <div className="flex gap-2">
-                    <button onClick={()=>window.location.href=`/dashboard/buyers/${b?.id}`} className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs rounded-lg transition">View Profile</button>
+                    <button onClick={()=>window.location.href=`/dashboard/buyers/${b?.id}`} className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs rounded-lg transition">Profile</button>
                     <button onClick={()=>rejectSubmission(sub.id)} className="px-3 py-1.5 bg-red-900/30 hover:bg-red-900/60 text-red-400 text-xs rounded-lg transition">Reject</button>
-                    <button onClick={()=>approveSubmission(sub)} className="px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white text-xs rounded-lg font-medium transition">✓ Approve All</button>
+                    <button onClick={handleApprove} className="px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white text-xs rounded-lg font-medium transition">✓ Save Approved</button>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  {d.marketPrimary && <div className="bg-gray-800 rounded p-2"><span className="text-gray-500">Market:</span> <span className="text-white">{d.marketPrimary}</span></div>}
-                  {d.strategies?.length > 0 && <div className="bg-gray-800 rounded p-2"><span className="text-gray-500">Strategy:</span> <span className="text-white">{d.strategies.join(', ')}</span></div>}
-                  {(d.minPrice || d.maxPrice || d.anyPrice) && <div className="bg-gray-800 rounded p-2"><span className="text-gray-500">Price:</span> <span className="text-white">{d.anyPrice ? 'Any' : `$${d.minPrice||'?'}–$${d.maxPrice||'?'}`}</span></div>}
-                  {d.rehabTolerance && <div className="bg-gray-800 rounded p-2"><span className="text-gray-500">Rehab:</span> <span className="text-white">{d.rehabTolerance.replace(/_/g,' ')}</span></div>}
-                  {d.fundingTypes?.length > 0 && <div className="bg-gray-800 rounded p-2"><span className="text-gray-500">Funding:</span> <span className="text-white">{d.fundingTypes.join(', ')}</span></div>}
-                  {d.closeSpeed && <div className="bg-gray-800 rounded p-2"><span className="text-gray-500">Close speed:</span> <span className="text-white">{d.closeSpeed} days</span></div>}
-                  {d.hardNoCriteria && <div className="bg-gray-800 rounded p-2 col-span-2"><span className="text-gray-500">Hard No:</span> <span className="text-white">{d.hardNoCriteria}</span></div>}
+                {/* Field diff table */}
+                <div className="divide-y divide-gray-800/50">
+                  {fields.map((field:any) => {
+                    const hasConflict = field.current && field.current.trim() && field.current !== field.submitted;
+                    const isNew = !field.current || !field.current.trim();
+                    const dec = decisions[field.key] || (isNew ? 'accept' : hasConflict ? '' : 'accept');
+                    return (
+                      <div key={field.key} className={`px-4 py-3 flex items-start gap-3 ${hasConflict && !dec ? 'bg-yellow-500/5' : ''}`}>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-gray-500 text-xs mb-1">{field.label}</p>
+                          <div className="flex items-start gap-3 flex-wrap">
+                            <div className={`flex-1 min-w-0 px-2 py-1 rounded text-xs ${isNew ? 'bg-green-500/10 border border-green-500/20 text-green-300' : dec==='accept' ? 'bg-green-500/10 border border-green-500/20 text-green-300' : dec==='keep' ? 'bg-gray-800 text-gray-500 line-through' : 'bg-yellow-500/10 border border-yellow-500/20 text-yellow-300'}`}>
+                              <span className="text-gray-500 mr-1">New:</span>{field.submitted}
+                            </div>
+                            {hasConflict && (
+                              <div className="flex-1 min-w-0 px-2 py-1 rounded text-xs bg-gray-800 border border-gray-700 text-gray-400">
+                                <span className="text-gray-500 mr-1">Current:</span>{field.current}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        {hasConflict && (
+                          <div className="flex gap-1 flex-shrink-0 mt-4">
+                            <button onClick={()=>setDecision(field.key,'accept')} className={`px-2 py-1 rounded text-xs transition ${dec==='accept'?'bg-green-600 text-white':'bg-gray-800 text-gray-400 hover:text-green-400'}`}>Use New</button>
+                            <button onClick={()=>setDecision(field.key,'keep')} className={`px-2 py-1 rounded text-xs transition ${dec==='keep'?'bg-gray-600 text-white':'bg-gray-800 text-gray-400 hover:text-gray-200'}`}>Keep Mine</button>
+                          </div>
+                        )}
+                        {isNew && <span className="text-green-500 text-xs flex-shrink-0 mt-4">✓ New</span>}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             );
