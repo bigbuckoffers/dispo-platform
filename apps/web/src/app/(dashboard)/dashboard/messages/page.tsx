@@ -284,7 +284,7 @@ JSON format: {"market":"city name or null","maxPrice":number or null,"minPrice":
   const nextQ = buyer ? getNextQuestion(buyer) : null;
 
   return (
-    <div className="flex bg-gray-950 text-white overflow-hidden" style={{height:"100vh",maxHeight:"100vh"}}>
+    <div className="flex text-white overflow-hidden" style={{height:"calc(100vh - 64px)"}}>
 
       {/* LEFT: Conversation List */}
       <div className="w-72 border-r border-gray-800 flex flex-col flex-shrink-0">
