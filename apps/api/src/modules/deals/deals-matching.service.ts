@@ -159,6 +159,7 @@ export class DealsMatchingService {
       '\nBUYER:\n' +
       buyer.firstName + ' ' + buyer.lastName + (buyer.company ? ' / ' + buyer.company : '') + '\n' +
       'Tier: ' + buyer.tier + ' | Type: ' + buyer.investorType + '\n' +
+      (buyer.notes && buyer.notes.toLowerCase().includes('wholesal') ? 'WHOLESALER/JV PARTNER — pitch as JV opportunity\n' : '') +
       (buyer.hasCash ? 'Has cash\n' : '') +
       (buyer.hasHardMoney ? 'Has hard money\n' : '') +
       'Scores: Reliability ' + buyer.reliabilityScore + ' | Liquidity ' + buyer.liquidityScore + ' | Activity ' + buyer.activityScore + '\n' +
