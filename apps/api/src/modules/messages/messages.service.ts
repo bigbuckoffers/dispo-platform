@@ -61,7 +61,13 @@ export class MessagesService {
     if (!Body || !From) return { success: false };
     try {
     const phone = From.replace(/\s/g, '');
-    const buyer = await this.prisma.buyer.findFirst({ where: { phone } });
+    // Normalize: try exact match first, then strip +1, then add +1
+    const phoneVariants = [phone, phone.replace(/^\+1/, ''), phone.startsWith('+1') ? phone : '+1'+phone.replace(/^\+/, '')];
+    let buyer = null;
+    for (const p of phoneVariants) {
+      buyer = await this.prisma.buyer.findFirst({ where: { phone: p } });
+      if (buyer) break;
+    }
     let buyerId: string;
     let orgId: string;
     if (buyer) {
