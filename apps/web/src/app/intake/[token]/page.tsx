@@ -190,11 +190,11 @@ export default function IntakePage({ params }: { params: { token: string } }) {
               </div>
             </div>
             {(form.buyingStatus==='ACTIVELY_BUYING'||form.buyingStatus==='BUYING_SELECTIVELY') && (
-              <div>
+              <div className="pb-24">
                 <label className="text-gray-500 text-xs block mb-1.5">How many deals per month can you take on?</label>
                 <div className="flex gap-2 flex-wrap">
                   {['1','2','3','4-5','5+'].map(n => (
-                    <button key={n} onClick={()=>set('monthlyCapacity',n)} className={`px-4 py-2 rounded-xl text-sm border transition ${form.monthlyCapacity===n?'bg-blue-600 border-blue-500 text-white':'bg-gray-800 border-gray-700 text-gray-300'}`}>{n}</button>
+                    <button key={n} onClick={()=>set('monthlyCapacity',n)} className={`px-5 py-3 rounded-xl text-sm border transition ${form.monthlyCapacity===n?'bg-blue-600 border-blue-500 text-white':'bg-gray-800 border-gray-700 text-gray-300'}`}>{n}</button>
                   ))}
                 </div>
               </div>
@@ -253,29 +253,20 @@ export default function IntakePage({ params }: { params: { token: string } }) {
             </div>
             <div>
               <label className="text-gray-500 text-xs block mb-2">Price Range</label>
-              <div className="grid grid-cols-2 gap-2">
-                {PRICE_RANGES.map(p => (
-                  <Chip key={p} label={p} selected={form.priceRange===p||(p==='Any price'&&form.anyPrice)} onClick={()=>{
-                    if (p==='Any price') { set('anyPrice', true); set('priceRange', 'Any price'); }
-                    else { set('anyPrice', false); set('priceRange', p);
-                      const ranges: any = {'Under $50k':[0,50000],'$50k–$100k':[50000,100000],'$100k–$150k':[100000,150000],'$150k–$250k':[150000,250000],'$250k–$500k':[250000,500000],'$500k+':[500000,'']};
-                      if (ranges[p]) { set('minPrice', ranges[p][0]||''); set('maxPrice', ranges[p][1]||''); }
-                    }
-                  }} />
-                ))}
-              </div>
-              {!form.anyPrice && (
-                <div className="grid grid-cols-2 gap-3 mt-3">
-                  <div>
-                    <label className="text-gray-500 text-xs block mb-1">Custom Min $</label>
-                    <input type="number" value={form.minPrice} onChange={e=>set('minPrice',e.target.value)} placeholder="0" className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500" />
-                  </div>
-                  <div>
-                    <label className="text-gray-500 text-xs block mb-1">Custom Max $</label>
-                    <input type="number" value={form.maxPrice} onChange={e=>set('maxPrice',e.target.value)} placeholder="500000" className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500" />
-                  </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-gray-500 text-xs block mb-1.5">Min Price</label>
+                  <input type="number" value={form.minPrice} onChange={e=>set('minPrice',e.target.value)} disabled={form.anyPrice} placeholder="e.g. 50000" className={`w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 ${form.anyPrice?'opacity-40':''}`} />
                 </div>
-              )}
+                <div>
+                  <label className="text-gray-500 text-xs block mb-1.5">Max Price</label>
+                  <input type="number" value={form.maxPrice} onChange={e=>set('maxPrice',e.target.value)} disabled={form.anyPrice} placeholder="e.g. 300000" className={`w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 ${form.anyPrice?'opacity-40':''}`} />
+                </div>
+              </div>
+              <label className="flex items-center gap-2 mt-2 cursor-pointer">
+                <input type="checkbox" checked={form.anyPrice} onChange={e=>set('anyPrice',e.target.checked)} className="accent-blue-500 w-4 h-4" />
+                <span className="text-gray-400 text-sm">No price limit — I buy at any price point</span>
+              </label>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
