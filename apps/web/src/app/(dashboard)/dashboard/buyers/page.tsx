@@ -86,7 +86,7 @@ export default function BuyersPage() {
         <button onClick={() => setTab('all')} className={`px-5 py-2 rounded-lg text-sm font-medium transition-colors ${tab==='all'?'bg-gray-700 text-white':'text-gray-400 hover:text-white'}`}>
           All Buyers <span className="ml-1 text-xs bg-gray-600 px-1.5 py-0.5 rounded-full">{total}</span>
         </button>
-        <button onClick={() => setTab('review')} className={`px-5 py-2 rounded-lg text-sm font-medium transition-colors ${tab==='review'?'bg-orange-600 text-white':'text-gray-400 hover:text-white'}`}>
+        <button onClick={() => { setTab('review'); loadAll(); }} className={`px-5 py-2 rounded-lg text-sm font-medium transition-colors ${tab==='review'?'bg-orange-600 text-white':'text-gray-400 hover:text-white'}`}>
           Needs Review <span className="ml-1 text-xs bg-orange-500/30 text-orange-300 px-1.5 py-0.5 rounded-full">{loadingAll ? '...' : needsReview.length}</span>
         </button>
       </div>
