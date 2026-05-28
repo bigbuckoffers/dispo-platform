@@ -311,7 +311,16 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
         {/* Property */}
         <div>
           <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg px-3 py-2 mb-3">
-            <p className="text-yellow-400 text-xs font-medium">📞 Ask: "What property types are you buying? Okay with tenant-occupied or prefer vacant? Anything you never want us sending?"</p>
+            <p className="text-yellow-400 text-xs font-medium">📞 Ask: "What property types are you buying? Any minimum year built? Okay with tenant-occupied or prefer vacant?"</p>
+          </div>
+          <div className="mb-3">
+            <label className="text-gray-500 text-xs block mb-2">Property Types</label>
+            <div className="flex flex-wrap gap-2">
+              {['SFH','Duplex','Triplex','Fourplex','Multi-Family (5+)','Mobile Home','Condo','Townhouse','Land','Commercial','Mixed Use'].map(pt=>{
+                const selected = (bbForm.propertyTypes||'').includes(pt);
+                return <button key={pt} type="button" onClick={()=>{ const cur = bbForm.propertyTypes ? bbForm.propertyTypes.split(',').map((s:string)=>s.trim()).filter(Boolean) : []; const updated = selected ? cur.filter((s:string)=>s!==pt) : [...cur, pt]; setBbForm((p:any)=>({...p, propertyTypes: updated.join(', ')})); }} className={`text-xs px-2.5 py-1 rounded-full border transition ${selected ? 'bg-blue-600 text-white border-blue-500' : 'bg-gray-800 text-gray-400 border-gray-700 hover:border-gray-500'}`}>{pt}</button>;
+              })}
+            </div>
           </div>
           <div className="grid grid-cols-3 gap-3">
             <div>
@@ -326,6 +335,22 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
               <label className="text-gray-500 text-xs block mb-1">Min Sqft</label>
               <input type="number" value={bbForm.minSqft||''} onChange={e=>setBbForm((p:any)=>({...p,minSqft:e.target.value}))} placeholder="e.g. 1000" className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500" />
             </div>
+            <div>
+              <label className="text-gray-500 text-xs block mb-1">Min Year Built</label>
+              <input type="number" value={bbForm.minYearBuilt||''} onChange={e=>setBbForm((p:any)=>({...p,minYearBuilt:e.target.value}))} placeholder="e.g. 1975" className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500" />
+            </div>
+            <div>
+              <label className="text-gray-500 text-xs block mb-1">Max Year Built</label>
+              <input type="number" value={bbForm.maxYearBuilt||''} onChange={e=>setBbForm((p:any)=>({...p,maxYearBuilt:e.target.value}))} placeholder="e.g. 2010" className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500" />
+            </div>
+            <div>
+              <label className="text-gray-500 text-xs block mb-1">HOA OK?</label>
+              <select value={bbForm.hoaOk||''} onChange={e=>setBbForm((p:any)=>({...p,hoaOk:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none">
+                <option value="">Unknown</option>
+                <option value="yes">Yes</option>
+                <option value="no">No HOA</option>
+              </select>
+            </div>
             <div className="col-span-2">
               <label className="text-gray-500 text-xs block mb-1">Occupancy</label>
               <select value={bbForm.occupancy||''} onChange={e=>setBbForm((p:any)=>({...p,occupancy:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none">
@@ -334,14 +359,6 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
                 <option value="tenant_ok">Tenant OK</option>
                 <option value="section8_ok">Section 8 OK</option>
                 <option value="no_tenants">No Tenants</option>
-              </select>
-            </div>
-            <div>
-              <label className="text-gray-500 text-xs block mb-1">HOA OK?</label>
-              <select value={bbForm.hoaOk||''} onChange={e=>setBbForm((p:any)=>({...p,hoaOk:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none">
-                <option value="">Unknown</option>
-                <option value="yes">Yes</option>
-                <option value="no">No HOA</option>
               </select>
             </div>
           </div>
