@@ -12,6 +12,7 @@ const NAV_ITEMS = [
   { href: '/dashboard/deals', icon: Home, label: 'Deals' },
   { href: '/dashboard/buyers', icon: Users, label: 'Buyers' },
   { href: '/dashboard/matching', icon: Zap, label: 'AI Matching' },
+  { href: '/dashboard/messages', icon: MessageSquare, label: 'Messages' },
   { href: '/dashboard/dispo', icon: MessageSquare, label: 'Dispo' },
   { href: '/dashboard/marketplace', icon: ShoppingBag, label: 'Marketplace' },
   { href: '/dashboard/analytics', icon: BarChart3, label: 'Analytics' },
