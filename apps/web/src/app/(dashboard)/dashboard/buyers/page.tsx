@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { CreateBuyerModal } from '@/components/buyer/CreateBuyerModal';
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
 
 function profileScore(b: any): number {
@@ -58,6 +59,7 @@ export default function BuyersPage() {
   const [total, setTotal] = useState(0);
   const [tab, setTab] = useState<'all'|'hot'|'review'|'reviewed'>('all');
   const [error, setError] = useState('');
+  const [showCreate, setShowCreate] = useState(false);
 
   const deleteBuyer = async (id: string, name: string) => {
     if (!confirm(`Delete ${name}? This cannot be undone.`)) return;
@@ -217,7 +219,10 @@ export default function BuyersPage() {
           <h1 className="text-2xl font-bold">Buyer CRM</h1>
           <p className="text-gray-400 text-sm mt-1">{total} buyers</p>
         </div>
-        <button onClick={exportCsv} className="bg-emerald-900/40 hover:bg-emerald-800/60 border border-emerald-700/40 text-emerald-300 px-4 py-2 rounded-lg text-sm font-medium transition">⬇ Export CSV</button>
+        <div className="flex gap-2">
+          <button onClick={() => setShowCreate(true)} className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition">+ Add Buyer</button>
+          <button onClick={exportCsv} className="bg-emerald-900/40 hover:bg-emerald-800/60 border border-emerald-700/40 text-emerald-300 px-4 py-2 rounded-lg text-sm font-medium transition">⬇ Export CSV</button>
+        </div>
       </div>
       <div className="flex gap-1 mb-6 bg-gray-900 border border-gray-800 rounded-xl p-1 w-fit">
         <button onClick={()=>setTab('all')} className={`px-5 py-2 rounded-lg text-sm font-medium transition-colors ${tab==='all'?'bg-gray-700 text-white':'text-gray-400 hover:text-white'}`}>
@@ -322,5 +327,6 @@ export default function BuyersPage() {
         </div>
       )}
     </div>
+      {showCreate && <CreateBuyerModal onClose={() => setShowCreate(false)} onCreated={() => { setShowCreate(false); load(); loadAll(); }} />}
   );
 }
