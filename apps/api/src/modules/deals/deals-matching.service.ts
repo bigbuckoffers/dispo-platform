@@ -167,7 +167,7 @@ export class DealsMatchingService {
       (buyer.buyerIntelNotes ? 'Intel Notes:\n' + buyer.buyerIntelNotes + '\n' : '') +
       (buyer.temperatureNotes ? 'Current Status: ' + buyer.temperatureNotes + '\n' : '') +
       'Buy box:\n' + (buyBoxSummary || 'Not filled in') +
-      '\n\nRespond ONLY with valid JSON:\n{"matchScore":<0-100>,"matchStrength":"<STRONG|MODERATE|WEAK>","matchReasoning":"<2-3 sentences referencing actual numbers>","redFlags":["<concern>"],"outreachAngle":"<one sentence pitch angle>","estimatedOfferRange":"<e.g. $85k-$92k>"}\n\n80-100: near perfect. 60-79: good. 40-59: moderate. 20-39: weak. 0-19: no match.';
+      '\n\nWrite like a dispo professional briefing your team. matchReasoning must be plain English — NO raw notes, NO data dumps. 2-4 sentences: why call this buyer, why they fit, any relevant history.\n\nRespond ONLY with valid JSON:\n{"matchScore":<0-100>,"matchStrength":"<STRONG|MODERATE|WEAK>","matchReasoning":"<2-4 sentences plain English — why this buyer fits and why they would close>","redFlags":["<plain English concern>"],"outreachAngle":"<one sentence — how to open the call with this buyer>","estimatedOfferRange":"<e.g. $45k-$52k or unknown>"}\n\n80-100: Strong. 60-79: Good. 40-59: Moderate. 20-39: Weak. 0-19: No match.';
 
     const response = await this.openai.chat.completions.create({ model: 'gpt-4o-mini', messages: [{ role: 'user', content: prompt }], max_tokens: 400, temperature: 0.2 });
     let result: any = {};
