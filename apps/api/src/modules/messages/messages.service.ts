@@ -69,7 +69,7 @@ export class MessagesService {
       if (!org) return { success: false };
       orgId = org.id;
       const newBuyer = await this.prisma.buyer.create({
-        data: { organizationId: orgId, phone, firstName: 'Unknown', lastName: 'Lead', importSource: 'SMS_INBOUND' },
+        data: { organizationId: orgId, phone, firstName: 'Unknown', lastName: 'Lead' } as any,
       });
       buyerId = newBuyer.id;
     }
