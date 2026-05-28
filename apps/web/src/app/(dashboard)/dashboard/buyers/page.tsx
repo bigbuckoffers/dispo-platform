@@ -144,11 +144,18 @@ export default function BuyersPage() {
     if (d.firstName) buyerFields.firstName = d.firstName;
     if (d.lastName) buyerFields.lastName = d.lastName;
     if (d.phone) buyerFields.phone = d.phone;
+    if (d.email) buyerFields.email = d.email;
     if (d.marketPrimary) buyerFields.marketPrimary = d.marketPrimary;
+    if (d.marketSecondary) buyerFields.marketSecondary = typeof d.marketSecondary === 'string' ? d.marketSecondary.split(',').map((s:string)=>s.trim()).filter(Boolean) : d.marketSecondary;
     if (d.strategies?.length) buyerFields.preferredStrategies = d.strategies;
     if (d.fundingTypes?.length) buyerFields.notes = d.fundingTypes.join(', ');
-    if (d.states?.length) buyBoxFields.states = d.states;
-    if (d.zipCodes) buyBoxFields.zipCodes = d.zipCodes.split(',').map((z:string)=>z.trim()).filter(Boolean);
+    if (d.buyingStatus) buyerFields.buyingStatus = d.buyingStatus;
+    if (d.monthlyCapacity) buyerFields.monthlyCapacity = d.monthlyCapacity;
+    if (d.closeSpeed) buyerFields.avgCloseSpeedDays = parseInt(d.closeSpeed);
+    if (d.preferredContact) buyerFields.preferredContact = d.preferredContact;
+    if (d.dealSendFreq) buyerFields.dealSendFreq = d.dealSendFreq;
+    if (d.states) buyBoxFields.states = typeof d.states === 'string' ? d.states.split(',').map((s:string)=>s.trim()).filter(Boolean) : d.states;
+    if (d.zipCodes) buyBoxFields.zipCodes = typeof d.zipCodes === 'string' ? d.zipCodes.split(',').map((z:string)=>z.trim()).filter(Boolean) : d.zipCodes;
     if (d.anyZipOk !== undefined) buyBoxFields.anyZipOk = d.anyZipOk;
     if (d.minPrice) buyBoxFields.minPrice = parseFloat(d.minPrice);
     if (d.maxPrice) buyBoxFields.maxPrice = parseFloat(d.maxPrice);
@@ -156,10 +163,20 @@ export default function BuyersPage() {
     if (d.rehabTolerance) buyBoxFields.rehabTolerance = d.rehabTolerance;
     if (d.propertyTypes?.length) buyBoxFields.propertyTypes = d.propertyTypes;
     if (d.minBeds) buyBoxFields.minBeds = parseInt(d.minBeds);
+    if (d.hoaOk) buyBoxFields.hoaOk = d.hoaOk;
+    if (d.minArv) buyBoxFields.minArv = parseFloat(d.minArv);
+    if (d.minProfit) buyBoxFields.minProfit = parseFloat(d.minProfit);
+    if (d.maxEmd) buyBoxFields.maxEmd = parseFloat(d.maxEmd);
+    if (d.inspectionDays) buyBoxFields.inspectionDays = parseInt(d.inspectionDays);
+    if (d.minYearBuilt) buyBoxFields.minYearBuilt = parseInt(d.minYearBuilt);
+    if (d.hardNoCriteria) buyBoxFields.hardNoCriteria = d.hardNoCriteria;
+    if (d.excludedAreas) buyBoxFields.excludedAreas = d.excludedAreas;
+    if (d.occupancy) buyBoxFields.occupancy = d.occupancy;
     await fetch(`${API}/intake/submissions/${sub.id}/approve`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ buyerFields, buyBoxFields }),
     });
+    alert('Buy box updated!');
     loadSubmissions();
   }
 
