@@ -24,6 +24,7 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
   const [recommendedDeals, setRecommendedDeals] = useState<string[]>([]);
   const [notIdealFor, setNotIdealFor] = useState<string[]>([]);
   const [dealBreakers, setDealBreakers] = useState<string[]>([]);
+  const [newDealBreaker, setNewDealBreaker] = useState('');
   const [nextActions, setNextActions] = useState<string[]>([]);
   const [strengths, setStrengths] = useState<string[]>([]);
   const [risks, setRisks] = useState<string[]>([]);
@@ -102,6 +103,10 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
     catch { toast.error('Failed to delete buyer'); }
   };
   const saveIntel = async () => { setSaving(true); try { await api.put(`/buyers/${id}`,{buyerIntelNotes:intelText,dealBreakers}); qc.invalidateQueries({queryKey:['buyer',id]}); toast.success('Saved'); } catch { toast.error('Failed'); } finally { setSaving(false); } };
+  const saveDealBreakers = async (updated: string[]) => { try { await api.put(`/buyers/${id}`,{dealBreakers:updated}); qc.invalidateQueries({queryKey:['buyer',id]}); toast.success('Deal breakers saved'); } catch { toast.error('Failed to save'); } };
+  const removeDealBreaker = (i: number) => { const updated = dealBreakers.filter((_,idx)=>idx!==i); setDealBreakers(updated); saveDealBreakers(updated); };
+  const addDealBreaker = () => { if (!newDealBreaker.trim()) return; const updated = [...dealBreakers, newDealBreaker.trim()]; setDealBreakers(updated); setNewDealBreaker(''); saveDealBreakers(updated); };
+  const clearAndRegenerateDealBreakers = async () => { setDealBreakers([]); await api.put(`/buyers/${id}`,{dealBreakers:[]}); generateAiIntel(); };
   const saveBuyBox = async () => { setSavingBb(true); try {
     // Build structured temperature notes with all status fields
     const statusData = {
@@ -242,7 +247,23 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
     {(recommendedDeals.length>0||notIdealFor.length>0)&&(<div className="grid grid-cols-1 md:grid-cols-2 gap-4">{recommendedDeals.length>0&&(<SECTION title="Send These Deals" icon={CheckCircle} iconColor="text-green-400"><div className="space-y-1.5">{recommendedDeals.map((d,i)=><div key={i} className="flex items-center gap-2 text-xs text-gray-300"><CheckCircle size={11} className="text-green-400 flex-shrink-0" />{d}</div>)}</div></SECTION>)}{notIdealFor.length>0&&(<SECTION title="Not Ideal For" icon={XCircle} iconColor="text-red-400"><div className="space-y-1.5">{notIdealFor.map((d,i)=><div key={i} className="flex items-center gap-2 text-xs text-gray-300"><XCircle size={11} className="text-red-400 flex-shrink-0" />{d}</div>)}</div></SECTION>)}</div>)}
     {dispoStrategy&&(<SECTION title="AI Dispo Strategy" icon={MessageSquare} iconColor="text-amber-400"><div className="bg-amber-500/5 border border-amber-500/20 rounded-lg p-4"><p className="text-amber-200 text-sm leading-relaxed">{dispoStrategy}</p></div></SECTION>)}
     {(strengths.length>0||risks.length>0)&&(<div className="grid grid-cols-1 md:grid-cols-2 gap-4">{strengths.length>0&&(<SECTION title="Buyer Strengths" icon={ThumbsUp} iconColor="text-green-400"><div className="space-y-1.5">{strengths.map((s,i)=><div key={i} className="flex items-center gap-2 text-xs text-gray-300"><CheckCircle size={11} className="text-green-400 flex-shrink-0" />{s}</div>)}</div></SECTION>)}{risks.length>0&&(<SECTION title="Risk Factors" icon={AlertCircle} iconColor="text-red-400"><div className="space-y-1.5">{risks.map((r,i)=><div key={i} className="flex items-center gap-2 text-xs text-gray-300"><AlertCircle size={11} className="text-red-400 flex-shrink-0" />{r}</div>)}</div></SECTION>)}</div>)}
-    {(dealBreakers.length>0||(buyer.dealBreakers?.length||0)>0)&&(<SECTION title="Avoids / Deal Breakers" icon={XCircle} iconColor="text-red-400"><div className="grid grid-cols-2 gap-2">{(dealBreakers.length>0?dealBreakers:buyer.dealBreakers||[]).map((d:string,i:number)=><div key={i} className="flex items-center gap-2 bg-red-500/5 border border-red-500/20 rounded-lg px-3 py-2"><XCircle size={12} className="text-red-400 flex-shrink-0" /><span className="text-red-300 text-xs">{d}</span></div>)}</div></SECTION>)}
+    <SECTION title="Avoids / Deal Breakers" icon={XCircle} iconColor="text-red-400">
+      <div className="space-y-3">
+        <div className="grid grid-cols-2 gap-2">
+          {(dealBreakers.length>0?dealBreakers:buyer.dealBreakers||[]).map((d:string,i:number)=>(
+            <div key={i} className="flex items-center justify-between gap-2 bg-red-500/5 border border-red-500/20 rounded-lg px-3 py-2 group/db">
+              <div className="flex items-center gap-2"><XCircle size={12} className="text-red-400 flex-shrink-0" /><span className="text-red-300 text-xs">{d}</span></div>
+              <button onClick={()=>removeDealBreaker(i)} className="opacity-0 group-hover/db:opacity-100 text-red-500 hover:text-red-300 transition text-xs px-1">✕</button>
+            </div>
+          ))}
+        </div>
+        <div className="flex gap-2">
+          <input value={newDealBreaker} onChange={e=>setNewDealBreaker(e.target.value)} onKeyDown={e=>e.key==='Enter'&&addDealBreaker()} placeholder="Add a deal breaker..." className="flex-1 bg-gray-800 border border-gray-700 text-white placeholder-gray-600 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:border-red-500" />
+          <button onClick={addDealBreaker} className="px-3 py-1.5 bg-red-900/40 hover:bg-red-800/60 border border-red-700/40 text-red-300 text-xs rounded-lg transition">+ Add</button>
+          <button onClick={clearAndRegenerateDealBreakers} className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-400 text-xs rounded-lg transition" title="Clear all and regenerate from intel notes">↺ Regenerate</button>
+        </div>
+      </div>
+    </SECTION>
     <SECTION title={'Profile Completeness — '+completeness+'/100'} icon={Target} iconColor="text-blue-400"><div className="space-y-3"><div className="h-2 bg-gray-800 rounded-full overflow-hidden"><div className={`h-full rounded-full ${completeness>=80?'bg-green-500':completeness>=50?'bg-yellow-500':'bg-red-500'}`} style={{width:completeness+'%'}} /></div>{missing.length>0&&<div><p className="text-gray-500 text-xs mb-2">Most important missing info:</p><div className="space-y-1">{missing.slice(0,5).map((m,i)=><div key={m} className="flex items-center gap-2 text-xs"><span className="w-4 h-4 rounded-full bg-gray-800 text-gray-500 flex items-center justify-center flex-shrink-0">{i+1}</span><span className="text-amber-400">{m}</span></div>)}</div></div>}<div className="grid grid-cols-2 gap-1.5">{checks.filter(c=>c.done).map(c=><div key={c.label} className="flex items-center gap-1.5 text-xs text-green-400"><CheckCircle size={11} />{c.label}</div>)}</div></div></SECTION>
     <SECTION title="Buy Box — Call Form" icon={Building2} iconColor="text-blue-400">
       <div className="space-y-6">
