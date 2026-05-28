@@ -158,28 +158,30 @@ export default function IntakePage({ params }: { params: { token: string } }) {
 
         {/* STEP 1 — Who are you + buying status */}
         {step === 1 && (
-          <div className="space-y-5" style={{paddingBottom: "120px"}}>
+          <div className="space-y-3" style={{paddingBottom: "120px"}}>
             <div>
-              <h2 className="text-xl font-bold text-white mb-1">Hey! Let's get you set up 👋</h2>
-              <p className="text-gray-400 text-sm">We use AI to match wholesale deals directly to your buy box. This takes about 2 minutes.</p>
+              <h2 className="text-lg font-bold text-white mb-0.5">Hey! Let's get you set up 👋</h2>
+              <p className="text-gray-400 text-xs">AI matches wholesale deals to your buy box. Takes 2 min.</p>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="text-gray-500 text-xs block mb-1.5">First Name</label>
-                <input value={form.firstName} onChange={e => set('firstName', e.target.value)} placeholder="John" className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500" />
+                <label className="text-gray-500 text-xs block mb-1">First Name</label>
+                <input value={form.firstName} onChange={e => set('firstName', e.target.value)} placeholder="John" className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-blue-500" />
               </div>
               <div>
-                <label className="text-gray-500 text-xs block mb-1.5">Last Name</label>
-                <input value={form.lastName} onChange={e => set('lastName', e.target.value)} placeholder="Smith" className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500" />
+                <label className="text-gray-500 text-xs block mb-1">Last Name</label>
+                <input value={form.lastName} onChange={e => set('lastName', e.target.value)} placeholder="Smith" className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-blue-500" />
               </div>
             </div>
-            <div>
-              <label className="text-gray-500 text-xs block mb-1.5">Phone</label>
-              <input value={form.phone} onChange={e => set('phone', e.target.value)} placeholder="+1 (555) 000-0000" className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500" />
-            </div>
-            <div>
-              <label className="text-gray-500 text-xs block mb-1.5">Email (optional)</label>
-              <input value={form.email} onChange={e => set('email', e.target.value)} placeholder="john@example.com" type="email" className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500" />
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-gray-500 text-xs block mb-1">Phone</label>
+                <input value={form.phone} onChange={e => set('phone', e.target.value)} placeholder="+1 (555) 000-0000" className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-blue-500" />
+              </div>
+              <div>
+                <label className="text-gray-500 text-xs block mb-1">Email (optional)</label>
+                <input value={form.email} onChange={e => set('email', e.target.value)} placeholder="john@email.com" type="email" className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-blue-500" />
+              </div>
             </div>
             <div>
               <label className="text-gray-500 text-xs block mb-2">Are you actively buying right now?</label>
