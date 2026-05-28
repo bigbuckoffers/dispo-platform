@@ -60,6 +60,7 @@ export default function BuyersPage() {
   const [tab, setTab] = useState<'all'|'hot'|'review'|'reviewed'|'submissions'>('all');
   const [submissions, setSubmissions] = useState<any[]>([]);
   const [loadingSubs, setLoadingSubs] = useState(false);
+  const [selectedSub, setSelectedSub] = useState<any>(null);
   const [fieldDecisions, setFieldDecisions] = useState<Record<string,string>>({});
   const [error, setError] = useState('');
   const [showCreate, setShowCreate] = useState(false);
