@@ -62,11 +62,6 @@ export class IntakeService {
       include: {
         buyer: {
           include: { buyBox: true },
-          select: {
-            id: true, firstName: true, lastName: true, phone: true,
-            tier: true, marketPrimary: true, preferredStrategies: true,
-            notes: true, buyBox: true, compositeScore: true,
-          } as any,
         },
       },
     });
