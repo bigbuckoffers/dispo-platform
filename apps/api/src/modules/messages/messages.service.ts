@@ -71,7 +71,7 @@ export class MessagesService {
       if (!org) return { success: false };
       orgId = org.id;
       const newBuyer = await this.prisma.buyer.create({
-        data: { organizationId: orgId, phone, firstName: 'Unknown', lastName: 'Lead' } as any,
+        data: { organizationId: orgId, phone, firstName: 'Unknown', lastName: 'Lead', email: `sms-lead-${phone.replace(/[^0-9]/g,'')}@import.dispoai.com` } as any,
       });
       buyerId = newBuyer.id;
     }
