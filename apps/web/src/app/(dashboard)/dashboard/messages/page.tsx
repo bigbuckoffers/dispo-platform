@@ -103,7 +103,7 @@ export default function MessagesPage() {
       }).catch(()=>{});
     }
   }, [conversations]);
-  useEffect(() => { if (selected) { loadMessages(selected.buyer.id); loadBuyer(selected.buyer.id); } }, [selected]);
+  useEffect(() => { if (selected) { if (selected.id) loadMessages(selected.buyer.id); loadBuyer(selected.buyer.id); } }, [selected]);
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
   useEffect(() => { if (buyer) { setNotes(buyer.buyerIntelNotes || ''); loadDeals(); } }, [buyer]);
 
@@ -284,7 +284,7 @@ JSON format: {"market":"city name or null","maxPrice":number or null,"minPrice":
   const nextQ = buyer ? getNextQuestion(buyer) : null;
 
   return (
-    <div className="flex h-screen bg-gray-950 text-white overflow-hidden">
+    <div className="flex bg-gray-950 text-white overflow-hidden" style={{height:"100vh",maxHeight:"100vh"}}>
 
       {/* LEFT: Conversation List */}
       <div className="w-72 border-r border-gray-800 flex flex-col flex-shrink-0">
@@ -388,7 +388,7 @@ JSON format: {"market":"city name or null","maxPrice":number or null,"minPrice":
 
             {/* Messages */}
             <div className="flex-1 overflow-y-auto p-4 space-y-2">
-              {loadingMsgs ? (
+              {loadingMsgs && selected?.id ? (
                 <div className="flex items-center justify-center h-full"><p className="text-gray-500 text-sm">Loading...</p></div>
               ) : messages.length === 0 ? (
                 <div className="flex items-center justify-center h-full">
