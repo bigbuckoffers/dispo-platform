@@ -57,7 +57,9 @@ export default function BuyersPage() {
   const [tier, setTier] = useState('');
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
-  const [tab, setTab] = useState<'all'|'hot'|'review'|'reviewed'>('all');
+  const [tab, setTab] = useState<'all'|'hot'|'review'|'reviewed'|'submissions'>('all');
+  const [submissions, setSubmissions] = useState<any[]>([]);
+  const [loadingSubs, setLoadingSubs] = useState(false);
   const [error, setError] = useState('');
   const [showCreate, setShowCreate] = useState(false);
 
@@ -122,6 +124,47 @@ export default function BuyersPage() {
       setTotal(j.meta?.total ?? (j.data ?? j).length);
     } catch (e: any) { setError(e.message); }
     finally { setLoading(false); }
+  }
+
+  async function loadSubmissions() {
+    setLoadingSubs(true);
+    try {
+      const r = await fetch(`${API}/intake/submissions`);
+      const d = await r.json();
+      setSubmissions(Array.isArray(d) ? d : []);
+    } catch {}
+    finally { setLoadingSubs(false); }
+  }
+
+  async function approveSubmission(sub: any) {
+    const d = sub.submittedData;
+    const buyerFields: any = {};
+    const buyBoxFields: any = {};
+    if (d.firstName) buyerFields.firstName = d.firstName;
+    if (d.lastName) buyerFields.lastName = d.lastName;
+    if (d.phone) buyerFields.phone = d.phone;
+    if (d.marketPrimary) buyerFields.marketPrimary = d.marketPrimary;
+    if (d.strategies?.length) buyerFields.preferredStrategies = d.strategies;
+    if (d.fundingTypes?.length) buyerFields.notes = d.fundingTypes.join(', ');
+    if (d.states?.length) buyBoxFields.states = d.states;
+    if (d.zipCodes) buyBoxFields.zipCodes = d.zipCodes.split(',').map((z:string)=>z.trim()).filter(Boolean);
+    if (d.anyZipOk !== undefined) buyBoxFields.anyZipOk = d.anyZipOk;
+    if (d.minPrice) buyBoxFields.minPrice = parseFloat(d.minPrice);
+    if (d.maxPrice) buyBoxFields.maxPrice = parseFloat(d.maxPrice);
+    if (d.anyPrice !== undefined) buyBoxFields.anyPrice = d.anyPrice;
+    if (d.rehabTolerance) buyBoxFields.rehabTolerance = d.rehabTolerance;
+    if (d.propertyTypes?.length) buyBoxFields.propertyTypes = d.propertyTypes;
+    if (d.minBeds) buyBoxFields.minBeds = parseInt(d.minBeds);
+    await fetch(`${API}/intake/submissions/${sub.id}/approve`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ buyerFields, buyBoxFields }),
+    });
+    loadSubmissions();
+  }
+
+  async function rejectSubmission(id: string) {
+    await fetch(`${API}/intake/submissions/${id}/reject`, { method: 'POST' });
+    loadSubmissions();
   }
 
   async function loadAll() {
@@ -237,6 +280,10 @@ export default function BuyersPage() {
         <button onClick={()=>{setTab('review');loadAll();}} className={`px-5 py-2 rounded-lg text-sm font-medium transition-colors ${tab==='review'?'bg-orange-600 text-white':'text-gray-400 hover:text-white'}`}>
           Needs Profile <span className="ml-1 text-xs bg-orange-500/30 text-orange-300 px-1.5 py-0.5 rounded-full">{loadingAll?'...':needsReview.length}</span>
         </button>
+        <button onClick={()=>{setTab('submissions');loadSubmissions();}} className={`px-5 py-2 rounded-lg text-sm font-medium transition-colors ${tab==='submissions'?'bg-purple-700 text-white':'text-gray-400 hover:text-white'}`}>
+          📬 Submissions <span className="ml-1 text-xs bg-purple-500/30 text-purple-300 px-1.5 py-0.5 rounded-full">{submissions.length}</span>
+          Needs Profile <span className="ml-1 text-xs bg-orange-500/30 text-orange-300 px-1.5 py-0.5 rounded-full">{loadingAll?'...':needsReview.length}</span>
+        </button>
       </div>
       {tab==='all' && (
         <div className="flex gap-3 mb-4">
@@ -297,6 +344,44 @@ export default function BuyersPage() {
               </tbody>
             </table>
           </div>
+        </div>
+      )}
+      {tab==='submissions'&&(
+        <div>
+          <div className="bg-purple-500/10 border border-purple-500/20 rounded-xl p-4 mb-4">
+            <p className="text-purple-300 text-sm font-medium">📬 {submissions.length} pending buy box submissions</p>
+            <p className="text-gray-400 text-xs mt-1">Buyers who filled out their intake form. Review and approve to update their profiles.</p>
+          </div>
+          {loadingSubs ? <div className="text-gray-500 text-sm p-8 text-center">Loading...</div>
+          : submissions.length === 0 ? <div className="text-gray-500 text-sm p-8 text-center">No pending submissions</div>
+          : <div className="space-y-4">{submissions.map((sub:any) => {
+            const d = sub.submittedData;
+            const b = sub.buyer;
+            return (
+              <div key={sub.id} className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <p className="font-semibold text-white">{b?.firstName} {b?.lastName} <span className="text-gray-500 text-xs ml-1">{b?.phone}</span></p>
+                    <p className="text-gray-500 text-xs">Submitted {new Date(sub.createdAt).toLocaleDateString()}</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={()=>window.location.href=`/dashboard/buyers/${b?.id}`} className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs rounded-lg transition">View Profile</button>
+                    <button onClick={()=>rejectSubmission(sub.id)} className="px-3 py-1.5 bg-red-900/30 hover:bg-red-900/60 text-red-400 text-xs rounded-lg transition">Reject</button>
+                    <button onClick={()=>approveSubmission(sub)} className="px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white text-xs rounded-lg font-medium transition">✓ Approve All</button>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  {d.marketPrimary && <div className="bg-gray-800 rounded p-2"><span className="text-gray-500">Market:</span> <span className="text-white">{d.marketPrimary}</span></div>}
+                  {d.strategies?.length > 0 && <div className="bg-gray-800 rounded p-2"><span className="text-gray-500">Strategy:</span> <span className="text-white">{d.strategies.join(', ')}</span></div>}
+                  {(d.minPrice || d.maxPrice || d.anyPrice) && <div className="bg-gray-800 rounded p-2"><span className="text-gray-500">Price:</span> <span className="text-white">{d.anyPrice ? 'Any' : `$${d.minPrice||'?'}–$${d.maxPrice||'?'}`}</span></div>}
+                  {d.rehabTolerance && <div className="bg-gray-800 rounded p-2"><span className="text-gray-500">Rehab:</span> <span className="text-white">{d.rehabTolerance.replace(/_/g,' ')}</span></div>}
+                  {d.fundingTypes?.length > 0 && <div className="bg-gray-800 rounded p-2"><span className="text-gray-500">Funding:</span> <span className="text-white">{d.fundingTypes.join(', ')}</span></div>}
+                  {d.closeSpeed && <div className="bg-gray-800 rounded p-2"><span className="text-gray-500">Close speed:</span> <span className="text-white">{d.closeSpeed} days</span></div>}
+                  {d.hardNoCriteria && <div className="bg-gray-800 rounded p-2 col-span-2"><span className="text-gray-500">Hard No:</span> <span className="text-white">{d.hardNoCriteria}</span></div>}
+                </div>
+              </div>
+            );
+          })}</div>}
         </div>
       )}
       {tab==='reviewed'&&(
