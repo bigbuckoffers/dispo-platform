@@ -62,7 +62,7 @@ export class BuyersService {
         take: limit,
         orderBy,
         include: {
-          buyBox: { select: { states: true, minPrice: true, maxPrice: true, propertyTypes: true } },
+          buyBox: true,
           _count: { select: { offers: true, purchases: true } },
         },
       }),
@@ -316,7 +316,7 @@ export class BuyersService {
         id: true, firstName: true, lastName: true, email: true,
         compositeScore: true, reliabilityScore: true, liquidityScore: true,
         activityScore: true, tier: true, investorType: true,
-        buyBox: { select: { states: true, minPrice: true, maxPrice: true } },
+        buyBox: true,
       },
     });
   }
