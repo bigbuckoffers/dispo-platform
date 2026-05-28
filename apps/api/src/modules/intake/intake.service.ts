@@ -1,10 +1,12 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../shared/prisma/prisma.service';
 import * as crypto from 'crypto';
+import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationType } from '@prisma/client';
 
 @Injectable()
 export class IntakeService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService, private notifications: NotificationsService) {}
 
   async generateToken(buyerId: string): Promise<string> {
     const token = crypto.randomBytes(16).toString('hex');
@@ -52,6 +54,17 @@ export class IntakeService {
       data: { intakeSubmittedAt: new Date() },
     });
 
+    // Send notification to org owner
+    if (isComplete) {
+      try {
+        const org = await this.prisma.organization.findFirst({ include: { members: { include: { user: true }, take: 1 } } });
+        const userId = org?.members?.[0]?.user?.id;
+        const buyerName = `${buyer.firstName || ''} ${buyer.lastName || ''}`.trim() || buyer.phone;
+        if (userId) {
+          await this.notifications.create(userId, NotificationType.SYSTEM, '📬 New Buy Box Submission', `${buyerName} just submitted their buy box`, '/dashboard/buyers?tab=submissions');
+        }
+      } catch {}
+    }
     return { success: true, message: 'Buy box submitted successfully' };
   }
 
