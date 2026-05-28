@@ -57,7 +57,7 @@ export class IntakeService {
 
   async getPendingSubmissions(orgId: string) {
     return this.prisma.buyerIntakeSubmission.findMany({
-      where: { status: 'PENDING', buyer: { organizationId: orgId } },
+      where: { status: { in: ['IN_PROGRESS', 'SUBMITTED', 'PENDING'] }, buyer: { organizationId: orgId } },
       orderBy: { createdAt: 'desc' },
       include: {
         buyer: {

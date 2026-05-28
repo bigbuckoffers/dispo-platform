@@ -1187,7 +1187,7 @@ model BuyerIntakeSubmission {
   id             String   @id @default(uuid()) @db.Uuid
   buyerId        String   @db.Uuid
   buyer          Buyer    @relation(fields: [buyerId], references: [id], onDelete: Cascade)
-  status         String   @default("PENDING") // PENDING | APPROVED | REJECTED
+  status         String   @default("IN_PROGRESS") // IN_PROGRESS | SUBMITTED | APPROVED | REJECTED
   submittedData  Json
   reviewedAt     DateTime?
   createdAt      DateTime @default(now())
