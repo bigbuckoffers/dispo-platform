@@ -137,6 +137,8 @@ model Buyer {
 
   // Buyer Intelligence
   buyerIntelNotes    String?
+  privateNotes       String?
+  privateNotes       String?
   aiExtractedInsights Json?
   aiSummary          String?
   temperatureNotes   String?

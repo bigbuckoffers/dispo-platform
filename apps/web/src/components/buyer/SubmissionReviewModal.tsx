@@ -77,6 +77,7 @@ export function SubmissionReviewModal({ sub, onClose, onSave }: Props) {
     monthlyCapacity: b.monthlyCapacity || d.monthlyCapacity || '',
     preferredContact: b.preferredContact || d.preferredContact || '',
     dealSendFreq: b.dealSendFreq || '',
+    privateNotes: b.privateNotes || '',
   });
 
   const submitted: any = {
@@ -121,6 +122,7 @@ export function SubmissionReviewModal({ sub, onClose, onSave }: Props) {
     if (form.closeSpeed) buyerFields.avgCloseSpeedDays = parseInt(form.closeSpeed);
     if (form.preferredContact) buyerFields.preferredContact = form.preferredContact;
     if (form.dealSendFreq) buyerFields.dealSendFreq = form.dealSendFreq;
+    if (form.privateNotes !== undefined) buyerFields.privateNotes = form.privateNotes;
     if (form.states) buyBoxFields.states = form.states.split(',').map((s: string) => s.trim()).filter(Boolean);
     if (form.zipCodes) buyBoxFields.zipCodes = form.zipCodes.split(',').map((z: string) => z.trim()).filter(Boolean);
     buyBoxFields.anyZipOk = !!form.anyZipOk;
@@ -283,6 +285,18 @@ export function SubmissionReviewModal({ sub, onClose, onSave }: Props) {
             <div className="grid grid-cols-2 gap-3">
               <F label="Preferred Contact" fieldKey="preferredContact" options={CONTACT_OPTS} />
               <F label="Deal Frequency" fieldKey="dealSendFreq" options={FREQ_OPTS} />
+            </div>
+          </div>
+          <div>
+            <h3 className="text-gray-300 text-xs font-semibold uppercase tracking-wider mb-3">Private Notes</h3>
+            <div className="relative">
+              <textarea
+                value={form.privateNotes || ''}
+                onChange={e => set('privateNotes', e.target.value)}
+                placeholder="Add private notes about this buyer (not visible to buyer)..."
+                rows={3}
+                className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-500 resize-none placeholder-gray-600"
+              />
             </div>
           </div>
           {d.freeformNotes && (
