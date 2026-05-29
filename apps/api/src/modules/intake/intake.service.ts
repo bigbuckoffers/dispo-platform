@@ -15,6 +15,13 @@ type LogIntakeEventInput = {
   source?: string | null;
 };
 
+type MessagingIntakeEventInput = {
+  buyerId: string;
+  messageBody: string;
+  intakeTrackingType?: 'link_sent' | 'reminder';
+  metadata?: any;
+};
+
 @Injectable()
 export class IntakeService {
   constructor(private prisma: PrismaService, private notifications: NotificationsService) {}
@@ -89,6 +96,62 @@ export class IntakeService {
       source,
     });
     return { ok: true, event };
+  }
+
+
+  async markReminderSent(token: string, metadata: any = {}) {
+    return this.logTokenEvent(token, BuyerIntakeEventType.INTAKE_REMINDER_SENT, metadata, 'api');
+  }
+
+  async logMessagingIntakeEventFromMessage(input: MessagingIntakeEventInput) {
+    const buyer = await this.prisma.buyer.findUnique({
+      where: { id: input.buyerId },
+      select: { id: true, intakeToken: true },
+    });
+    if (!buyer?.intakeToken) return { ok: false, reason: 'buyer_has_no_intake_token' };
+
+    const detectedToken = this.detectIntakeTokenFromMessage(input.messageBody, buyer.intakeToken);
+    if (!detectedToken) return { ok: false, reason: 'message_does_not_contain_intake_token' };
+
+    const eventType = input.intakeTrackingType === 'reminder'
+      ? BuyerIntakeEventType.INTAKE_REMINDER_SENT
+      : BuyerIntakeEventType.INTAKE_LINK_SENT;
+
+    if (input.metadata?.messageId) {
+      const duplicate = await this.prisma.buyerIntakeEvent.findFirst({
+        where: {
+          buyerId: buyer.id,
+          eventType,
+          metadata: { path: ['messageId'], equals: input.metadata.messageId },
+        } as any,
+      });
+      if (duplicate) return { ok: true, event: duplicate, deduped: true };
+    }
+
+    const event = await this.logIntakeEvent({
+      buyerId: buyer.id,
+      intakeToken: buyer.intakeToken,
+      eventType,
+      metadata: {
+        ...(input.metadata || {}),
+        detectedToken,
+        trackingType: input.intakeTrackingType || 'link_sent',
+      },
+      source: input.metadata?.source || 'messaging',
+    });
+
+    return { ok: true, event };
+  }
+
+  detectIntakeTokenFromMessage(messageBody: string, buyerIntakeToken?: string | null) {
+    if (!messageBody) return null;
+
+    if (buyerIntakeToken && messageBody.includes(buyerIntakeToken)) {
+      return buyerIntakeToken;
+    }
+
+    const match = messageBody.match(/\/intake\/([A-Za-z0-9_-]+)/);
+    return match?.[1] || null;
   }
 
   async submitIntake(token: string, data: any = {}) {

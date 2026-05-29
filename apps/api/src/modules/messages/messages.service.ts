@@ -2,13 +2,14 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../shared/prisma/prisma.service';
 import * as twilio from 'twilio';
+import { IntakeService } from '../intake/intake.service';
 
 @Injectable()
 export class MessagesService {
   private readonly logger = new Logger(MessagesService.name);
   private twilioClient: any;
 
-  constructor(private prisma: PrismaService, private config: ConfigService) {
+  constructor(private prisma: PrismaService, private config: ConfigService, private intakeService: IntakeService) {
     this.twilioClient = twilio(
       config.get('TWILIO_ACCOUNT_SID'),
       config.get('TWILIO_AUTH_TOKEN'),
@@ -38,7 +39,7 @@ export class MessagesService {
     return conv;
   }
 
-  async sendMessage(orgId: string, buyerId: string, body: string) {
+  async sendMessage(orgId: string, buyerId: string, body: string, options: { intakeTrackingType?: 'link_sent' | 'reminder'; trackingMetadata?: any } = {}) {
     const buyer = await this.prisma.buyer.findUnique({ where: { id: buyerId } });
     if (!buyer?.phone) throw new Error('Buyer has no phone number');
     const twilioSid = await this.sendViaTwilio(buyer.phone, body);
@@ -47,12 +48,33 @@ export class MessagesService {
       create: { organizationId: orgId, buyerId, lastMessageAt: new Date(), lastMessageBody: body },
       update: { lastMessageAt: new Date(), lastMessageBody: body },
     });
-    return this.prisma.smsMessage.create({
+    const message = await this.prisma.smsMessage.create({
       data: {
         conversationId: conv.id, body, direction: 'OUTBOUND', status: 'SENT',
         twilioSid, fromNumber: this.config.get('TWILIO_PHONE_NUMBER'), toNumber: buyer.phone,
       },
     });
+
+    try {
+      await this.intakeService.logMessagingIntakeEventFromMessage({
+        buyerId,
+        messageBody: body,
+        intakeTrackingType: options.intakeTrackingType || 'link_sent',
+        metadata: {
+          source: options.trackingMetadata?.source || 'dispoai_messaging',
+          method: 'twilio_sms',
+          messageId: message.id,
+          twilioSid,
+          conversationId: conv.id,
+          buyerId,
+          ...(options.trackingMetadata || {}),
+        },
+      });
+    } catch (e: any) {
+      this.logger.warn(`Failed to log intake tracking for message ${message.id}: ${e.message}`);
+    }
+
+    return message;
   }
 
   async handleInbound(data: any) {
@@ -97,10 +119,10 @@ export class MessagesService {
     }
   }
 
-  async sendBulk(orgId: string, buyerIds: string[], body: string, delayMs: number = 12000) {
+  async sendBulk(orgId: string, buyerIds: string[], body: string, delayMs: number = 12000, options: { intakeTrackingType?: 'link_sent' | 'reminder'; batchId?: string } = {}) {
     for (let i = 0; i < buyerIds.length; i++) {
       setTimeout(async () => {
-        try { await this.sendMessage(orgId, buyerIds[i], body); }
+        try { await this.sendMessage(orgId, buyerIds[i], body, { intakeTrackingType: options.intakeTrackingType || 'link_sent', trackingMetadata: { source: 'bulk_intake_send', batchId: options.batchId || `bulk-${Date.now()}` } }); }
         catch (e) { this.logger.error(`Failed to send to ${buyerIds[i]}: ${e.message}`); }
       }, i * delayMs);
     }

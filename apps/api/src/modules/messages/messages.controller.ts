@@ -20,16 +20,16 @@ export class MessagesController {
   @Post('conversations/:buyerId/send')
   sendMessage(
     @Param('buyerId') buyerId: string,
-    @Body() body: { message: string; orgId?: string },
+    @Body() body: { message: string; orgId?: string; intakeTrackingType?: 'link_sent' | 'reminder' },
   ) {
     const defaultOrg = 'c87f4e63-fd29-4ff5-823f-e4926daa0820';
-    return this.messagesService.sendMessage(body.orgId || defaultOrg, buyerId, body.message);
+    return this.messagesService.sendMessage(body.orgId || defaultOrg, buyerId, body.message, { intakeTrackingType: body.intakeTrackingType });
   }
 
   @Post('bulk')
-  sendBulk(@Body() body: { buyerIds: string[]; message: string; delayMs?: number; orgId?: string }) {
+  sendBulk(@Body() body: { buyerIds: string[]; message: string; delayMs?: number; orgId?: string; intakeTrackingType?: 'link_sent' | 'reminder'; batchId?: string }) {
     const defaultOrg = 'c87f4e63-fd29-4ff5-823f-e4926daa0820';
-    return this.messagesService.sendBulk(body.orgId || defaultOrg, body.buyerIds, body.message, body.delayMs);
+    return this.messagesService.sendBulk(body.orgId || defaultOrg, body.buyerIds, body.message, body.delayMs, { intakeTrackingType: body.intakeTrackingType, batchId: body.batchId });
   }
 
   @Post('webhook/inbound')

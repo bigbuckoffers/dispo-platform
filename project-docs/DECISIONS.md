@@ -60,3 +60,8 @@ Use lightweight in-page tracking helpers with `sessionStorage` guards instead of
 - Phase 2 only needs opened/started calls for the public intake form.
 - `sessionStorage` keeps opened/started calls to once per token per tab session.
 - Avoids introducing analytics vendors, dependencies, or UI changes.
+
+
+## 2026-05-29 — Phase 4 Messaging Intake Tracking
+
+Added backend hooks so successful DispoAI/Twilio messages containing a buyer intake link log `INTAKE_LINK_SENT`, and reminder sends using `intakeTrackingType: "reminder"` log `INTAKE_REMINDER_SENT`. Scheduled reminder automation remains deferred.

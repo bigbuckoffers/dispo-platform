@@ -62,3 +62,8 @@
 - No frontend UI changes.
 - No reminder automation.
 - No redesign of buyer profile or intake pages.
+
+
+## 2026-05-29 — Phase 4 Messaging Intake Tracking
+
+Added backend hooks so successful DispoAI/Twilio messages containing a buyer intake link log `INTAKE_LINK_SENT`, and reminder sends using `intakeTrackingType: "reminder"` log `INTAKE_REMINDER_SENT`. Scheduled reminder automation remains deferred.
