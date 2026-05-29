@@ -44,7 +44,7 @@ export default function IntakePage({ params }: { params: { token: string } }) {
     firstName: '', lastName: '', phone: '', email: '',
     buyingStatus: '', monthlyCapacity: '',
     marketPrimary: '', marketSecondary: '', states: '', zipCodes: '', anyZipOk: false, excludedAreas: '',
-    propertyTypes: [], minBeds: '', occupancy: '', hoaOk: '', minYearBuilt: '',
+    propertyTypes: [], minBeds: '', minSqft: '', occupancy: '', hoaOk: '', minYearBuilt: '',
     priceRange: '', minPrice: '', maxPrice: '', anyPrice: false, minArv: '', minProfit: '', maxRehab: '', minCashFlow: '',
     strategies: [], rehabTolerance: '', hardNoCriteria: '',
     fundingTypes: [], closeSpeed: '', maxEmd: '', inspectionDays: '', proofOfFunds: '',
@@ -280,6 +280,10 @@ export default function IntakePage({ params }: { params: { token: string } }) {
                 </div>
               </div>
               <div>
+                <label className="text-gray-500 text-xs block mb-1.5">Min Sqft (optional)</label>
+                <input type="number" value={form.minSqft} onChange={e=>set('minSqft',e.target.value)} placeholder="e.g. 1000" className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500" />
+              </div>
+              <div>
                 <label className="text-gray-500 text-xs block mb-1.5">HOA OK?</label>
                 <div className="flex gap-1.5">
                   {['Yes','No'].map(n=>(
@@ -342,6 +346,14 @@ export default function IntakePage({ params }: { params: { token: string } }) {
                 <label className="text-gray-500 text-xs block mb-1.5">Min profit needed (optional)</label>
                 <input type="number" value={form.minProfit} onChange={e=>set('minProfit',e.target.value)} placeholder="e.g. 25000" className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500" />
               </div>
+              <div>
+                <label className="text-gray-500 text-xs block mb-1.5">Max rehab budget (optional)</label>
+                <input type="number" value={form.maxRehab} onChange={e=>set('maxRehab',e.target.value)} placeholder="e.g. 50000" className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500" />
+              </div>
+              <div>
+                <label className="text-gray-500 text-xs block mb-1.5">Min cash flow/mo - rentals (optional)</label>
+                <input type="number" value={form.minCashFlow} onChange={e=>set('minCashFlow',e.target.value)} placeholder="e.g. 300" className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500" />
+              </div>
             </div>
           </div>
         )}
@@ -370,14 +382,6 @@ export default function IntakePage({ params }: { params: { token: string } }) {
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-gray-500 text-xs block mb-1.5">Max EMD (optional)</label>
-                <input type="number" value={form.maxEmd} onChange={e=>set('maxEmd',e.target.value)} placeholder="e.g. 2500" className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500" />
-              </div>
-              <div>
-                <label className="text-gray-500 text-xs block mb-1.5">Inspection period (days)</label>
-                <input type="number" value={form.inspectionDays} onChange={e=>set('inspectionDays',e.target.value)} placeholder="e.g. 7" className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500" />
-              </div>
             </div>
             <div>
               <label className="text-gray-500 text-xs block mb-2">Do you have proof of funds?</label>
