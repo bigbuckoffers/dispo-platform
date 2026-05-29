@@ -303,7 +303,7 @@ export default function IntakePage({ params }: { params: { token: string } }) {
             </div>
             <div>
               <label className="text-gray-500 text-xs block mb-1.5">Min Year Built (optional)</label>
-              <NumInput value={form.minYearBuilt} onChange={v=>set('minYearBuilt',v)} placeholder="e.g. 1970" className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500" />
+              <input type="number" value={form.minYearBuilt} onChange={e=>set('minYearBuilt',e.target.value)} placeholder="e.g. 1970" className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500" />
             </div>
           </div>
         )}

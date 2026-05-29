@@ -371,11 +371,11 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
           <div className="grid grid-cols-3 gap-3">
             <div>
               <label className="text-gray-500 text-xs block mb-1">Min Beds</label>
-              <NumInput value={bbForm.minBeds||''} onChange={v=>setBbForm((p:any)=>({...p,minBeds:v}))} placeholder="e.g. 3" className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500" />
+              <input type="number" value={bbForm.minBeds||''} onChange={e=>setBbForm((p:any)=>({...p,minBeds:e.target.value}))} placeholder="e.g. 3" className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500" />
             </div>
             <div>
               <label className="text-gray-500 text-xs block mb-1">Min Baths</label>
-              <NumInput value={bbForm.minBaths||''} onChange={v=>setBbForm((p:any)=>({...p,minBaths:v}))} placeholder="e.g. 1" className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500" />
+              <input type="number" value={bbForm.minBaths||''} onChange={e=>setBbForm((p:any)=>({...p,minBaths:e.target.value}))} placeholder="e.g. 1" className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500" />
             </div>
             <div>
               <label className="text-gray-500 text-xs block mb-1">Min Sqft</label>
@@ -383,11 +383,11 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
             </div>
             <div>
               <label className="text-gray-500 text-xs block mb-1">Min Year Built</label>
-              <NumInput value={bbForm.minYearBuilt||''} onChange={v=>setBbForm((p:any)=>({...p,minYearBuilt:v}))} placeholder="e.g. 1975" className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500" />
+              <input type="number" value={bbForm.minYearBuilt||''} onChange={e=>setBbForm((p:any)=>({...p,minYearBuilt:e.target.value}))} placeholder="e.g. 1975" className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500" />
             </div>
             <div>
               <label className="text-gray-500 text-xs block mb-1">Max Year Built</label>
-              <NumInput value={bbForm.maxYearBuilt||''} onChange={v=>setBbForm((p:any)=>({...p,maxYearBuilt:v}))} placeholder="e.g. 2010" className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500" />
+              <input type="number" value={bbForm.maxYearBuilt||''} onChange={e=>setBbForm((p:any)=>({...p,maxYearBuilt:e.target.value}))} placeholder="e.g. 2010" className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500" />
             </div>
             <div>
               <label className="text-gray-500 text-xs block mb-1">HOA OK?</label>
