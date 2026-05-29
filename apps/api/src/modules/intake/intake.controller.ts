@@ -10,6 +10,21 @@ export class IntakeController {
     return this.intakeService.getBuyerByToken(token);
   }
 
+  @Post('token/:token/opened')
+  logOpened(@Param('token') token: string, @Body() body: { metadata?: any } = {}) {
+    return this.intakeService.logOpened(token, body?.metadata || {});
+  }
+
+  @Post('token/:token/started')
+  logStarted(@Param('token') token: string, @Body() body: { metadata?: any } = {}) {
+    return this.intakeService.logStarted(token, body?.metadata || {});
+  }
+
+  @Post('token/:token/sent')
+  markLinkSent(@Param('token') token: string, @Body() body: { metadata?: any } = {}) {
+    return this.intakeService.markLinkSent(token, body?.metadata || {});
+  }
+
   @Post('token/:token/submit')
   submitIntake(@Param('token') token: string, @Body() data: any) {
     return this.intakeService.submitIntake(token, data);
@@ -36,8 +51,13 @@ export class IntakeController {
   }
 
   @Post('token/:token/track')
-  trackEvent(@Param('token') token: string, @Body() body: { event: string; metadata?: any }) {
-    return this.intakeService.trackEvent(token, body.event, body.metadata || {});
+  trackEvent(@Param('token') token: string, @Body() body: { event?: string; metadata?: any } = {}) {
+    return this.intakeService.trackEvent(token, body.event || '', body.metadata || {});
+  }
+
+  @Get('buyers/:buyerId/events')
+  getBuyerIntakeEvents(@Param('buyerId') buyerId: string) {
+    return this.intakeService.getBuyerIntakeEvents(buyerId);
   }
 
   @Post('submissions/:id/reject')

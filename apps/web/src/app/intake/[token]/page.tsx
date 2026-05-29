@@ -1,13 +1,33 @@
 'use client';
 import { NumInput } from '@/components/buyer/NumInput';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
 
-const track = (token: string, event: string, metadata?: any) => {
-  fetch(`${API}/intake/token/${token}/track`, {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ event, metadata: metadata || {} }),
-  }).catch(() => {});
+const trackingMetadata = () => ({
+  source: 'public_intake_form',
+  userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : undefined,
+  timestamp: new Date().toISOString(),
+});
+
+const hasSessionTracked = (key: string) => {
+  try { return sessionStorage.getItem(key) === '1'; } catch { return false; }
+};
+
+const markSessionTracked = (key: string) => {
+  try { sessionStorage.setItem(key, '1'); } catch {}
+};
+
+const trackIntake = async (token: string, action: 'opened' | 'started', metadata?: any) => {
+  try {
+    const response = await fetch(`${API}/intake/token/${token}/${action}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ metadata: { ...trackingMetadata(), ...(metadata || {}) } }),
+    });
+    if (!response.ok) console.warn(`Intake ${action} tracking failed`, response.status);
+  } catch (err) {
+    console.warn(`Intake ${action} tracking failed`, err);
+  }
 };
 
 const STRATEGIES = ['Fix & Flip', 'Buy & Hold', 'Subject-To', 'Seller Finance', 'BRRRR', 'Wholesale', 'Multifamily', 'Section 8', 'Airbnb/STR', 'Land'];
@@ -47,6 +67,8 @@ export default function IntakePage({ params }: { params: { token: string } }) {
   const [submitting, setSubmitting] = useState(false);
   const [step, setStep] = useState(1);
   const totalSteps = 6;
+  const openedTrackedRef = useRef(false);
+  const startedTrackedRef = useRef(false);
 
   const [form, setForm] = useState<any>({
     firstName: '', lastName: '', phone: '', email: '',
@@ -60,10 +82,24 @@ export default function IntakePage({ params }: { params: { token: string } }) {
     freeformNotes: '',
   });
 
-  const set = (key: string, val: any) => setForm((f: any) => ({ ...f, [key]: val }));
-  const toggle = (key: string, val: string) => setForm((f: any) => ({
-    ...f, [key]: f[key].includes(val) ? f[key].filter((x: string) => x !== val) : [...f[key], val]
-  }));
+  const trackStartedOnce = useCallback((metadata?: any) => {
+    const sessionKey = `intake:${params.token}:started`;
+    if (startedTrackedRef.current || hasSessionTracked(sessionKey)) return;
+    startedTrackedRef.current = true;
+    markSessionTracked(sessionKey);
+    void trackIntake(params.token, 'started', metadata);
+  }, [params.token]);
+
+  const set = (key: string, val: any) => {
+    trackStartedOnce({ interaction: 'field_change', field: key });
+    setForm((f: any) => ({ ...f, [key]: val }));
+  };
+  const toggle = (key: string, val: string) => {
+    trackStartedOnce({ interaction: 'field_toggle', field: key });
+    setForm((f: any) => ({
+      ...f, [key]: f[key].includes(val) ? f[key].filter((x: string) => x !== val) : [...f[key], val]
+    }));
+  };
 
   useEffect(() => {
     fetch(`${API}/intake/token/${params.token}`)
@@ -71,7 +107,12 @@ export default function IntakePage({ params }: { params: { token: string } }) {
       .then(d => {
         if (d.statusCode === 404) { setError('This link is invalid or expired.'); return; }
         setBuyer(d);
-        track(params.token, 'INTAKE_OPENED', { ts: Date.now() });
+        const sessionKey = `intake:${params.token}:opened`;
+        if (!openedTrackedRef.current && !hasSessionTracked(sessionKey)) {
+          openedTrackedRef.current = true;
+          markSessionTracked(sessionKey);
+          void trackIntake(params.token, 'opened');
+        }
         setForm((f: any) => ({
           ...f,
           firstName: d.firstName === 'Unknown' ? '' : d.firstName || '',
@@ -106,6 +147,7 @@ export default function IntakePage({ params }: { params: { token: string } }) {
   }, [form, step, params.token]);
 
   const nextStep = async () => {
+    trackStartedOnce({ interaction: 'step_advance', fromStep: step, toStep: step + 1 });
     await autoSave();
     setStep(s => {
       const next = s + 1;
@@ -149,7 +191,7 @@ export default function IntakePage({ params }: { params: { token: string } }) {
   const firstName = form.firstName || buyer?.firstName || 'there';
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
+    <div className="min-h-screen bg-gray-950 text-white" onChangeCapture={() => trackStartedOnce({ interaction: 'form_change' })}>
       {/* Header */}
       <div className="bg-gray-900/80 border-b border-gray-800 px-5 py-4 sticky top-0 z-10 backdrop-blur">
         <div className="max-w-lg mx-auto flex items-center justify-between">
