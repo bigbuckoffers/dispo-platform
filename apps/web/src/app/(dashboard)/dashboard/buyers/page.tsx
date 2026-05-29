@@ -208,7 +208,7 @@ export default function BuyersPage() {
   const needsReview = [...allBuyers].filter(b => profileScore(b) < 70 && !(b.tags||[]).includes('profile_reviewed')).sort((a,b) => (b.compositeScore||0)-(a.compositeScore||0));
   const hotBuyers = [...allBuyers].filter(b => b.tier==='VIP'||b.tier==='TIER_1'||getTemp(b).label.includes('Hot')||getTemp(b).label.includes('Active')).sort((a,b) => (b.compositeScore||0)-(a.compositeScore||0));
 
-  const getIntakeStatus = (b) => {
+  const getIntakeStatus = (b: any) => {
     const latestEvent = b.events?.[0]?.eventType;
     if (latestEvent === 'INTAKE_COMPLETED') return { label: '✅ Completed', color: 'text-green-400 bg-green-500/10', priority: 3 };
     if (latestEvent === 'INTAKE_OPENED') return { label: '👀 Opened', color: 'text-blue-400 bg-blue-500/10', priority: 2 };

@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 
-const EVENT_CONFIG = {
+const EVENT_CONFIG: Record<string, { icon: string; label: string; color: string }> = {
   INTAKE_OPENED:    { icon: '👀', label: 'Opened intake link',        color: 'text-blue-400' },
   INTAKE_STEP_2:    { icon: '📍', label: 'Reached Markets step',      color: 'text-blue-300' },
   INTAKE_STEP_3:    { icon: '🏠', label: 'Reached Property step',     color: 'text-blue-300' },
@@ -17,7 +17,7 @@ const EVENT_CONFIG = {
   PROFILE_CREATED:  { icon: '👤', label: 'Profile created',           color: 'text-gray-400' },
 };
 
-function timeAgo(date) {
+function timeAgo(date: string | Date) {
   const s = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
   if (s < 60) return 'just now';
   if (s < 3600) return Math.floor(s/60) + 'm ago';
@@ -26,8 +26,8 @@ function timeAgo(date) {
   return new Date(date).toLocaleDateString();
 }
 
-export function ActivityTimeline({ buyerId }) {
-  const [events, setEvents] = useState([]);
+export function ActivityTimeline({ buyerId }: { buyerId: string }) {
+  const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

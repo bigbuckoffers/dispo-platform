@@ -151,7 +151,6 @@ export default function IntakePage({ params }: { params: { token: string } }) {
     await autoSave();
     setStep(s => {
       const next = s + 1;
-      track(params.token, `INTAKE_STEP_${next}`, { from: s, ts: Date.now() });
       return next;
     });
     window.scrollTo(0, 0);
@@ -168,7 +167,7 @@ export default function IntakePage({ params }: { params: { token: string } }) {
         body: JSON.stringify({ ...form, _partial: false }),
       });
       const d = await r.json();
-      if (d.success) { setSubmitted(true); track(params.token, 'INTAKE_COMPLETED', { ts: Date.now() }); }
+      if (d.success) { setSubmitted(true); }
       else alert('Submission failed. Please try again.');
     } catch { alert('Network error. Please try again.'); }
     finally { setSubmitting(false); }
