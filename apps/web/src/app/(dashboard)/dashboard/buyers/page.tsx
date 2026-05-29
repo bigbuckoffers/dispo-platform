@@ -803,7 +803,6 @@ export default function BuyersPage() {
         </div>
       )}
       {showCreate && <CreateBuyerModal onClose={() => setShowCreate(false)} onCreated={() => { setShowCreate(false); load(); loadAll(); }} />}
-    </div>
     {selectedSub && tab==='submissions' && (
       <SubmissionReviewModal
         sub={selectedSub}
