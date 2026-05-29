@@ -86,7 +86,7 @@ export function SubmissionReviewModal({ sub, onClose, onSave }: Props) {
     fundingTypes:     b.notes || (d.fundingTypes || []).join(', ') || '',
     closeSpeed:       b.avgCloseSpeedDays || d.closeSpeed || '',
     monthlyCapacity:  b.monthlyCapacity || d.monthlyCapacity || '',
-    preferredContact: b.preferredContact || d.preferredContact || '',
+    preferredContact: d.preferredContact || b.preferredContact || '',
     dealSendFreq:     d.dealSendFreq || b.dealSendFreq || '',
     proofOfFunds:     b.proofOfFunds || d.proofOfFunds || '',
     privateNotes:     b.privateNotes || '',
