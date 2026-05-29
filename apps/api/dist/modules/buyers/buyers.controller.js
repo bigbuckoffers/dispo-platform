@@ -18,13 +18,13 @@ const swagger_1 = require("@nestjs/swagger");
 const client_1 = require("@prisma/client");
 const decorators_1 = require("../../shared/decorators");
 const buyers_service_1 = require("./buyers.service");
+const buyer_intelligence_service_1 = require("./buyer-intelligence.service");
 const create_buyer_dto_1 = require("./dto/create-buyer.dto");
-const update_buyer_dto_1 = require("./dto/update-buyer.dto");
-const update_buy_box_dto_1 = require("./dto/update-buy-box.dto");
 const list_buyers_dto_1 = require("./dto/list-buyers.dto");
 let BuyersController = class BuyersController {
-    constructor(buyersService) {
+    constructor(buyersService, intelService) {
         this.buyersService = buyersService;
+        this.intelService = intelService;
     }
     findAll(orgId, query) {
         return this.buyersService.findAll(orgId, query);
@@ -34,6 +34,15 @@ let BuyersController = class BuyersController {
     }
     getTopBuyers(orgId, limit = 20) {
         return this.buyersService.getTopBuyers(orgId, +limit);
+    }
+    async backfillBuyBoxes() {
+        return this.intelService.backfillBuyBoxes();
+    }
+    async generateProfiles(limit = 50) {
+        return this.intelService.generateAllMissingProfiles(+limit);
+    }
+    async generateSummaries(limit = 50) {
+        return this.intelService.generateAllMissingAiSummaries(+limit);
     }
     findOne(orgId, id) {
         return this.buyersService.findOne(orgId, id);
@@ -70,6 +79,10 @@ let BuyersController = class BuyersController {
     }
     remove(orgId, id, userId) {
         return this.buyersService.remove(orgId, id, userId);
+    }
+    async generateProfile(id) {
+        const profile = await this.intelService.generateBuyerProfile(id);
+        return { profile };
     }
 };
 exports.BuyersController = BuyersController;
@@ -108,6 +121,26 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], BuyersController.prototype, "getTopBuyers", null);
 __decorate([
+    (0, common_1.Post)('backfill-buy-boxes'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], BuyersController.prototype, "backfillBuyBoxes", null);
+__decorate([
+    (0, common_1.Post)('generate-profiles'),
+    __param(0, (0, common_1.Query)('limit')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], BuyersController.prototype, "generateProfiles", null);
+__decorate([
+    (0, common_1.Post)('generate-summaries'),
+    __param(0, (0, common_1.Query)('limit')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], BuyersController.prototype, "generateSummaries", null);
+__decorate([
     (0, common_1.Get)(':id'),
     (0, swagger_1.ApiOperation)({ summary: 'Get full buyer profile' }),
     __param(0, (0, decorators_1.OrgId)()),
@@ -125,7 +158,7 @@ __decorate([
     __param(2, (0, common_1.Body)()),
     __param(3, (0, decorators_1.CurrentUser)('id')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String, update_buyer_dto_1.UpdateBuyerDto, String]),
+    __metadata("design:paramtypes", [String, String, Object, String]),
     __metadata("design:returntype", void 0)
 ], BuyersController.prototype, "update", null);
 __decorate([
@@ -164,7 +197,7 @@ __decorate([
     __param(2, (0, common_1.Body)()),
     __param(3, (0, decorators_1.CurrentUser)('id')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String, update_buy_box_dto_1.UpdateBuyBoxDto, String]),
+    __metadata("design:paramtypes", [String, String, Object, String]),
     __metadata("design:returntype", void 0)
 ], BuyersController.prototype, "updateBuyBox", null);
 __decorate([
@@ -231,10 +264,18 @@ __decorate([
     __metadata("design:paramtypes", [String, String, String]),
     __metadata("design:returntype", void 0)
 ], BuyersController.prototype, "remove", null);
+__decorate([
+    (0, common_1.Post)(':id/generate-profile'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], BuyersController.prototype, "generateProfile", null);
 exports.BuyersController = BuyersController = __decorate([
     (0, swagger_1.ApiTags)('buyers'),
     (0, swagger_1.ApiBearerAuth)(),
     (0, common_1.Controller)('buyers'),
-    __metadata("design:paramtypes", [buyers_service_1.BuyersService])
+    __metadata("design:paramtypes", [buyers_service_1.BuyersService,
+        buyer_intelligence_service_1.BuyerIntelligenceService])
 ], BuyersController);
 //# sourceMappingURL=buyers.controller.js.map

@@ -169,4 +169,21 @@ export class IntakeService {
     }
     return results;
   }
+
+  async trackEvent(token: string, event: string, metadata: any = {}) {
+    const buyer = await this.prisma.buyer.findUnique({ where: { intakeToken: token }, select: { id: true } });
+    if (!buyer) return { ok: false };
+    const validEvents: any = {
+      'INTAKE_OPENED': 'INTAKE_OPENED', 'INTAKE_STEP_2': 'INTAKE_STEP_2',
+      'INTAKE_STEP_3': 'INTAKE_STEP_3', 'INTAKE_STEP_4': 'INTAKE_STEP_4',
+      'INTAKE_STEP_5': 'INTAKE_STEP_5', 'INTAKE_STEP_6': 'INTAKE_STEP_6',
+      'INTAKE_COMPLETED': 'INTAKE_COMPLETED', 'INTAKE_ABANDONED': 'INTAKE_ABANDONED',
+    };
+    if (!validEvents[event]) return { ok: false, error: 'Invalid event' };
+    await this.prisma.buyerEvent.create({
+      data: { buyerId: buyer.id, eventType: validEvents[event], metadata },
+    });
+    return { ok: true };
+  }
+
 }

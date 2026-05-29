@@ -13,10 +13,43 @@ export declare class BuyersService {
     findAll(orgId: string, query: ListBuyersDto): Promise<{
         data: ({
             buyBox: {
+                id: string;
+                updatedAt: Date;
                 states: string[];
+                counties: string[];
+                zipCodes: string[];
+                anyZipOk: boolean;
+                anyPrice: boolean;
+                radiusMiles: number | null;
                 propertyTypes: import(".prisma/client").$Enums.PropertyType[];
-                minPrice: number;
-                maxPrice: number;
+                minPrice: number | null;
+                maxPrice: number | null;
+                minArv: number | null;
+                maxArv: number | null;
+                minRehab: number | null;
+                maxRehab: number | null;
+                minBeds: number | null;
+                maxBeds: number | null;
+                minSqft: number | null;
+                maxSqft: number | null;
+                minYearBuilt: number | null;
+                maxYearBuilt: number | null;
+                investmentStrategy: import(".prisma/client").$Enums.InvestmentStrategy[];
+                maxAssignmentFee: number | null;
+                rehabTolerance: import(".prisma/client").$Enums.RehabTolerance;
+                occupancy: string | null;
+                hardNoCriteria: string | null;
+                excludedAreas: string | null;
+                minProfit: number | null;
+                minBaths: number | null;
+                maxEmd: number | null;
+                buyerId: string;
+                geoPolygon: import("@prisma/client/runtime/library").JsonValue | null;
+                minCashFlow: number | null;
+                maxBaths: number | null;
+                occupancyPref: import(".prisma/client").$Enums.OccupancyPref[];
+                preferredExits: import(".prisma/client").$Enums.ExitStrategy[];
+                inspectionDays: number | null;
             };
             _count: {
                 offers: number;
@@ -32,6 +65,7 @@ export declare class BuyersService {
             createdAt: Date;
             updatedAt: Date;
             organizationId: string;
+            hoaOk: string | null;
             company: string | null;
             website: string | null;
             llcNames: string[];
@@ -57,9 +91,16 @@ export declare class BuyersService {
             ghostCount: number;
             aiSummary: string | null;
             temperatureNotes: string | null;
+            buyingStatus: string | null;
+            monthlyCapacity: string | null;
+            preferredContact: string | null;
+            dealSendFreq: string | null;
+            proofOfFunds: string | null;
+            privateNotes: string | null;
             tier: import(".prisma/client").$Enums.BuyerTier;
             aiTemperatureAnalysis: string | null;
             proofOfFundsUrl: string | null;
+            proofOfFundsWaived: boolean;
             rawImportData: import("@prisma/client/runtime/library").JsonValue | null;
             seriousnessScore: number;
             compositeScore: number;
@@ -83,6 +124,8 @@ export declare class BuyersService {
             lastActiveDate: Date | null;
             lastContactDate: Date | null;
             importedAt: Date | null;
+            intakeToken: string | null;
+            intakeSubmittedAt: Date | null;
         })[];
         meta: {
             total: number;
@@ -92,6 +135,46 @@ export declare class BuyersService {
         };
     }>;
     create(orgId: string, userId: string, dto: CreateBuyerDto): Promise<{
+        buyBox: {
+            id: string;
+            updatedAt: Date;
+            states: string[];
+            counties: string[];
+            zipCodes: string[];
+            anyZipOk: boolean;
+            anyPrice: boolean;
+            radiusMiles: number | null;
+            propertyTypes: import(".prisma/client").$Enums.PropertyType[];
+            minPrice: number | null;
+            maxPrice: number | null;
+            minArv: number | null;
+            maxArv: number | null;
+            minRehab: number | null;
+            maxRehab: number | null;
+            minBeds: number | null;
+            maxBeds: number | null;
+            minSqft: number | null;
+            maxSqft: number | null;
+            minYearBuilt: number | null;
+            maxYearBuilt: number | null;
+            investmentStrategy: import(".prisma/client").$Enums.InvestmentStrategy[];
+            maxAssignmentFee: number | null;
+            rehabTolerance: import(".prisma/client").$Enums.RehabTolerance;
+            occupancy: string | null;
+            hardNoCriteria: string | null;
+            excludedAreas: string | null;
+            minProfit: number | null;
+            minBaths: number | null;
+            maxEmd: number | null;
+            buyerId: string;
+            geoPolygon: import("@prisma/client/runtime/library").JsonValue | null;
+            minCashFlow: number | null;
+            maxBaths: number | null;
+            occupancyPref: import(".prisma/client").$Enums.OccupancyPref[];
+            preferredExits: import(".prisma/client").$Enums.ExitStrategy[];
+            inspectionDays: number | null;
+        };
+    } & {
         id: string;
         email: string;
         firstName: string;
@@ -101,6 +184,7 @@ export declare class BuyersService {
         createdAt: Date;
         updatedAt: Date;
         organizationId: string;
+        hoaOk: string | null;
         company: string | null;
         website: string | null;
         llcNames: string[];
@@ -126,9 +210,16 @@ export declare class BuyersService {
         ghostCount: number;
         aiSummary: string | null;
         temperatureNotes: string | null;
+        buyingStatus: string | null;
+        monthlyCapacity: string | null;
+        preferredContact: string | null;
+        dealSendFreq: string | null;
+        proofOfFunds: string | null;
+        privateNotes: string | null;
         tier: import(".prisma/client").$Enums.BuyerTier;
         aiTemperatureAnalysis: string | null;
         proofOfFundsUrl: string | null;
+        proofOfFundsWaived: boolean;
         rawImportData: import("@prisma/client/runtime/library").JsonValue | null;
         seriousnessScore: number;
         compositeScore: number;
@@ -152,6 +243,8 @@ export declare class BuyersService {
         lastActiveDate: Date | null;
         lastContactDate: Date | null;
         importedAt: Date | null;
+        intakeToken: string | null;
+        intakeSubmittedAt: Date | null;
     }>;
     findOne(orgId: string, id: string): Promise<{
         buyBox: {
@@ -160,6 +253,8 @@ export declare class BuyersService {
             states: string[];
             counties: string[];
             zipCodes: string[];
+            anyZipOk: boolean;
+            anyPrice: boolean;
             radiusMiles: number | null;
             propertyTypes: import(".prisma/client").$Enums.PropertyType[];
             minPrice: number | null;
@@ -177,12 +272,19 @@ export declare class BuyersService {
             investmentStrategy: import(".prisma/client").$Enums.InvestmentStrategy[];
             maxAssignmentFee: number | null;
             rehabTolerance: import(".prisma/client").$Enums.RehabTolerance;
+            occupancy: string | null;
+            hardNoCriteria: string | null;
+            excludedAreas: string | null;
+            minProfit: number | null;
+            minBaths: number | null;
+            maxEmd: number | null;
             buyerId: string;
             geoPolygon: import("@prisma/client/runtime/library").JsonValue | null;
-            minBaths: number | null;
+            minCashFlow: number | null;
             maxBaths: number | null;
             occupancyPref: import(".prisma/client").$Enums.OccupancyPref[];
             preferredExits: import(".prisma/client").$Enums.ExitStrategy[];
+            inspectionDays: number | null;
         };
         realBuyBox: {
             id: string;
@@ -215,6 +317,7 @@ export declare class BuyersService {
         createdAt: Date;
         updatedAt: Date;
         organizationId: string;
+        hoaOk: string | null;
         company: string | null;
         website: string | null;
         llcNames: string[];
@@ -240,9 +343,16 @@ export declare class BuyersService {
         ghostCount: number;
         aiSummary: string | null;
         temperatureNotes: string | null;
+        buyingStatus: string | null;
+        monthlyCapacity: string | null;
+        preferredContact: string | null;
+        dealSendFreq: string | null;
+        proofOfFunds: string | null;
+        privateNotes: string | null;
         tier: import(".prisma/client").$Enums.BuyerTier;
         aiTemperatureAnalysis: string | null;
         proofOfFundsUrl: string | null;
+        proofOfFundsWaived: boolean;
         rawImportData: import("@prisma/client/runtime/library").JsonValue | null;
         seriousnessScore: number;
         compositeScore: number;
@@ -266,6 +376,8 @@ export declare class BuyersService {
         lastActiveDate: Date | null;
         lastContactDate: Date | null;
         importedAt: Date | null;
+        intakeToken: string | null;
+        intakeSubmittedAt: Date | null;
     }>;
     update(orgId: string, id: string, dto: UpdateBuyerDto, userId: string): Promise<{
         id: string;
@@ -277,6 +389,7 @@ export declare class BuyersService {
         createdAt: Date;
         updatedAt: Date;
         organizationId: string;
+        hoaOk: string | null;
         company: string | null;
         website: string | null;
         llcNames: string[];
@@ -302,9 +415,16 @@ export declare class BuyersService {
         ghostCount: number;
         aiSummary: string | null;
         temperatureNotes: string | null;
+        buyingStatus: string | null;
+        monthlyCapacity: string | null;
+        preferredContact: string | null;
+        dealSendFreq: string | null;
+        proofOfFunds: string | null;
+        privateNotes: string | null;
         tier: import(".prisma/client").$Enums.BuyerTier;
         aiTemperatureAnalysis: string | null;
         proofOfFundsUrl: string | null;
+        proofOfFundsWaived: boolean;
         rawImportData: import("@prisma/client/runtime/library").JsonValue | null;
         seriousnessScore: number;
         compositeScore: number;
@@ -328,6 +448,8 @@ export declare class BuyersService {
         lastActiveDate: Date | null;
         lastContactDate: Date | null;
         importedAt: Date | null;
+        intakeToken: string | null;
+        intakeSubmittedAt: Date | null;
     }>;
     getScores(orgId: string, id: string): Promise<{
         current: {
@@ -365,6 +487,8 @@ export declare class BuyersService {
         states: string[];
         counties: string[];
         zipCodes: string[];
+        anyZipOk: boolean;
+        anyPrice: boolean;
         radiusMiles: number | null;
         propertyTypes: import(".prisma/client").$Enums.PropertyType[];
         minPrice: number | null;
@@ -382,12 +506,19 @@ export declare class BuyersService {
         investmentStrategy: import(".prisma/client").$Enums.InvestmentStrategy[];
         maxAssignmentFee: number | null;
         rehabTolerance: import(".prisma/client").$Enums.RehabTolerance;
+        occupancy: string | null;
+        hardNoCriteria: string | null;
+        excludedAreas: string | null;
+        minProfit: number | null;
+        minBaths: number | null;
+        maxEmd: number | null;
         buyerId: string;
         geoPolygon: import("@prisma/client/runtime/library").JsonValue | null;
-        minBaths: number | null;
+        minCashFlow: number | null;
         maxBaths: number | null;
         occupancyPref: import(".prisma/client").$Enums.OccupancyPref[];
         preferredExits: import(".prisma/client").$Enums.ExitStrategy[];
+        inspectionDays: number | null;
     }>;
     updateBuyBox(orgId: string, id: string, dto: UpdateBuyBoxDto, userId: string): Promise<{
         id: string;
@@ -395,6 +526,8 @@ export declare class BuyersService {
         states: string[];
         counties: string[];
         zipCodes: string[];
+        anyZipOk: boolean;
+        anyPrice: boolean;
         radiusMiles: number | null;
         propertyTypes: import(".prisma/client").$Enums.PropertyType[];
         minPrice: number | null;
@@ -412,12 +545,19 @@ export declare class BuyersService {
         investmentStrategy: import(".prisma/client").$Enums.InvestmentStrategy[];
         maxAssignmentFee: number | null;
         rehabTolerance: import(".prisma/client").$Enums.RehabTolerance;
+        occupancy: string | null;
+        hardNoCriteria: string | null;
+        excludedAreas: string | null;
+        minProfit: number | null;
+        minBaths: number | null;
+        maxEmd: number | null;
         buyerId: string;
         geoPolygon: import("@prisma/client/runtime/library").JsonValue | null;
-        minBaths: number | null;
+        minCashFlow: number | null;
         maxBaths: number | null;
         occupancyPref: import(".prisma/client").$Enums.OccupancyPref[];
         preferredExits: import(".prisma/client").$Enums.ExitStrategy[];
+        inspectionDays: number | null;
     }>;
     getRealBuyBox(orgId: string, id: string): Promise<{
         stated: {
@@ -426,6 +566,8 @@ export declare class BuyersService {
             states: string[];
             counties: string[];
             zipCodes: string[];
+            anyZipOk: boolean;
+            anyPrice: boolean;
             radiusMiles: number | null;
             propertyTypes: import(".prisma/client").$Enums.PropertyType[];
             minPrice: number | null;
@@ -443,12 +585,19 @@ export declare class BuyersService {
             investmentStrategy: import(".prisma/client").$Enums.InvestmentStrategy[];
             maxAssignmentFee: number | null;
             rehabTolerance: import(".prisma/client").$Enums.RehabTolerance;
+            occupancy: string | null;
+            hardNoCriteria: string | null;
+            excludedAreas: string | null;
+            minProfit: number | null;
+            minBaths: number | null;
+            maxEmd: number | null;
             buyerId: string;
             geoPolygon: import("@prisma/client/runtime/library").JsonValue | null;
-            minBaths: number | null;
+            minCashFlow: number | null;
             maxBaths: number | null;
             occupancyPref: import(".prisma/client").$Enums.OccupancyPref[];
             preferredExits: import(".prisma/client").$Enums.ExitStrategy[];
+            inspectionDays: number | null;
         };
         real: {
             id: string;
@@ -489,9 +638,43 @@ export declare class BuyersService {
     }>;
     getTopBuyers(orgId: string, limit: number): Promise<{
         buyBox: {
+            id: string;
+            updatedAt: Date;
             states: string[];
-            minPrice: number;
-            maxPrice: number;
+            counties: string[];
+            zipCodes: string[];
+            anyZipOk: boolean;
+            anyPrice: boolean;
+            radiusMiles: number | null;
+            propertyTypes: import(".prisma/client").$Enums.PropertyType[];
+            minPrice: number | null;
+            maxPrice: number | null;
+            minArv: number | null;
+            maxArv: number | null;
+            minRehab: number | null;
+            maxRehab: number | null;
+            minBeds: number | null;
+            maxBeds: number | null;
+            minSqft: number | null;
+            maxSqft: number | null;
+            minYearBuilt: number | null;
+            maxYearBuilt: number | null;
+            investmentStrategy: import(".prisma/client").$Enums.InvestmentStrategy[];
+            maxAssignmentFee: number | null;
+            rehabTolerance: import(".prisma/client").$Enums.RehabTolerance;
+            occupancy: string | null;
+            hardNoCriteria: string | null;
+            excludedAreas: string | null;
+            minProfit: number | null;
+            minBaths: number | null;
+            maxEmd: number | null;
+            buyerId: string;
+            geoPolygon: import("@prisma/client/runtime/library").JsonValue | null;
+            minCashFlow: number | null;
+            maxBaths: number | null;
+            occupancyPref: import(".prisma/client").$Enums.OccupancyPref[];
+            preferredExits: import(".prisma/client").$Enums.ExitStrategy[];
+            inspectionDays: number | null;
         };
         id: string;
         email: string;
@@ -514,6 +697,7 @@ export declare class BuyersService {
         createdAt: Date;
         updatedAt: Date;
         organizationId: string;
+        hoaOk: string | null;
         company: string | null;
         website: string | null;
         llcNames: string[];
@@ -539,9 +723,16 @@ export declare class BuyersService {
         ghostCount: number;
         aiSummary: string | null;
         temperatureNotes: string | null;
+        buyingStatus: string | null;
+        monthlyCapacity: string | null;
+        preferredContact: string | null;
+        dealSendFreq: string | null;
+        proofOfFunds: string | null;
+        privateNotes: string | null;
         tier: import(".prisma/client").$Enums.BuyerTier;
         aiTemperatureAnalysis: string | null;
         proofOfFundsUrl: string | null;
+        proofOfFundsWaived: boolean;
         rawImportData: import("@prisma/client/runtime/library").JsonValue | null;
         seriousnessScore: number;
         compositeScore: number;
@@ -565,6 +756,8 @@ export declare class BuyersService {
         lastActiveDate: Date | null;
         lastContactDate: Date | null;
         importedAt: Date | null;
+        intakeToken: string | null;
+        intakeSubmittedAt: Date | null;
     }>;
     suspend(orgId: string, id: string, reason: string, userId: string): Promise<{
         id: string;
@@ -576,6 +769,7 @@ export declare class BuyersService {
         createdAt: Date;
         updatedAt: Date;
         organizationId: string;
+        hoaOk: string | null;
         company: string | null;
         website: string | null;
         llcNames: string[];
@@ -601,9 +795,16 @@ export declare class BuyersService {
         ghostCount: number;
         aiSummary: string | null;
         temperatureNotes: string | null;
+        buyingStatus: string | null;
+        monthlyCapacity: string | null;
+        preferredContact: string | null;
+        dealSendFreq: string | null;
+        proofOfFunds: string | null;
+        privateNotes: string | null;
         tier: import(".prisma/client").$Enums.BuyerTier;
         aiTemperatureAnalysis: string | null;
         proofOfFundsUrl: string | null;
+        proofOfFundsWaived: boolean;
         rawImportData: import("@prisma/client/runtime/library").JsonValue | null;
         seriousnessScore: number;
         compositeScore: number;
@@ -627,6 +828,8 @@ export declare class BuyersService {
         lastActiveDate: Date | null;
         lastContactDate: Date | null;
         importedAt: Date | null;
+        intakeToken: string | null;
+        intakeSubmittedAt: Date | null;
     }>;
     remove(orgId: string, id: string, userId: string): Promise<void>;
 }

@@ -29,6 +29,7 @@ export declare class DealsService {
         createdAt: Date;
         updatedAt: Date;
         organizationId: string;
+        occupancy: import(".prisma/client").$Enums.OccupancyStatus;
         aiSummary: string | null;
         temperatureNotes: string | null;
         aiTemperatureAnalysis: string | null;
@@ -36,9 +37,9 @@ export declare class DealsService {
         closingDate: Date | null;
         status: import(".prisma/client").$Enums.DealStatus;
         address: string;
-        description: string | null;
         city: string;
         state: string;
+        description: string | null;
         zipCode: string;
         county: string | null;
         latitude: number | null;
@@ -57,7 +58,6 @@ export declare class DealsService {
         sqft: number | null;
         yearBuilt: number | null;
         lotSize: number | null;
-        occupancy: import(".prisma/client").$Enums.OccupancyStatus;
         titleStatus: import(".prisma/client").$Enums.TitleStatus;
         closingDeadline: Date | null;
         accessInstructions: string | null;
@@ -216,6 +216,7 @@ export declare class DealsService {
         createdAt: Date;
         updatedAt: Date;
         organizationId: string;
+        occupancy: import(".prisma/client").$Enums.OccupancyStatus;
         aiSummary: string | null;
         temperatureNotes: string | null;
         aiTemperatureAnalysis: string | null;
@@ -223,9 +224,9 @@ export declare class DealsService {
         closingDate: Date | null;
         status: import(".prisma/client").$Enums.DealStatus;
         address: string;
-        description: string | null;
         city: string;
         state: string;
+        description: string | null;
         zipCode: string;
         county: string | null;
         latitude: number | null;
@@ -244,7 +245,6 @@ export declare class DealsService {
         sqft: number | null;
         yearBuilt: number | null;
         lotSize: number | null;
-        occupancy: import(".prisma/client").$Enums.OccupancyStatus;
         titleStatus: import(".prisma/client").$Enums.TitleStatus;
         closingDeadline: Date | null;
         accessInstructions: string | null;
@@ -374,6 +374,7 @@ export declare class DealsService {
         createdAt: Date;
         updatedAt: Date;
         organizationId: string;
+        occupancy: import(".prisma/client").$Enums.OccupancyStatus;
         aiSummary: string | null;
         temperatureNotes: string | null;
         aiTemperatureAnalysis: string | null;
@@ -381,9 +382,9 @@ export declare class DealsService {
         closingDate: Date | null;
         status: import(".prisma/client").$Enums.DealStatus;
         address: string;
-        description: string | null;
         city: string;
         state: string;
+        description: string | null;
         zipCode: string;
         county: string | null;
         latitude: number | null;
@@ -402,7 +403,6 @@ export declare class DealsService {
         sqft: number | null;
         yearBuilt: number | null;
         lotSize: number | null;
-        occupancy: import(".prisma/client").$Enums.OccupancyStatus;
         titleStatus: import(".prisma/client").$Enums.TitleStatus;
         closingDeadline: Date | null;
         accessInstructions: string | null;
@@ -586,6 +586,7 @@ export declare class DealsService {
         createdAt: Date;
         updatedAt: Date;
         organizationId: string;
+        occupancy: import(".prisma/client").$Enums.OccupancyStatus;
         aiSummary: string | null;
         temperatureNotes: string | null;
         aiTemperatureAnalysis: string | null;
@@ -593,9 +594,9 @@ export declare class DealsService {
         closingDate: Date | null;
         status: import(".prisma/client").$Enums.DealStatus;
         address: string;
-        description: string | null;
         city: string;
         state: string;
+        description: string | null;
         zipCode: string;
         county: string | null;
         latitude: number | null;
@@ -614,7 +615,6 @@ export declare class DealsService {
         sqft: number | null;
         yearBuilt: number | null;
         lotSize: number | null;
-        occupancy: import(".prisma/client").$Enums.OccupancyStatus;
         titleStatus: import(".prisma/client").$Enums.TitleStatus;
         closingDeadline: Date | null;
         accessInstructions: string | null;

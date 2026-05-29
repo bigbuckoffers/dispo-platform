@@ -1,8 +1,10 @@
-import { InvestorType } from '@prisma/client';
+import { InvestorType, BuyerTier } from '@prisma/client';
 export declare class CreateBuyBoxDto {
     states?: string[];
     counties?: string[];
     zipCodes?: string[];
+    anyZipOk?: boolean;
+    anyPrice?: boolean;
     radiusMiles?: number;
     propertyTypes?: string[];
     minPrice?: number;
@@ -20,6 +22,12 @@ export declare class CreateBuyBoxDto {
     investmentStrategy?: string[];
     maxAssignmentFee?: number;
     rehabTolerance?: string;
+    occupancy?: string;
+    hoaOk?: string;
+    hardNoCriteria?: string;
+    excludedAreas?: string;
+    minProfit?: number;
+    minBaths?: number;
 }
 export declare class CreateBuyerDto {
     firstName: string;
@@ -51,9 +59,16 @@ export declare class CreateBuyerDto {
     ghostCount?: number;
     aiSummary?: string;
     temperatureNotes?: string;
-    tier?: string;
+    buyingStatus?: string;
+    monthlyCapacity?: string;
+    preferredContact?: string;
+    dealSendFreq?: string;
+    proofOfFunds?: string;
+    privateNotes?: string;
+    tier?: BuyerTier;
     aiTemperatureAnalysis?: string;
     proofOfFundsUrl?: string;
+    proofOfFundsWaived?: boolean;
     maxEmd?: number;
     rawImportData?: any;
     seriousnessScore?: number;

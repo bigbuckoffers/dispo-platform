@@ -14,6 +14,7 @@ const deals_service_1 = require("./deals.service");
 const deals_scoring_service_1 = require("./deals-scoring.service");
 const deals_ai_analyze_service_1 = require("./deals-ai-analyze.service");
 const deals_ai_parser_service_1 = require("./deals-ai-parser.service");
+const deals_matching_service_1 = require("./deals-matching.service");
 const matching_module_1 = require("../matching/matching.module");
 const rentcast_module_1 = require("../rentcast/rentcast.module");
 const ai_module_1 = require("../ai/ai.module");
@@ -22,13 +23,13 @@ let DealsModule = class DealsModule {
 exports.DealsModule = DealsModule;
 exports.DealsModule = DealsModule = __decorate([
     (0, common_1.Module)({
-        imports: [matching_module_1.MatchingModule,
-            rentcast_module_1.RentCastModule, ai_module_1.AiModule],
+        imports: [matching_module_1.MatchingModule, rentcast_module_1.RentCastModule, ai_module_1.AiModule],
         controllers: [deals_controller_1.DealsController],
         providers: [
-            arv_engine_service_1.ArvEngineService, deals_service_1.DealsService, deals_scoring_service_1.DealsScoringService, deals_ai_parser_service_1.DealsAiParserService, deals_ai_analyze_service_1.DealsAiAnalyzeService
+            arv_engine_service_1.ArvEngineService, deals_service_1.DealsService, deals_scoring_service_1.DealsScoringService,
+            deals_ai_parser_service_1.DealsAiParserService, deals_ai_analyze_service_1.DealsAiAnalyzeService, deals_matching_service_1.DealsMatchingService,
         ],
-        exports: [deals_service_1.DealsService, deals_scoring_service_1.DealsScoringService],
+        exports: [deals_service_1.DealsService, deals_scoring_service_1.DealsScoringService, deals_matching_service_1.DealsMatchingService],
     })
 ], DealsModule);
 //# sourceMappingURL=deals.module.js.map

@@ -19,6 +19,8 @@ const buyers_module_1 = require("./modules/buyers/buyers.module");
 const deals_module_1 = require("./modules/deals/deals.module");
 const matching_module_1 = require("./modules/matching/matching.module");
 const dispo_module_1 = require("./modules/dispo/dispo.module");
+const messages_module_1 = require("./modules/messages/messages.module");
+const intake_module_1 = require("./modules/intake/intake.module");
 const marketplace_module_1 = require("./modules/marketplace/marketplace.module");
 const analytics_module_1 = require("./modules/analytics/analytics.module");
 const notifications_module_1 = require("./modules/notifications/notifications.module");
@@ -78,6 +80,8 @@ exports.AppModule = AppModule = __decorate([
             deals_module_1.DealsModule,
             matching_module_1.MatchingModule,
             dispo_module_1.DispoModule,
+            messages_module_1.MessagesModule,
+            intake_module_1.IntakeModule,
             marketplace_module_1.MarketplaceModule,
             analytics_module_1.AnalyticsModule,
             notifications_module_1.NotificationsModule,

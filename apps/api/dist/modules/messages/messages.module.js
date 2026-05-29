@@ -6,19 +6,20 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.BuyersModule = void 0;
+exports.MessagesModule = void 0;
 const common_1 = require("@nestjs/common");
-const buyers_controller_1 = require("./buyers.controller");
-const buyers_service_1 = require("./buyers.service");
-const buyer_intelligence_service_1 = require("./buyer-intelligence.service");
-let BuyersModule = class BuyersModule {
+const messages_service_1 = require("./messages.service");
+const messages_controller_1 = require("./messages.controller");
+const prisma_module_1 = require("../../shared/prisma/prisma.module");
+let MessagesModule = class MessagesModule {
 };
-exports.BuyersModule = BuyersModule;
-exports.BuyersModule = BuyersModule = __decorate([
+exports.MessagesModule = MessagesModule;
+exports.MessagesModule = MessagesModule = __decorate([
     (0, common_1.Module)({
-        controllers: [buyers_controller_1.BuyersController],
-        providers: [buyers_service_1.BuyersService, buyer_intelligence_service_1.BuyerIntelligenceService],
-        exports: [buyers_service_1.BuyersService, buyer_intelligence_service_1.BuyerIntelligenceService],
+        imports: [prisma_module_1.PrismaModule],
+        controllers: [messages_controller_1.MessagesController],
+        providers: [messages_service_1.MessagesService],
+        exports: [messages_service_1.MessagesService],
     })
-], BuyersModule);
-//# sourceMappingURL=buyers.module.js.map
+], MessagesModule);
+//# sourceMappingURL=messages.module.js.map

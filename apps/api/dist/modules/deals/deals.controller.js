@@ -11,6 +11,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
+var DealsController_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DealsController = void 0;
 const common_1 = require("@nestjs/common");
@@ -21,15 +22,18 @@ const deals_service_1 = require("./deals.service");
 const deals_scoring_service_1 = require("./deals-scoring.service");
 const deals_ai_analyze_service_1 = require("./deals-ai-analyze.service");
 const deals_ai_parser_service_1 = require("./deals-ai-parser.service");
+const deals_matching_service_1 = require("./deals-matching.service");
 const prisma_service_1 = require("../../shared/prisma/prisma.service");
-let DealsController = class DealsController {
-    constructor(dealsService, scoringService, aiParser, aiAnalyze, prisma, arvEngine) {
+let DealsController = DealsController_1 = class DealsController {
+    constructor(dealsService, scoringService, aiParser, aiAnalyze, prisma, arvEngine, matchingService) {
         this.dealsService = dealsService;
         this.scoringService = scoringService;
         this.aiParser = aiParser;
         this.aiAnalyze = aiAnalyze;
         this.prisma = prisma;
         this.arvEngine = arvEngine;
+        this.matchingService = matchingService;
+        this.logger = new common_1.Logger(DealsController_1.name);
     }
     async findAll(orgId, query) {
         return this.dealsService.findAll(orgId || await this.dealsService.getDefaultOrgId(), query);
@@ -87,7 +91,7 @@ let DealsController = class DealsController {
     async create(orgId, userId, dto) {
         const metrics = this.scoringService.calculateMetrics(dto);
         const marketKey = `${dto.city || ''}, ${dto.state || ''}`.trim().replace(/^,\s*/, '');
-        return this.prisma.deal.create({
+        const deal = await this.prisma.deal.create({
             data: {
                 ...dto,
                 ...metrics,
@@ -101,6 +105,22 @@ let DealsController = class DealsController {
                 askingPrice: dto.askingPrice || 0,
             },
         });
+        setImmediate(async () => {
+            try {
+                const gate = this.matchingService.runFinancialGateOnly(deal);
+                if (gate.passes) {
+                    this.logger.log('[Auto-match] Deal ' + deal.id + ' passed gate — running AI matching');
+                    await this.matchingService.runMatchingForDeal(deal.id);
+                }
+                else {
+                    this.logger.log('[Auto-match] Deal ' + deal.id + ' failed gate — skipping AI');
+                }
+            }
+            catch (err) {
+                this.logger.warn('[Auto-match] Failed: ' + err.message);
+            }
+        });
+        return deal;
     }
     async findOne(orgId, id) {
         return this.dealsService.findOne(orgId || await this.dealsService.getDefaultOrgId(), id);
@@ -140,32 +160,13 @@ let DealsController = class DealsController {
         return { message, missingInfo: metrics.missingInfo };
     }
     async matchBuyers(id) {
-        const deal = await this.prisma.deal.findUnique({ where: { id } });
-        if (!deal)
-            return { error: 'Not found' };
-        const buyers = await this.prisma.buyer.findMany({ where: { isActive: true }, include: { buyBox: true } });
-        let matched = 0, tier1 = 0;
-        for (const buyer of buyers) {
-            if (!buyer.buyBox)
-                continue;
-            const bb = buyer.buyBox;
-            const stateMatch = !bb.states?.length || bb.states.includes(deal.state);
-            const price = deal.askingPrice || deal.buyerFacingPrice || 0;
-            const priceMatch = (!bb.minPrice || price >= bb.minPrice) && (!bb.maxPrice || price <= bb.maxPrice);
-            if (stateMatch && priceMatch) {
-                matched++;
-                if (buyer.tier === 'TIER_1')
-                    tier1++;
-            }
-        }
-        const buyerDemandScore = Math.min(100, matched * 5);
-        return this.prisma.deal.update({
-            where: { id },
-            data: {
-                matchedBuyerCount: matched, tier1MatchCount: tier1, buyerDemandScore,
-                status: (matched > 0 ? 'MATCHED' : deal.status),
-            },
-        });
+        return this.matchingService.runMatchingForDeal(id);
+    }
+    async triggerMatching(id) {
+        return this.matchingService.runMatchingForDeal(id);
+    }
+    async getMatches(id, limit = 50) {
+        return this.matchingService.getMatchesForDeal(id, +limit);
     }
     async arvAnalysis(id, body) {
         return this.arvEngine.runArvEngine(id, body?.manualApprovals);
@@ -275,12 +276,29 @@ __decorate([
 ], DealsController.prototype, "generateFollowUp", null);
 __decorate([
     (0, common_1.Post)(':id/match-buyers'),
-    (0, swagger_1.ApiOperation)({ summary: 'Run buyer matching' }),
+    (0, swagger_1.ApiOperation)({ summary: 'Run AI buyer matching (alias)' }),
     __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], DealsController.prototype, "matchBuyers", null);
+__decorate([
+    (0, common_1.Post)(':id/trigger-matching'),
+    (0, swagger_1.ApiOperation)({ summary: 'Run AI buyer matching' }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], DealsController.prototype, "triggerMatching", null);
+__decorate([
+    (0, common_1.Get)(':id/matches'),
+    (0, swagger_1.ApiOperation)({ summary: 'Get AI match results for a deal' }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
+    __param(1, (0, common_1.Query)('limit')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], DealsController.prototype, "getMatches", null);
 __decorate([
     (0, common_1.Post)(':id/arv-analysis'),
     __param(0, (0, common_1.Param)('id')),
@@ -308,7 +326,7 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], DealsController.prototype, "fetchZestimate", null);
-exports.DealsController = DealsController = __decorate([
+exports.DealsController = DealsController = DealsController_1 = __decorate([
     (0, swagger_1.ApiTags)('deals'),
     (0, swagger_1.ApiBearerAuth)(),
     (0, common_1.Controller)('deals'),
@@ -317,6 +335,7 @@ exports.DealsController = DealsController = __decorate([
         deals_ai_parser_service_1.DealsAiParserService,
         deals_ai_analyze_service_1.DealsAiAnalyzeService,
         prisma_service_1.PrismaService,
-        arv_engine_service_1.ArvEngineService])
+        arv_engine_service_1.ArvEngineService,
+        deals_matching_service_1.DealsMatchingService])
 ], DealsController);
 //# sourceMappingURL=deals.controller.js.map

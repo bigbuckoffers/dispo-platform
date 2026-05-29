@@ -35,6 +35,11 @@ export class IntakeController {
     return this.intakeService.approveSubmission(id, body);
   }
 
+  @Post('token/:token/track')
+  trackEvent(@Param('token') token: string, @Body() body: { event: string; metadata?: any }) {
+    return this.intakeService.trackEvent(token, body.event, body.metadata || {});
+  }
+
   @Post('submissions/:id/reject')
   rejectSubmission(@Param('id') id: string) {
     return this.intakeService.rejectSubmission(id);

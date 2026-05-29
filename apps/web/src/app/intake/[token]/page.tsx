@@ -3,6 +3,13 @@ import { NumInput } from '@/components/buyer/NumInput';
 import { useState, useEffect, useCallback } from 'react';
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
 
+const track = (token: string, event: string, metadata?: any) => {
+  fetch(`${API}/intake/token/${token}/track`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ event, metadata: metadata || {} }),
+  }).catch(() => {});
+};
+
 const STRATEGIES = ['Fix & Flip', 'Buy & Hold', 'Subject-To', 'Seller Finance', 'BRRRR', 'Wholesale', 'Multifamily', 'Section 8', 'Airbnb/STR', 'Land'];
 const FUNDING = ['Cash', 'Hard Money', 'DSCR Loan', 'Conventional', 'Private Money', 'Subject-To', 'Seller Finance'];
 const REHAB_OPTS = [
@@ -64,6 +71,7 @@ export default function IntakePage({ params }: { params: { token: string } }) {
       .then(d => {
         if (d.statusCode === 404) { setError('This link is invalid or expired.'); return; }
         setBuyer(d);
+        track(params.token, 'INTAKE_OPENED', { ts: Date.now() });
         setForm((f: any) => ({
           ...f,
           firstName: d.firstName === 'Unknown' ? '' : d.firstName || '',
@@ -99,7 +107,11 @@ export default function IntakePage({ params }: { params: { token: string } }) {
 
   const nextStep = async () => {
     await autoSave();
-    setStep(s => s + 1);
+    setStep(s => {
+      const next = s + 1;
+      track(params.token, `INTAKE_STEP_${next}`, { from: s, ts: Date.now() });
+      return next;
+    });
     window.scrollTo(0, 0);
   };
 
@@ -114,7 +126,7 @@ export default function IntakePage({ params }: { params: { token: string } }) {
         body: JSON.stringify({ ...form, _partial: false }),
       });
       const d = await r.json();
-      if (d.success) setSubmitted(true);
+      if (d.success) { setSubmitted(true); track(params.token, 'INTAKE_COMPLETED', { ts: Date.now() }); }
       else alert('Submission failed. Please try again.');
     } catch { alert('Network error. Please try again.'); }
     finally { setSubmitting(false); }
