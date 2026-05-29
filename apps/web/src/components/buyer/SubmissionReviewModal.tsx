@@ -146,6 +146,8 @@ export function SubmissionReviewModal({ sub, onClose, onSave }: Props) {
     if (form.inspectionDays)   buyBoxFields.inspectionDays = parseInt(form.inspectionDays);
     if (rehabTolerance)        buyBoxFields.rehabTolerance = rehabTolerance;
     if (form.hardNoCriteria)   buyBoxFields.hardNoCriteria = form.hardNoCriteria;
+    if (form.maxRehab)         buyBoxFields.maxRehab = parseFloat(form.maxRehab);
+    if (form.minCashFlow)      buyBoxFields.minCashFlow = parseFloat(form.minCashFlow);
     onSave({ buyerFields, buyBoxFields });
   }, [anyZipOk, anyPrice, hoaOk, occupancy, rehabTolerance, buyingStatus, propertyTypes, onSave]);
 
