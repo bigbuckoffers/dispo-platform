@@ -227,6 +227,7 @@ model BuyBox {
   maxArv             Float?
   minRehab           Float?
   maxRehab           Float?
+  minCashFlow        Float?
   minBeds            Int?
   maxBeds            Int?
   minBaths           Float?
