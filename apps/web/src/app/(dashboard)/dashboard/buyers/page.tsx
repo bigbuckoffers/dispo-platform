@@ -366,7 +366,7 @@ export default function BuyersPage() {
           </div>
         </div>
       )}
-      {tab==='submissions'&&(
+      {tab==='submissions'&&!selectedSub&&(
         <div>
           <div className="bg-purple-500/10 border border-purple-500/20 rounded-xl p-4 mb-4 flex items-center justify-between">
             <div>
