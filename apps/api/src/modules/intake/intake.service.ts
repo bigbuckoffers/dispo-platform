@@ -103,10 +103,23 @@ export class IntakeService {
     const { buyBoxFields, buyerFields } = approvedFields;
 
     if (buyerFields && Object.keys(buyerFields).length > 0) {
-      await this.prisma.buyer.update({
-        where: { id: sub.buyerId },
-        data: buyerFields,
-      });
+      const tempNoteFields = ['buyingStatus','monthlyCapacity','occupancy','hoaOk','minArv','minProfit',
+        'maxRehab','minCashFlow','hardNoCriteria','maxEmd','inspectionDays','preferredContact',
+        'dealSendFreq','excludedAreas','privateNotes','propertyTypes','minYearBuilt','maxYearBuilt'];
+      const directFields: any = {};
+      const statusFields: any = {};
+      for (const [k, v] of Object.entries(buyerFields)) {
+        if (tempNoteFields.includes(k)) { statusFields[k] = v; } else { directFields[k] = v; }
+      }
+      if (Object.keys(directFields).length > 0) {
+        await this.prisma.buyer.update({ where: { id: sub.buyerId }, data: directFields });
+      }
+      if (Object.keys(statusFields).length > 0) {
+        let existing: any = {};
+        try { if (sub.buyer.temperatureNotes) existing = JSON.parse(sub.buyer.temperatureNotes as string); } catch {}
+        const merged = { ...existing, ...statusFields };
+        await this.prisma.buyer.update({ where: { id: sub.buyerId }, data: { temperatureNotes: JSON.stringify(merged) } });
+      }
     }
     // Save freeform notes to buyerIntelNotes
     const submittedData = sub.submittedData as any;
