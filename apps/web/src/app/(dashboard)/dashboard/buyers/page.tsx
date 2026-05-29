@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { CreateBuyerModal } from '@/components/buyer/CreateBuyerModal';
+import { SubmissionReviewModal } from '@/components/buyer/SubmissionReviewModal';
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
 
 function profileScore(b: any): number {
@@ -396,7 +397,7 @@ export default function BuyersPage() {
                     <div className="flex items-center gap-2">
                       <button onClick={()=>window.location.href=`/dashboard/buyers/${b?.id}`} className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs rounded-lg transition">Profile</button>
                       <button onClick={()=>rejectSubmission(sub.id)} className="px-3 py-1.5 bg-red-900/30 hover:bg-red-900/60 text-red-400 text-xs rounded-lg transition">Reject</button>
-                      <button onClick={()=>{ setSelectedSub(isSelected ? null : sub); setFieldDecisions({}); }} className={`px-3 py-1.5 text-xs rounded-lg transition font-medium ${isSelected ? 'bg-gray-700 text-white' : 'bg-purple-700 hover:bg-purple-600 text-white'}`}>
+                      <button onClick={()=>{ setSelectedSub(sub); setFieldDecisions({}); }} className={`px-3 py-1.5 text-xs rounded-lg transition font-medium ${isSelected ? 'bg-gray-700 text-white' : 'bg-purple-700 hover:bg-purple-600 text-white'}`}>
                         {isSelected ? '▲ Close' : '▼ Review'}
                       </button>
                     </div>
@@ -513,6 +514,21 @@ export default function BuyersPage() {
         </div>
       )}
       {showCreate && <CreateBuyerModal onClose={() => setShowCreate(false)} onCreated={() => { setShowCreate(false); load(); loadAll(); }} />}
+      {selectedSub && (
+        <SubmissionReviewModal
+          sub={selectedSub}
+          onClose={()=>setSelectedSub(null)}
+          onSave={async (fields:any)=>{
+            const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
+            await fetch(`${API}/intake/submissions/${selectedSub.id}/approve`, {
+              method: 'POST', headers: {'Content-Type':'application/json'},
+              body: JSON.stringify(fields),
+            });
+            setSelectedSub(null);
+            loadSubmissions();
+          }}
+        />
+      )}
     </div>
   );
 }
