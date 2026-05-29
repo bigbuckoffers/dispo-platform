@@ -33,7 +33,7 @@ function FastSelect({ label, fieldKey, formRef, options }: any) {
   const [val, setVal] = useState(formRef.current[fieldKey] || '');
   return (
     <div className="p-2">
-      {label && <label className="text-gray-500 text-xs block mb-1">{label}</label>}
+      {label !== undefined && <label className="text-gray-500 text-xs block mb-1">{label}</label>}
       <select value={val} onChange={e => { formRef.current[fieldKey] = e.target.value; setVal(e.target.value); }} className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500">
         {options.map((o: any) => <option key={o.v} value={o.v}>{o.l}</option>)}
       </select>
@@ -120,7 +120,7 @@ export function SubmissionReviewModal({ sub, onClose, onSave }: Props) {
     if (form.fundingTypes)     buyerFields.notes = form.fundingTypes;
     if (buyingStatus)          buyerFields.buyingStatus = buyingStatus;
     if (form.monthlyCapacity)  buyerFields.monthlyCapacity = form.monthlyCapacity;
-    if (form.closeSpeed)       buyerFields.avgCloseSpeedDays = parseInt(form.closeSpeed);
+    if (form.closeSpeed)       buyerFields.avgCloseSpeedDays = isNaN(parseInt(form.closeSpeed)) ? form.closeSpeed : parseInt(form.closeSpeed);
     if (form.preferredContact) buyerFields.preferredContact = form.preferredContact;
     if (form.dealSendFreq)     buyerFields.dealSendFreq = form.dealSendFreq;
     if (form.proofOfFunds)     buyerFields.proofOfFunds = form.proofOfFunds;
@@ -158,7 +158,6 @@ export function SubmissionReviewModal({ sub, onClose, onSave }: Props) {
           <div className="flex gap-2"><button onClick={onClose} className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs rounded-lg transition">Cancel</button><button onClick={handleSave} className="px-4 py-2 bg-green-600 hover:bg-green-500 text-white text-xs rounded-lg font-medium transition">✓ Save to Buy Box</button></div>
         </div>
         <div className="px-6 py-4 space-y-4">
-          {/* BUYING STATUS */}
           <div><S t="Buying Status" />
             <div className="grid grid-cols-2 gap-1">
               <div className="p-2 col-span-2">
@@ -172,7 +171,6 @@ export function SubmissionReviewModal({ sub, onClose, onSave }: Props) {
               <FI label="Monthly Capacity" fieldKey="monthlyCapacity" />
             </div>
           </div>
-          {/* MARKETS */}
           <div><S t="Markets" />
             <div className="grid grid-cols-2 gap-1">
               <FI label="Primary Market" fieldKey="marketPrimary" />
@@ -188,7 +186,6 @@ export function SubmissionReviewModal({ sub, onClose, onSave }: Props) {
               <div className="col-span-2"><FI label="Excluded Areas" fieldKey="excludedAreas" /></div>
             </div>
           </div>
-          {/* PROPERTY */}
           <div><S t="Property" />
             <div className="px-2 mb-3">
               <label className="text-gray-500 text-xs block mb-2">Property Types {d.propertyTypes?.length>0 && <span className="text-blue-400">· Buyer: {(d.propertyTypes||[]).join(', ')}</span>}</label>
@@ -209,7 +206,6 @@ export function SubmissionReviewModal({ sub, onClose, onSave }: Props) {
               <div className="flex gap-1.5 flex-wrap">{['Vacant only','Tenant-occupied OK','No preference'].map(v=>(<button key={v} onClick={()=>{setOccupancy(v);formRef.current.occupancy=v;}} className={'text-xs px-3 py-1.5 rounded-lg border transition '+(occupancy===v?'bg-blue-600 text-white border-blue-500':'bg-gray-800 text-gray-400 border-gray-700')}>{v}</button>))}</div>
             </div>
           </div>
-          {/* PRICE & FINANCIALS */}
           <div><S t="Price & Financials" />
             <div className="grid grid-cols-2 gap-1">
               <FI label="Min Price" fieldKey="minPrice" type="number" />
@@ -228,7 +224,6 @@ export function SubmissionReviewModal({ sub, onClose, onSave }: Props) {
               <FI label="Inspection Days" fieldKey="inspectionDays" type="number" />
             </div>
           </div>
-          {/* STRATEGY & REHAB */}
           <div><S t="Strategy & Rehab" />
             <div className="grid grid-cols-2 gap-1">
               <FI label="Strategies" fieldKey="strategies" />
@@ -239,39 +234,24 @@ export function SubmissionReviewModal({ sub, onClose, onSave }: Props) {
               <div className="col-span-2"><FI label="Hard No Criteria" fieldKey="hardNoCriteria" /></div>
             </div>
           </div>
-          {/* FUNDING & CLOSING */}
           <div><S t="Funding & Closing" />
             <div className="grid grid-cols-2 gap-1">
               <FI label="Funding Types" fieldKey="fundingTypes" />
               <FI label="Close Speed" fieldKey="closeSpeed" />
             </div>
           </div>
-          {/* PREFERENCES */}
           <div><S t="Preferences" />
             <div className="grid grid-cols-2 gap-1">
-              <div className="p-2">
-                <label className="text-gray-500 text-xs block mb-1">Preferred Contact {d.preferredContact&&<span className="text-blue-400">· {d.preferredContact}</span>}</label>
-                <select defaultValue={formRef.current.preferredContact} onChange={e=>{formRef.current.preferredContact=e.target.value;}} className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500">
-                  {[{v:'',l:'Unknown'},{v:'Text only',l:'Text only'},{v:'Text first, then call',l:'Text first, then call'},{v:'Call me',l:'Call me'},{v:'Email',l:'Email'}].map(o=><option key={o.v} value={o.v}>{o.l}</option>)}
-                </select>
-              </div>
-              <div className="p-2">
-                <label className="text-gray-500 text-xs block mb-1">Deal Frequency {d.dealSendFreq&&<span className="text-blue-400">· {d.dealSendFreq}</span>}</label>
-                <select defaultValue={formRef.current.dealSendFreq} onChange={e=>{formRef.current.dealSendFreq=e.target.value;}} className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500">
-                  {[{v:'',l:'Unknown'},{v:'Every deal',l:'Every deal'},{v:'Only strong matches',l:'Only strong matches'},{v:'Weekly digest',l:'Weekly digest'},{v:'Only top deals',l:'Only top deals'}].map(o=><option key={o.v} value={o.v}>{o.l}</option>)}
-                </select>
-              </div>
+              <FastSelect label={<>Preferred Contact {d.preferredContact&&<span className="text-blue-400 font-normal">· {d.preferredContact}</span>}</>} fieldKey="preferredContact" formRef={formRef} options={[{v:'',l:'Unknown'},{v:'Text only',l:'Text only'},{v:'Text first, then call',l:'Text first, then call'},{v:'Call me',l:'Call me'},{v:'Email',l:'Email'}]} />
+              <FastSelect label={<>Deal Frequency {d.dealSendFreq&&<span className="text-blue-400 font-normal">· {d.dealSendFreq}</span>}</>} fieldKey="dealSendFreq" formRef={formRef} options={[{v:'',l:'Unknown'},{v:'Every deal',l:'Every deal'},{v:'Only strong matches',l:'Only strong matches'},{v:'Weekly digest',l:'Weekly digest'},{v:'Only top deals',l:'Only top deals'}]} />
             </div>
           </div>
-          {/* PROOF OF FUNDS */}
           <PoFSection formRef={formRef} submitted={d.proofOfFunds} />
-          {/* PRIVATE NOTES */}
           <div><S t="Private Notes" />
             <div className="px-2">
               <textarea defaultValue={formRef.current.privateNotes||''} onBlur={e=>{formRef.current.privateNotes=e.target.value;}} placeholder="Private notes about this buyer (not visible to buyer)..." rows={3} className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-500 resize-none placeholder-gray-600" />
             </div>
           </div>
-          {/* BUYER FREEFORM NOTES */}
           {d.freeformNotes&&(<div><S t="Buyer's Notes (from intake form)" /><div className="px-2"><div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3 text-gray-300 text-xs leading-relaxed">{d.freeformNotes}</div></div></div>)}
         </div>
         <div className="flex justify-end gap-2 px-6 py-4 border-t border-gray-800">
