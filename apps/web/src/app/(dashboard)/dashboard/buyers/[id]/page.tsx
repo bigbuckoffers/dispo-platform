@@ -128,13 +128,18 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
     const link = buyer?.intakeLink || `${window.location.origin}/intake/${token}`;
     const message = `Quick reminder to complete your buy box so we can send you better-matched deals: ${link}`;
 
+    const confirmed = window.confirm(
+      `Send this reminder SMS to ${buyer?.firstName || 'this buyer'}?\n\n${message}`
+    );
+    if (!confirmed) return;
+
     try {
       await api.post(`/messages/conversations/${id}/send`, {
         message,
         intakeTrackingType: 'reminder',
       });
 
-      toast.success('Intake reminder sent');
+      toast.success('Reminder SMS sent');
       qc.invalidateQueries({ queryKey: ['buyer', id] });
       qc.invalidateQueries({ queryKey: ['buyer-intake-events', id] });
       refetchIntakeEvents();
