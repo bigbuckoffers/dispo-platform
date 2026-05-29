@@ -124,6 +124,38 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
   const [showReminderConfirm, setShowReminderConfirm] = useState(false);
   const [sendingReminder, setSendingReminder] = useState(false);
 
+  const [showIntakeSendConfirm, setShowIntakeSendConfirm] = useState(false);
+  const [sendingIntakeForm, setSendingIntakeForm] = useState(false);
+
+  const getIntakeFormMessage = () => {
+    const token = buyer?.intakeToken;
+    const link = buyer?.intakeLink || `${window.location.origin}/intake/${token}`;
+    return `Hey, please complete your buy box so we can send you better-matched deals: ${link}`;
+  };
+
+  const sendIntakeForm = async () => {
+    const token = buyer?.intakeToken;
+    if (!token) { toast.error('Create the intake link first.'); return; }
+
+    setSendingIntakeForm(true);
+    try {
+      await api.post(`/messages/conversations/${id}/send`, {
+        message: getIntakeFormMessage(),
+        intakeTrackingType: 'link_sent',
+      });
+
+      toast.success('Intake form sent');
+      setShowIntakeSendConfirm(false);
+      qc.invalidateQueries({ queryKey: ['buyer', id] });
+      qc.invalidateQueries({ queryKey: ['buyer-intake-events', id] });
+      refetchIntakeEvents();
+    } catch (e) {
+      toast.error('Could not send intake form');
+    } finally {
+      setSendingIntakeForm(false);
+    }
+  };
+
   const getNextReminderNumber = () => reminderCount + 1;
 
   const getIntakeReminderMessage = () => {
@@ -272,6 +304,7 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
   const latestIntakeEvent = intakeEventsList[0];
   const reminderCount = intakeEventsList.filter((e:any)=>e.eventType==='INTAKE_REMINDER_SENT').length;
   const intakeCreatedAt = getIntakeEventDate('INTAKE_LINK_CREATED');
+  const canSendIntakeForm = !!buyer.intakeToken && !buyer.intakeSubmittedAt && !['LINK_SENT','OPENED','STARTED','SUBMITTED'].includes(buyer.intakeStatus);
   const canSendIntakeReminder = !!buyer.intakeToken && !buyer.intakeSubmittedAt && ['LINK_SENT','OPENED','STARTED'].includes(buyer.intakeStatus);
   const intakeDates = [['Sent',buyer.intakeSentAt||getIntakeEventDate('INTAKE_LINK_SENT')],['Opened',buyer.intakeOpenedAt||getIntakeEventDate('INTAKE_LINK_OPENED')],['Started',buyer.intakeStartedAt||getIntakeEventDate('INTAKE_FORM_STARTED')],['Submitted',buyer.intakeSubmittedAt||getIntakeEventDate('INTAKE_FORM_SUBMITTED')]];
   const matColor = maturity==='Highly Verified'?'text-green-400 bg-green-500/10 border-green-500/30':maturity==='Mature'?'text-blue-400 bg-blue-500/10 border-blue-500/30':maturity==='Growing'?'text-yellow-400 bg-yellow-500/10 border-yellow-500/30':'text-gray-400 bg-gray-500/10 border-gray-500/30';
@@ -281,6 +314,61 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
   const cpColor=closeProbability>=75?'text-green-400':closeProbability>=50?'text-yellow-400':'text-red-400';
   const cpBg=closeProbability>=75?'border-green-500/30 bg-green-500/5':closeProbability>=50?'border-yellow-500/30 bg-yellow-500/5':'border-red-500/30 bg-red-500/5';
   return (<div className="p-6 max-w-5xl mx-auto space-y-4">
+      {showIntakeSendConfirm&&(
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm px-4">
+          <div className="w-full max-w-xl overflow-hidden rounded-2xl border border-green-700/40 bg-gray-950 shadow-2xl">
+            <div className="border-b border-gray-800 bg-gradient-to-r from-green-950/80 to-blue-950/50 px-6 py-5">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-green-500/30 bg-green-600/20 text-green-300">
+                  📩
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-white">Send intake form SMS?</h3>
+                  <p className="text-sm text-gray-400">This will text the buyer their buy box intake link and log the form as sent.</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4 px-6 py-5">
+              <div>
+                <div className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">Buyer</div>
+                <div className="rounded-xl border border-gray-800 bg-gray-900/60 px-4 py-3 text-sm text-gray-200">
+                  {(buyer?.firstName || buyer?.lastName) ? `${buyer?.firstName || ''} ${buyer?.lastName || ''}`.trim() : 'This buyer'}
+                  {buyer?.phone ? <span className="text-gray-500"> • {buyer.phone}</span> : null}
+                </div>
+              </div>
+
+              <div>
+                <div className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">Message Preview</div>
+                <div className="rounded-xl border border-gray-800 bg-gray-900/70 p-4 text-sm leading-relaxed text-gray-200">
+                  {buyer?.intakeToken ? getIntakeFormMessage() : 'Create the intake link first.'}
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-yellow-700/30 bg-yellow-900/10 p-3 text-xs text-yellow-200">
+                This is a real SMS. Only send if you want to request this buyer’s buy box now.
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 border-t border-gray-800 px-6 py-4">
+              <button
+                onClick={()=>setShowIntakeSendConfirm(false)}
+                disabled={sendingIntakeForm}
+                className="rounded-lg bg-gray-800 px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={sendIntakeForm}
+                disabled={sendingIntakeForm || !buyer?.intakeToken}
+                className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-500 disabled:opacity-50"
+              >
+                {sendingIntakeForm ? 'Sending...' : 'Send Intake Form'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {showReminderConfirm&&(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm px-4">
           <div className="w-full max-w-xl overflow-hidden rounded-2xl border border-blue-700/40 bg-gray-950 shadow-2xl">
@@ -361,7 +449,7 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
       </div>
     </div>
     <div className="bg-gray-900 rounded-xl border border-gray-800 p-5 space-y-4">
-      <div className="flex items-start justify-between gap-3"><div><h2 className="text-white font-semibold text-sm flex items-center gap-2"><FileText size={14} className="text-purple-400" />Buy Box Intake Tracking</h2><p className="text-xs text-gray-500 mt-1">Current status: <span className="text-gray-300">{intakeStatusLabel(buyer.intakeStatus)}</span></p></div><div className="flex items-center gap-2 flex-wrap justify-end"><button onClick={sendIntakeLink} className="px-3 py-1.5 bg-purple-900/40 hover:bg-purple-800/60 border border-purple-700/40 text-purple-300 text-xs rounded-lg transition">Copy Intake Link</button>{canSendIntakeReminder&&<button onClick={()=>setShowReminderConfirm(true)} className="px-3 py-1.5 bg-blue-900/40 hover:bg-blue-800/60 border border-blue-700/40 text-blue-300 text-xs rounded-lg transition">Send Reminder #{getNextReminderNumber()}</button>}<button onClick={()=>refetchIntakeEvents()} className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs rounded-lg transition"><RefreshCw size={11} className={intakeEventsLoading?'animate-spin':''} />Refresh</button></div></div>
+      <div className="flex items-start justify-between gap-3"><div><h2 className="text-white font-semibold text-sm flex items-center gap-2"><FileText size={14} className="text-purple-400" />Buy Box Intake Tracking</h2><p className="text-xs text-gray-500 mt-1">Current status: <span className="text-gray-300">{intakeStatusLabel(buyer.intakeStatus)}</span></p></div><div className="flex items-center gap-2 flex-wrap justify-end"><button onClick={sendIntakeLink} className="px-3 py-1.5 bg-purple-900/40 hover:bg-purple-800/60 border border-purple-700/40 text-purple-300 text-xs rounded-lg transition">Copy Intake Link</button>{canSendIntakeForm&&<button onClick={()=>setShowIntakeSendConfirm(true)} className="px-3 py-1.5 bg-green-900/40 hover:bg-green-800/60 border border-green-700/40 text-green-300 text-xs rounded-lg transition">Send Intake Form</button>}{canSendIntakeReminder&&<button onClick={()=>setShowReminderConfirm(true)} className="px-3 py-1.5 bg-blue-900/40 hover:bg-blue-800/60 border border-blue-700/40 text-blue-300 text-xs rounded-lg transition">Send Reminder #{getNextReminderNumber()}</button>}<button onClick={()=>refetchIntakeEvents()} className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs rounded-lg transition"><RefreshCw size={11} className={intakeEventsLoading?'animate-spin':''} />Refresh</button></div></div>
       <div className="grid grid-cols-4 gap-2">{INTAKE_STEPS.map(([eventType,label])=>{ const done=!!getIntakeEventDate(eventType)||(eventType==='INTAKE_LINK_SENT'&&!!buyer.intakeSentAt)||(eventType==='INTAKE_LINK_OPENED'&&!!buyer.intakeOpenedAt)||(eventType==='INTAKE_FORM_STARTED'&&!!buyer.intakeStartedAt)||(eventType==='INTAKE_FORM_SUBMITTED'&&!!buyer.intakeSubmittedAt); return <div key={eventType} className={`rounded-lg border px-2 py-2 text-center ${done?'bg-purple-500/10 border-purple-500/30 text-purple-300':'bg-gray-950/40 border-gray-800 text-gray-600'}`}><div className="text-[11px] font-medium">{label}</div></div>; })}</div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2">{intakeDates.map(([label,value])=><div key={label as string} className="bg-gray-950/40 rounded-lg border border-gray-800 px-3 py-2"><p className="text-[11px] text-gray-500">{label}</p><p className="text-xs text-gray-300 mt-0.5">{formatIntakeDate(value as any)}</p></div>)}</div>
       {intakeCreatedAt&&<p className="text-xs text-gray-500">Intake link ready since <span className="text-gray-300">{formatIntakeDate(intakeCreatedAt as any)}</span></p>}
