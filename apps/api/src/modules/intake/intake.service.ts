@@ -54,11 +54,13 @@ export class IntakeService {
       orderBy: { createdAt: 'desc' },
     });
     if (existing) {
+      // Update existing in-progress record
       await this.prisma.buyerIntakeSubmission.update({
         where: { id: existing.id },
         data: { submittedData: data, status },
       });
     } else {
+      // Always create new record if completing (no in-progress found)
       await this.prisma.buyerIntakeSubmission.create({
         data: { buyerId: buyer.id, status, submittedData: data },
       });
