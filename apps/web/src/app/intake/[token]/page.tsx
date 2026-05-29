@@ -166,20 +166,22 @@ export default function IntakePage({ params }: { params: { token: string } }) {
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <label className="text-gray-500 text-xs block mb-1">First Name</label>
-                <input value={form.firstName} onChange={e => set('firstName', e.target.value)} placeholder="John" className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-3 py-2.5 text-base focus:outline-none focus:border-blue-500" />
+                <input value={form.firstName} onChange={e => set('firstName', e.target.value)} placeholder="John" className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-blue-500" />
               </div>
               <div>
                 <label className="text-gray-500 text-xs block mb-1">Last Name</label>
-                <input value={form.lastName} onChange={e => set('lastName', e.target.value)} placeholder="Smith" className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-3 py-2.5 text-base focus:outline-none focus:border-blue-500" />
+                <input value={form.lastName} onChange={e => set('lastName', e.target.value)} placeholder="Smith" className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-blue-500" />
               </div>
             </div>
-            <div>
-              <label className="text-gray-500 text-xs block mb-1">Phone</label>
-              <input value={form.phone} onChange={e => set('phone', e.target.value)} placeholder="+1 (555) 000-0000" className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-3 py-2.5 text-base focus:outline-none focus:border-blue-500" />
-            </div>
-            <div>
-              <label className="text-gray-500 text-xs block mb-1">Email (optional)</label>
-              <input value={form.email} onChange={e => set('email', e.target.value)} placeholder="john@email.com" type="email" className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-3 py-2.5 text-base focus:outline-none focus:border-blue-500" />
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-gray-500 text-xs block mb-1">Phone</label>
+                <input value={form.phone} onChange={e => set('phone', e.target.value)} placeholder="+1 (555) 000-0000" className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-blue-500" />
+              </div>
+              <div>
+                <label className="text-gray-500 text-xs block mb-1">Email (optional)</label>
+                <input value={form.email} onChange={e => set('email', e.target.value)} placeholder="john@email.com" type="email" className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-blue-500" />
+              </div>
             </div>
             <div>
               <label className="text-gray-500 text-xs block mb-2">Are you actively buying right now?</label>
@@ -211,19 +213,19 @@ export default function IntakePage({ params }: { params: { token: string } }) {
             </div>
             <div>
               <label className="text-gray-500 text-xs block mb-1.5">Primary Market <span className="text-red-400">*</span></label>
-              <input value={form.marketPrimary} onChange={e => set('marketPrimary', e.target.value)} placeholder="e.g. Birmingham, AL" className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 text-base focus:outline-none focus:border-blue-500" />
+              <input value={form.marketPrimary} onChange={e => set('marketPrimary', e.target.value)} placeholder="e.g. Birmingham, AL" className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500" />
             </div>
             <div>
               <label className="text-gray-500 text-xs block mb-1.5">Other Markets (optional)</label>
-              <input value={form.marketSecondary} onChange={e => set('marketSecondary', e.target.value)} placeholder="e.g. Atlanta, Tampa, Dallas" className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 text-base focus:outline-none focus:border-blue-500" />
+              <input value={form.marketSecondary} onChange={e => set('marketSecondary', e.target.value)} placeholder="e.g. Atlanta, Tampa, Dallas" className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500" />
             </div>
             <div>
               <label className="text-gray-500 text-xs block mb-1.5">States</label>
-              <input value={form.states} onChange={e => set('states', e.target.value)} placeholder="e.g. AL, FL, TX" className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 text-base focus:outline-none focus:border-blue-500" />
+              <input value={form.states} onChange={e => set('states', e.target.value)} placeholder="e.g. AL, FL, TX" className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500" />
             </div>
             <div>
               <label className="text-gray-500 text-xs block mb-1.5">Preferred Zip Codes (optional)</label>
-              <input value={form.zipCodes} onChange={e => set('zipCodes', e.target.value)} disabled={form.anyZipOk} placeholder="e.g. 35206, 35208" className={`w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 text-base focus:outline-none focus:border-blue-500 ${form.anyZipOk?'opacity-40':''}`} />
+              <input value={form.zipCodes} onChange={e => set('zipCodes', e.target.value)} disabled={form.anyZipOk} placeholder="e.g. 35206, 35208" className={`w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 ${form.anyZipOk?'opacity-40':''}`} />
               <label className="flex items-center gap-2 mt-2 cursor-pointer">
                 <input type="checkbox" checked={form.anyZipOk} onChange={e => set('anyZipOk', e.target.checked)} className="accent-blue-500 w-4 h-4" />
                 <span className="text-gray-400 text-sm">Any zip code is fine — entire market works for me</span>
@@ -231,7 +233,7 @@ export default function IntakePage({ params }: { params: { token: string } }) {
             </div>
             <div>
               <label className="text-gray-500 text-xs block mb-1.5">Areas to avoid (optional)</label>
-              <input value={form.excludedAreas} onChange={e => set('excludedAreas', e.target.value)} placeholder="e.g. No rural, no flood zones" className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 text-base focus:outline-none focus:border-blue-500" />
+              <input value={form.excludedAreas} onChange={e => set('excludedAreas', e.target.value)} placeholder="e.g. No rural, no flood zones" className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500" />
             </div>
           </div>
         )}
@@ -256,11 +258,11 @@ export default function IntakePage({ params }: { params: { token: string } }) {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-gray-500 text-xs block mb-1.5">Min Price</label>
-                  <input type="number" value={form.minPrice} onChange={e=>set('minPrice',e.target.value)} disabled={form.anyPrice} placeholder="e.g. 50000" className={`w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 text-base focus:outline-none focus:border-blue-500 ${form.anyPrice?'opacity-40':''}`} />
+                  <input type="number" value={form.minPrice} onChange={e=>set('minPrice',e.target.value)} disabled={form.anyPrice} placeholder="e.g. 50000" className={`w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 ${form.anyPrice?'opacity-40':''}`} />
                 </div>
                 <div>
                   <label className="text-gray-500 text-xs block mb-1.5">Max Price</label>
-                  <input type="number" value={form.maxPrice} onChange={e=>set('maxPrice',e.target.value)} disabled={form.anyPrice} placeholder="e.g. 300000" className={`w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 text-base focus:outline-none focus:border-blue-500 ${form.anyPrice?'opacity-40':''}`} />
+                  <input type="number" value={form.maxPrice} onChange={e=>set('maxPrice',e.target.value)} disabled={form.anyPrice} placeholder="e.g. 300000" className={`w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 ${form.anyPrice?'opacity-40':''}`} />
                 </div>
               </div>
               <label className="flex items-center gap-2 mt-2 cursor-pointer">
@@ -296,7 +298,7 @@ export default function IntakePage({ params }: { params: { token: string } }) {
             </div>
             <div>
               <label className="text-gray-500 text-xs block mb-1.5">Min Year Built (optional)</label>
-              <input type="number" value={form.minYearBuilt} onChange={e=>set('minYearBuilt',e.target.value)} placeholder="e.g. 1970" className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 text-base focus:outline-none focus:border-blue-500" />
+              <input type="number" value={form.minYearBuilt} onChange={e=>set('minYearBuilt',e.target.value)} placeholder="e.g. 1970" className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500" />
             </div>
           </div>
         )}
@@ -329,16 +331,16 @@ export default function IntakePage({ params }: { params: { token: string } }) {
             </div>
             <div>
               <label className="text-gray-500 text-xs block mb-1.5">Automatic deal-killers (optional)</label>
-              <textarea value={form.hardNoCriteria} onChange={e=>set('hardNoCriteria',e.target.value)} placeholder="e.g. No foundation issues, no flood zones, no rural, no mold..." className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 text-base focus:outline-none focus:border-blue-500 resize-none h-20" />
+              <textarea value={form.hardNoCriteria} onChange={e=>set('hardNoCriteria',e.target.value)} placeholder="e.g. No foundation issues, no flood zones, no rural, no mold..." className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 resize-none h-20" />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-gray-500 text-xs block mb-1.5">Min ARV needed (optional)</label>
-                <input type="number" value={form.minArv} onChange={e=>set('minArv',e.target.value)} placeholder="e.g. 100000" className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 text-base focus:outline-none focus:border-blue-500" />
+                <input type="number" value={form.minArv} onChange={e=>set('minArv',e.target.value)} placeholder="e.g. 100000" className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500" />
               </div>
               <div>
                 <label className="text-gray-500 text-xs block mb-1.5">Min profit needed (optional)</label>
-                <input type="number" value={form.minProfit} onChange={e=>set('minProfit',e.target.value)} placeholder="e.g. 25000" className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 text-base focus:outline-none focus:border-blue-500" />
+                <input type="number" value={form.minProfit} onChange={e=>set('minProfit',e.target.value)} placeholder="e.g. 25000" className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500" />
               </div>
             </div>
           </div>
@@ -370,11 +372,11 @@ export default function IntakePage({ params }: { params: { token: string } }) {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-gray-500 text-xs block mb-1.5">Max EMD (optional)</label>
-                <input type="number" value={form.maxEmd} onChange={e=>set('maxEmd',e.target.value)} placeholder="e.g. 2500" className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 text-base focus:outline-none focus:border-blue-500" />
+                <input type="number" value={form.maxEmd} onChange={e=>set('maxEmd',e.target.value)} placeholder="e.g. 2500" className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500" />
               </div>
               <div>
                 <label className="text-gray-500 text-xs block mb-1.5">Inspection period (days)</label>
-                <input type="number" value={form.inspectionDays} onChange={e=>set('inspectionDays',e.target.value)} placeholder="e.g. 7" className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 text-base focus:outline-none focus:border-blue-500" />
+                <input type="number" value={form.inspectionDays} onChange={e=>set('inspectionDays',e.target.value)} placeholder="e.g. 7" className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500" />
               </div>
             </div>
             <div>
@@ -414,7 +416,7 @@ export default function IntakePage({ params }: { params: { token: string } }) {
             <div>
               <label className="text-gray-500 text-xs block mb-1.5">Anything else we should know? 💬</label>
               <p className="text-gray-600 text-xs mb-2">Creative finance preferences, partnership interests, past deals, specific neighborhoods, anything — the more detail the better our AI can match you.</p>
-              <textarea value={form.freeformNotes} onChange={e=>set('freeformNotes',e.target.value)} placeholder="e.g. I love Subject-To deals under $35k entry in Birmingham. I close in 7 days cash, no inspection. I'm part of the Subto community. I also wholesale so I have buyers if you need JV partners..." className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 text-base focus:outline-none focus:border-blue-500 resize-none h-36" />
+              <textarea value={form.freeformNotes} onChange={e=>set('freeformNotes',e.target.value)} placeholder="e.g. I love Subject-To deals under $35k entry in Birmingham. I close in 7 days cash, no inspection. I'm part of the Subto community. I also wholesale so I have buyers if you need JV partners..." className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 resize-none h-36" />
             </div>
           </div>
         )}
