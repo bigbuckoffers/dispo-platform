@@ -87,7 +87,7 @@ export function SubmissionReviewModal({ sub, onClose, onSave }: Props) {
     closeSpeed:       b.avgCloseSpeedDays || d.closeSpeed || '',
     monthlyCapacity:  b.monthlyCapacity || d.monthlyCapacity || '',
     preferredContact: b.preferredContact || d.preferredContact || '',
-    dealSendFreq:     b.dealSendFreq || d.dealSendFreq || '',
+    dealSendFreq:     d.dealSendFreq || b.dealSendFreq || '',
     proofOfFunds:     b.proofOfFunds || d.proofOfFunds || '',
     privateNotes:     b.privateNotes || '',
   });
@@ -103,7 +103,10 @@ export function SubmissionReviewModal({ sub, onClose, onSave }: Props) {
   const sub_d: any = {
     marketPrimary: d.marketPrimary, marketSecondary: d.marketSecondary, states: d.states,
     zipCodes: d.zipCodes, excludedAreas: d.excludedAreas, minBeds: d.minBeds,
-    minYearBuilt: d.minYearBuilt, minPrice: d.minPrice, maxPrice: d.maxPrice,
+    minSqft: d.minSqft,
+    minYearBuilt: d.minYearBuilt,
+    maxRehab: d.maxRehab,
+    minCashFlow: d.minCashFlow, minPrice: d.minPrice, maxPrice: d.maxPrice,
     minArv: d.minArv, minProfit: d.minProfit, maxEmd: d.maxEmd,
     inspectionDays: d.inspectionDays, hardNoCriteria: d.hardNoCriteria,
     strategies: (d.strategies || []).join(', '), fundingTypes: (d.fundingTypes || []).join(', '),
