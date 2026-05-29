@@ -1,4 +1,5 @@
 'use client';
+import { NumInput } from '@/components/buyer/NumInput';
 import { useState, useEffect, useCallback } from 'react';
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
 
@@ -258,11 +259,11 @@ export default function IntakePage({ params }: { params: { token: string } }) {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-gray-500 text-xs block mb-1.5">Min Price</label>
-                  <input type="number" value={form.minPrice} onChange={e=>set('minPrice',e.target.value)} disabled={form.anyPrice} placeholder="e.g. 50000" className={`w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 ${form.anyPrice?'opacity-40':''}`} />
+                  <NumInput value={form.minPrice} onChange={v=>set('minPrice',v)} placeholder="e.g. 50000" disabled={form.anyPrice} className={`w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 ${form.anyPrice?'opacity-40':''}`} />
                 </div>
                 <div>
                   <label className="text-gray-500 text-xs block mb-1.5">Max Price</label>
-                  <input type="number" value={form.maxPrice} onChange={e=>set('maxPrice',e.target.value)} disabled={form.anyPrice} placeholder="e.g. 300000" className={`w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 ${form.anyPrice?'opacity-40':''}`} />
+                  <NumInput value={form.maxPrice} onChange={v=>set('maxPrice',v)} placeholder="e.g. 300000" disabled={form.anyPrice} className={`w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 ${form.anyPrice?'opacity-40':''}`} />
                 </div>
               </div>
               <label className="flex items-center gap-2 mt-2 cursor-pointer">
@@ -281,7 +282,7 @@ export default function IntakePage({ params }: { params: { token: string } }) {
               </div>
               <div>
                 <label className="text-gray-500 text-xs block mb-1.5">Min Sqft (optional)</label>
-                <input type="number" value={form.minSqft} onChange={e=>set('minSqft',e.target.value)} placeholder="e.g. 1000" className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500" />
+                <NumInput value={form.minSqft} onChange={v=>set('minSqft',v)} placeholder="e.g. 1000" className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500" />
               </div>
               <div>
                 <label className="text-gray-500 text-xs block mb-1.5">HOA OK?</label>
@@ -302,7 +303,7 @@ export default function IntakePage({ params }: { params: { token: string } }) {
             </div>
             <div>
               <label className="text-gray-500 text-xs block mb-1.5">Min Year Built (optional)</label>
-              <input type="number" value={form.minYearBuilt} onChange={e=>set('minYearBuilt',e.target.value)} placeholder="e.g. 1970" className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500" />
+              <NumInput value={form.minYearBuilt} onChange={v=>set('minYearBuilt',v)} placeholder="e.g. 1970" className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500" />
             </div>
           </div>
         )}
@@ -340,11 +341,11 @@ export default function IntakePage({ params }: { params: { token: string } }) {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-gray-500 text-xs block mb-1.5">Max rehab budget (optional)</label>
-                <input type="number" value={form.maxRehab} onChange={e=>set('maxRehab',e.target.value)} placeholder="e.g. 50000" className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500" />
+                <NumInput value={form.maxRehab} onChange={v=>set('maxRehab',v)} placeholder="e.g. 50000" className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500" />
               </div>
               <div>
                 <label className="text-gray-500 text-xs block mb-1.5">Min cash flow/mo - rentals (optional)</label>
-                <input type="number" value={form.minCashFlow} onChange={e=>set('minCashFlow',e.target.value)} placeholder="e.g. 300" className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500" />
+                <NumInput value={form.minCashFlow} onChange={v=>set('minCashFlow',v)} placeholder="e.g. 300" className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500" />
               </div>
             </div>
           </div>

@@ -5,3 +5,4 @@ export { ScoreBadge } from './ScoreBadge';
 export { ScoreMeter } from './ScoreMeter';
 export { TierBadge } from './TierBadge';
 export { TopBuyersTable } from './TopBuyersTable';
+export { NumInput } from './NumInput';

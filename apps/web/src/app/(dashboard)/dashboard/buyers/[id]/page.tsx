@@ -1,4 +1,5 @@
 'use client';
+import { NumInput } from '@/components/buyer/NumInput';
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Shield, TrendingUp, Zap, Star, DollarSign, Phone, Mail, Building2, RefreshCw, Brain, MapPin, Target, FileText, ChevronDown, ChevronUp, Save, CheckCircle, XCircle, AlertCircle, Activity, BarChart2, MessageSquare, Send, Sparkles, ThumbsUp, ThumbsDown, ArrowRight } from 'lucide-react';
@@ -314,7 +315,7 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
             </div>
             <div>
               <label className="text-gray-500 text-xs block mb-1">Deals/Month Capacity</label>
-              <input type="number" value={bbForm.monthlyCapacity||''} onChange={e=>setBbForm((p:any)=>({...p,monthlyCapacity:e.target.value}))} placeholder="e.g. 2" className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500" />
+              <NumInput value={bbForm.monthlyCapacity||''} onChange={v=>setBbForm((p:any)=>({...p,monthlyCapacity:v}))} placeholder="e.g. 2" className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500" />
             </div>
             <div>
               <label className="text-gray-500 text-xs block mb-1">If Paused — Resume Date</label>
@@ -370,23 +371,23 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
           <div className="grid grid-cols-3 gap-3">
             <div>
               <label className="text-gray-500 text-xs block mb-1">Min Beds</label>
-              <input type="number" value={bbForm.minBeds||''} onChange={e=>setBbForm((p:any)=>({...p,minBeds:e.target.value}))} placeholder="e.g. 3" className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500" />
+              <NumInput value={bbForm.minBeds||''} onChange={v=>setBbForm((p:any)=>({...p,minBeds:v}))} placeholder="e.g. 3" className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500" />
             </div>
             <div>
               <label className="text-gray-500 text-xs block mb-1">Min Baths</label>
-              <input type="number" value={bbForm.minBaths||''} onChange={e=>setBbForm((p:any)=>({...p,minBaths:e.target.value}))} placeholder="e.g. 1" className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500" />
+              <NumInput value={bbForm.minBaths||''} onChange={v=>setBbForm((p:any)=>({...p,minBaths:v}))} placeholder="e.g. 1" className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500" />
             </div>
             <div>
               <label className="text-gray-500 text-xs block mb-1">Min Sqft</label>
-              <input type="number" value={bbForm.minSqft||''} onChange={e=>setBbForm((p:any)=>({...p,minSqft:e.target.value}))} placeholder="e.g. 1000" className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500" />
+              <NumInput value={bbForm.minSqft||''} onChange={v=>setBbForm((p:any)=>({...p,minSqft:v}))} placeholder="e.g. 1000" className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500" />
             </div>
             <div>
               <label className="text-gray-500 text-xs block mb-1">Min Year Built</label>
-              <input type="number" value={bbForm.minYearBuilt||''} onChange={e=>setBbForm((p:any)=>({...p,minYearBuilt:e.target.value}))} placeholder="e.g. 1975" className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500" />
+              <NumInput value={bbForm.minYearBuilt||''} onChange={v=>setBbForm((p:any)=>({...p,minYearBuilt:v}))} placeholder="e.g. 1975" className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500" />
             </div>
             <div>
               <label className="text-gray-500 text-xs block mb-1">Max Year Built</label>
-              <input type="number" value={bbForm.maxYearBuilt||''} onChange={e=>setBbForm((p:any)=>({...p,maxYearBuilt:e.target.value}))} placeholder="e.g. 2010" className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500" />
+              <NumInput value={bbForm.maxYearBuilt||''} onChange={v=>setBbForm((p:any)=>({...p,maxYearBuilt:v}))} placeholder="e.g. 2010" className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500" />
             </div>
             <div>
               <label className="text-gray-500 text-xs block mb-1">HOA OK?</label>
@@ -416,28 +417,28 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-gray-500 text-xs block mb-1">Min Purchase Price</label>
-              <input type="number" value={bbForm.minPrice||''} onChange={e=>setBbForm((p:any)=>({...p,minPrice:e.target.value}))} placeholder="e.g. 30000" disabled={bbForm.anyPrice} className={`w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500 ${bbForm.anyPrice?'opacity-40':''}`} />
+              <NumInput value={bbForm.minPrice||''} onChange={v=>setBbForm((p:any)=>({...p,minPrice:v}))} placeholder="e.g. 30000" disabled={bbForm.anyPrice} className={`w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500 ${bbForm.anyPrice?'opacity-40':''}`} />
             </div>
             <div>
               <label className="text-gray-500 text-xs block mb-1">Max Purchase Price</label>
-              <input type="number" value={bbForm.maxPrice||''} onChange={e=>setBbForm((p:any)=>({...p,maxPrice:e.target.value}))} placeholder="e.g. 150000" disabled={bbForm.anyPrice} className={`w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500 ${bbForm.anyPrice?'opacity-40':''}`} />
+              <NumInput value={bbForm.maxPrice||''} onChange={v=>setBbForm((p:any)=>({...p,maxPrice:v}))} placeholder="e.g. 150000" disabled={bbForm.anyPrice} className={`w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500 ${bbForm.anyPrice?'opacity-40':''}`} />
             </div>
             <div className="col-span-2"><label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={!!bbForm.anyPrice} onChange={e=>setBbForm((p:any)=>({...p,anyPrice:e.target.checked}))} className="accent-blue-500" /><span className="text-gray-400 text-xs">No price limit — buys at any price point</span></label></div>
             <div>
               <label className="text-gray-500 text-xs block mb-1">Min ARV</label>
-              <input type="number" value={bbForm.minArv||''} onChange={e=>setBbForm((p:any)=>({...p,minArv:e.target.value}))} placeholder="e.g. 100000" className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500" />
+              <NumInput value={bbForm.minArv||''} onChange={v=>setBbForm((p:any)=>({...p,minArv:v}))} placeholder="e.g. 100000" className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500" />
             </div>
             <div>
               <label className="text-gray-500 text-xs block mb-1">Min Projected Profit</label>
-              <input type="number" value={bbForm.minProfit||''} onChange={e=>setBbForm((p:any)=>({...p,minProfit:e.target.value}))} placeholder="e.g. 25000" className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500" />
+              <NumInput value={bbForm.minProfit||''} onChange={v=>setBbForm((p:any)=>({...p,minProfit:v}))} placeholder="e.g. 25000" className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500" />
             </div>
             <div>
               <label className="text-gray-500 text-xs block mb-1">Max Rehab Budget</label>
-              <input type="number" value={bbForm.maxRehab||''} onChange={e=>setBbForm((p:any)=>({...p,maxRehab:e.target.value}))} placeholder="e.g. 50000" className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500" />
+              <NumInput value={bbForm.maxRehab||''} onChange={v=>setBbForm((p:any)=>({...p,maxRehab:v}))} placeholder="e.g. 50000" className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500" />
             </div>
             <div>
               <label className="text-gray-500 text-xs block mb-1">Min Cash Flow (rentals)</label>
-              <input type="number" value={bbForm.minCashFlow||''} onChange={e=>setBbForm((p:any)=>({...p,minCashFlow:e.target.value}))} placeholder="e.g. 300" className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500" />
+              <NumInput value={bbForm.minCashFlow||''} onChange={v=>setBbForm((p:any)=>({...p,minCashFlow:v}))} placeholder="e.g. 300" className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500" />
             </div>
           </div>
         </div>
@@ -483,15 +484,15 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
             </div>
             <div>
               <label className="text-gray-500 text-xs block mb-1">Close Speed (days)</label>
-              <input type="number" value={bbForm.closeSpeed||''} onChange={e=>setBbForm((p:any)=>({...p,closeSpeed:e.target.value}))} placeholder="e.g. 14" className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500" />
+              <NumInput value={bbForm.closeSpeed||''} onChange={v=>setBbForm((p:any)=>({...p,closeSpeed:v}))} placeholder="e.g. 14" className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500" />
             </div>
             <div>
               <label className="text-gray-500 text-xs block mb-1">Max EMD</label>
-              <input type="number" value={bbForm.maxEmd||''} onChange={e=>setBbForm((p:any)=>({...p,maxEmd:e.target.value}))} placeholder="e.g. 2500" className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500" />
+              <NumInput value={bbForm.maxEmd||''} onChange={v=>setBbForm((p:any)=>({...p,maxEmd:v}))} placeholder="e.g. 2500" className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500" />
             </div>
             <div>
               <label className="text-gray-500 text-xs block mb-1">Inspection Period (days)</label>
-              <input type="number" value={bbForm.inspectionDays||''} onChange={e=>setBbForm((p:any)=>({...p,inspectionDays:e.target.value}))} placeholder="e.g. 7" className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500" />
+              <NumInput value={bbForm.inspectionDays||''} onChange={v=>setBbForm((p:any)=>({...p,inspectionDays:v}))} placeholder="e.g. 7" className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500" />
             </div>
           </div>
         </div>
