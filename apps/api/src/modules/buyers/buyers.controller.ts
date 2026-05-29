@@ -92,7 +92,7 @@ export class BuyersController {
   update(
     @OrgId() orgId: string,
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() dto: UpdateBuyerDto,
+    @Body() dto: any,
     @CurrentUser('id') userId: string,
   ) {
     return this.buyersService.update(orgId, id, dto, userId);
@@ -131,7 +131,7 @@ export class BuyersController {
   updateBuyBox(
     @OrgId() orgId: string,
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() dto: UpdateBuyBoxDto,
+    @Body() dto: any,
     @CurrentUser('id') userId: string,
   ) {
     return this.buyersService.updateBuyBox(orgId, id, dto, userId);
