@@ -223,8 +223,8 @@ export function SubmissionReviewModal({ sub, onClose, onSave }: Props) {
             <div className="grid grid-cols-2 gap-1">
               <FI label="Min ARV" fieldKey="minArv" type="number" />
               <FI label="Min Profit" fieldKey="minProfit" type="number" />
-              <FI label="Max EMD" fieldKey="maxEmd" type="number" />
-              <FI label="Inspection Days" fieldKey="inspectionDays" type="number" />
+
+
             </div>
           </div>
           <div><S t="Strategy & Rehab" />
