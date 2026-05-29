@@ -103,6 +103,28 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
     }
   }, [buyer]);
   const recalculate = useMutation({ mutationFn: () => api.post(`/buyers/${id}/recalculate-scores`).then(r=>r.data), onSuccess: () => { qc.invalidateQueries({queryKey:['buyer',id]}); toast.success('Recalculated'); } });
+  const getOrCreateBuyBoxLink = async () => {
+    if (buyer?.intakeToken) {
+      return buyer?.intakeLink || `${window.location.origin}/intake/${buyer.intakeToken}`;
+    }
+
+    const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
+    const r = await fetch(`${API}/intake/generate/${id}`, { method: 'POST' });
+    const text = await r.text();
+
+    if (!r.ok) {
+      throw new Error('API error ' + r.status);
+    }
+
+    const cleanToken = text.replace(/"/g, '').trim();
+    const link = `https://dispo-platform-web.vercel.app/intake/${cleanToken}`;
+
+    qc.invalidateQueries({ queryKey: ['buyer', id] });
+    qc.invalidateQueries({ queryKey: ['buyer-intake-events', id] });
+
+    return link;
+  };
+
   const sendIntakeLink = async () => {
     try {
       const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
@@ -113,7 +135,7 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
       const link = `https://dispo-platform-web.vercel.app/intake/${cleanToken}`;
       try {
         await navigator.clipboard.writeText(link);
-        toast.success('Intake link copied! Paste it into a text to send.');
+        toast.success('Buy Box link copied! Paste it into a text to send.');
         qc.invalidateQueries({queryKey:['buyer',id]}); qc.invalidateQueries({queryKey:['buyer-intake-events',id]});
       } catch {
         window.prompt('Copy this intake link:', link);
@@ -127,30 +149,27 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
   const [showIntakeSendConfirm, setShowIntakeSendConfirm] = useState(false);
   const [sendingIntakeForm, setSendingIntakeForm] = useState(false);
 
-  const getIntakeFormMessage = () => {
-    const token = buyer?.intakeToken;
-    const link = buyer?.intakeLink || `${window.location.origin}/intake/${token}`;
-    return `Hey, please complete your buy box so we can send you better-matched deals: ${link}`;
+  const getBuyBoxFormMessage = (link: string) => {
+    return `Hey, please complete your buy box form so we can send you better-matched deals: ${link}`;
   };
 
-  const sendIntakeForm = async () => {
-    const token = buyer?.intakeToken;
-    if (!token) { toast.error('Create the intake link first.'); return; }
-
+  const sendBuyBoxForm = async () => {
     setSendingIntakeForm(true);
     try {
+      const link = await getOrCreateBuyBoxLink();
+
       await api.post(`/messages/conversations/${id}/send`, {
-        message: getIntakeFormMessage(),
+        message: getBuyBoxFormMessage(link),
         intakeTrackingType: 'link_sent',
       });
 
-      toast.success('Intake form sent');
+      toast.success('Buy Box form sent');
       setShowIntakeSendConfirm(false);
       qc.invalidateQueries({ queryKey: ['buyer', id] });
       qc.invalidateQueries({ queryKey: ['buyer-intake-events', id] });
       refetchIntakeEvents();
-    } catch (e) {
-      toast.error('Could not send intake form');
+    } catch (e: any) {
+      toast.error('Could not send Buy Box form: ' + (e?.message || 'Unknown error'));
     } finally {
       setSendingIntakeForm(false);
     }
@@ -176,7 +195,7 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
 
   const sendIntakeReminder = async () => {
     const token = buyer?.intakeToken;
-    if (!token) { toast.error('Create the intake link first.'); return; }
+    if (!token) { toast.error('Create the Buy Box form link first.'); return; }
 
     setSendingReminder(true);
     try {
@@ -304,7 +323,7 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
   const latestIntakeEvent = intakeEventsList[0];
   const reminderCount = intakeEventsList.filter((e:any)=>e.eventType==='INTAKE_REMINDER_SENT').length;
   const intakeCreatedAt = getIntakeEventDate('INTAKE_LINK_CREATED');
-  const canSendIntakeForm = !!buyer.intakeToken && !buyer.intakeSubmittedAt && !['LINK_SENT','OPENED','STARTED','SUBMITTED'].includes(buyer.intakeStatus);
+  const canSendIntakeForm = !buyer.intakeSubmittedAt && !['LINK_SENT','OPENED','STARTED','SUBMITTED'].includes(buyer.intakeStatus);
   const canSendIntakeReminder = !!buyer.intakeToken && !buyer.intakeSubmittedAt && ['LINK_SENT','OPENED','STARTED'].includes(buyer.intakeStatus);
   const intakeDates = [['Sent',buyer.intakeSentAt||getIntakeEventDate('INTAKE_LINK_SENT')],['Opened',buyer.intakeOpenedAt||getIntakeEventDate('INTAKE_LINK_OPENED')],['Started',buyer.intakeStartedAt||getIntakeEventDate('INTAKE_FORM_STARTED')],['Submitted',buyer.intakeSubmittedAt||getIntakeEventDate('INTAKE_FORM_SUBMITTED')]];
   const matColor = maturity==='Highly Verified'?'text-green-400 bg-green-500/10 border-green-500/30':maturity==='Mature'?'text-blue-400 bg-blue-500/10 border-blue-500/30':maturity==='Growing'?'text-yellow-400 bg-yellow-500/10 border-yellow-500/30':'text-gray-400 bg-gray-500/10 border-gray-500/30';
@@ -323,8 +342,8 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
                   📩
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-white">Send intake form SMS?</h3>
-                  <p className="text-sm text-gray-400">This will text the buyer their buy box intake link and log the form as sent.</p>
+                  <h3 className="text-lg font-semibold text-white">Send Buy Box form SMS?</h3>
+                  <p className="text-sm text-gray-400">This will text the buyer their Buy Box form link and log the form as sent.</p>
                 </div>
               </div>
             </div>
@@ -341,7 +360,7 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
               <div>
                 <div className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">Message Preview</div>
                 <div className="rounded-xl border border-gray-800 bg-gray-900/70 p-4 text-sm leading-relaxed text-gray-200">
-                  {buyer?.intakeToken ? getIntakeFormMessage() : 'Create the intake link first.'}
+                  {buyer?.intakeToken ? getBuyBoxFormMessage(buyer?.intakeLink || `${window.location.origin}/intake/${buyer.intakeToken}`) : 'A Buy Box form link will be created before sending.'}
                 </div>
               </div>
 
@@ -359,11 +378,11 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
                 Cancel
               </button>
               <button
-                onClick={sendIntakeForm}
-                disabled={sendingIntakeForm || !buyer?.intakeToken}
+                onClick={sendBuyBoxForm}
+                disabled={sendingIntakeForm}
                 className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-500 disabled:opacity-50"
               >
-                {sendingIntakeForm ? 'Sending...' : 'Send Intake Form'}
+                {sendingIntakeForm ? 'Sending...' : 'Send Buy Box Form'}
               </button>
             </div>
           </div>
@@ -396,7 +415,7 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
               <div>
                 <div className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">Auto-selected Message Preview</div>
                 <div className="rounded-xl border border-gray-800 bg-gray-900/70 p-4 text-sm leading-relaxed text-gray-200">
-                  {buyer?.intakeToken ? getIntakeReminderMessage() : 'Create the intake link first.'}
+                  {buyer?.intakeToken ? getIntakeReminderMessage() : 'Create the Buy Box form link first.'}
                 </div>
               </div>
 
@@ -445,11 +464,11 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
       </div>
       <div className="flex flex-col gap-2 items-end">
         <div className={`border rounded-xl p-3 text-center min-w-28 ${cpBg}`}><p className="text-gray-500 text-xs">Likely to Close</p><p className={`text-2xl font-bold ${cpColor}`}>{closeProbability}%</p></div>
-        <button onClick={()=>recalculate.mutate()} disabled={recalculate.isPending} className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs rounded-lg transition"><RefreshCw size={11} className={recalculate.isPending?'animate-spin':''} />Recalculate</button><button onClick={markReviewed} className={`flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg transition border font-medium ${ (buyer.tags||[]).includes('profile_reviewed') ? 'bg-green-600 text-white border-green-500' : 'bg-yellow-500 hover:bg-yellow-400 text-black border-yellow-400' }`}><CheckCircle size={11} />{(buyer.tags||[]).includes('profile_reviewed')?'✓ Reviewed':'Mark Reviewed'}</button><button onClick={()=>window.location.href=`/dashboard/messages?buyer=${id}`} className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-900/40 hover:bg-blue-800/60 border border-blue-700/40 text-blue-300 text-xs rounded-lg transition">💬 Message</button><button onClick={sendIntakeLink} className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-900/40 hover:bg-purple-800/60 border border-purple-700/40 text-purple-300 text-xs rounded-lg transition">📋 Copy Intake Link</button><button onClick={deleteBuyer} className="flex items-center gap-1.5 px-3 py-1.5 bg-red-900/30 hover:bg-red-900/60 border border-red-700/40 text-red-400 text-xs rounded-lg transition">🗑 Delete</button>
+        <button onClick={()=>recalculate.mutate()} disabled={recalculate.isPending} className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs rounded-lg transition"><RefreshCw size={11} className={recalculate.isPending?'animate-spin':''} />Recalculate</button><button onClick={markReviewed} className={`flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg transition border font-medium ${ (buyer.tags||[]).includes('profile_reviewed') ? 'bg-green-600 text-white border-green-500' : 'bg-yellow-500 hover:bg-yellow-400 text-black border-yellow-400' }`}><CheckCircle size={11} />{(buyer.tags||[]).includes('profile_reviewed')?'✓ Reviewed':'Mark Reviewed'}</button><button onClick={()=>window.location.href=`/dashboard/messages?buyer=${id}`} className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-900/40 hover:bg-blue-800/60 border border-blue-700/40 text-blue-300 text-xs rounded-lg transition">💬 Message</button><button onClick={sendIntakeLink} className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-900/40 hover:bg-purple-800/60 border border-purple-700/40 text-purple-300 text-xs rounded-lg transition">📋 Copy Buy Box Link</button><button onClick={deleteBuyer} className="flex items-center gap-1.5 px-3 py-1.5 bg-red-900/30 hover:bg-red-900/60 border border-red-700/40 text-red-400 text-xs rounded-lg transition">🗑 Delete</button>
       </div>
     </div>
     <div className="bg-gray-900 rounded-xl border border-gray-800 p-5 space-y-4">
-      <div className="flex items-start justify-between gap-3"><div><h2 className="text-white font-semibold text-sm flex items-center gap-2"><FileText size={14} className="text-purple-400" />Buy Box Intake Tracking</h2><p className="text-xs text-gray-500 mt-1">Current status: <span className="text-gray-300">{intakeStatusLabel(buyer.intakeStatus)}</span></p></div><div className="flex items-center gap-2 flex-wrap justify-end"><button onClick={sendIntakeLink} className="px-3 py-1.5 bg-purple-900/40 hover:bg-purple-800/60 border border-purple-700/40 text-purple-300 text-xs rounded-lg transition">Copy Intake Link</button>{canSendIntakeForm&&<button onClick={()=>setShowIntakeSendConfirm(true)} className="px-3 py-1.5 bg-green-900/40 hover:bg-green-800/60 border border-green-700/40 text-green-300 text-xs rounded-lg transition">Send Intake Form</button>}{canSendIntakeReminder&&<button onClick={()=>setShowReminderConfirm(true)} className="px-3 py-1.5 bg-blue-900/40 hover:bg-blue-800/60 border border-blue-700/40 text-blue-300 text-xs rounded-lg transition">Send Reminder #{getNextReminderNumber()}</button>}<button onClick={()=>refetchIntakeEvents()} className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs rounded-lg transition"><RefreshCw size={11} className={intakeEventsLoading?'animate-spin':''} />Refresh</button></div></div>
+      <div className="flex items-start justify-between gap-3"><div><h2 className="text-white font-semibold text-sm flex items-center gap-2"><FileText size={14} className="text-purple-400" />Buy Box Form Tracking</h2><p className="text-xs text-gray-500 mt-1">Current status: <span className="text-gray-300">{intakeStatusLabel(buyer.intakeStatus)}</span></p></div><div className="flex items-center gap-2 flex-wrap justify-end"><button onClick={sendIntakeLink} className="px-3 py-1.5 bg-purple-900/40 hover:bg-purple-800/60 border border-purple-700/40 text-purple-300 text-xs rounded-lg transition">Copy Buy Box Link</button>{canSendIntakeForm&&<button onClick={()=>setShowIntakeSendConfirm(true)} className="px-3 py-1.5 bg-green-900/40 hover:bg-green-800/60 border border-green-700/40 text-green-300 text-xs rounded-lg transition">Send Buy Box Form</button>}{canSendIntakeReminder&&<button onClick={()=>setShowReminderConfirm(true)} className="px-3 py-1.5 bg-blue-900/40 hover:bg-blue-800/60 border border-blue-700/40 text-blue-300 text-xs rounded-lg transition">Send Reminder #{getNextReminderNumber()}</button>}<button onClick={()=>refetchIntakeEvents()} className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs rounded-lg transition"><RefreshCw size={11} className={intakeEventsLoading?'animate-spin':''} />Refresh</button></div></div>
       <div className="grid grid-cols-4 gap-2">{INTAKE_STEPS.map(([eventType,label])=>{ const done=!!getIntakeEventDate(eventType)||(eventType==='INTAKE_LINK_SENT'&&!!buyer.intakeSentAt)||(eventType==='INTAKE_LINK_OPENED'&&!!buyer.intakeOpenedAt)||(eventType==='INTAKE_FORM_STARTED'&&!!buyer.intakeStartedAt)||(eventType==='INTAKE_FORM_SUBMITTED'&&!!buyer.intakeSubmittedAt); return <div key={eventType} className={`rounded-lg border px-2 py-2 text-center ${done?'bg-purple-500/10 border-purple-500/30 text-purple-300':'bg-gray-950/40 border-gray-800 text-gray-600'}`}><div className="text-[11px] font-medium">{label}</div></div>; })}</div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2">{intakeDates.map(([label,value])=><div key={label as string} className="bg-gray-950/40 rounded-lg border border-gray-800 px-3 py-2"><p className="text-[11px] text-gray-500">{label}</p><p className="text-xs text-gray-300 mt-0.5">{formatIntakeDate(value as any)}</p></div>)}</div>
       {intakeCreatedAt&&<p className="text-xs text-gray-500">Intake link ready since <span className="text-gray-300">{formatIntakeDate(intakeCreatedAt as any)}</span></p>}
