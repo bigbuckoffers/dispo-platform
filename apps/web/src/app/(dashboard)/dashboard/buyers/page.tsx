@@ -520,12 +520,19 @@ export default function BuyersPage() {
           onClose={()=>setSelectedSub(null)}
           onSave={async (fields:any)=>{
             const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
-            await fetch(`${API}/intake/submissions/${selectedSub.id}/approve`, {
-              method: 'POST', headers: {'Content-Type':'application/json'},
-              body: JSON.stringify(fields),
-            });
-            setSelectedSub(null);
-            loadSubmissions();
+            const buyerId = selectedSub.buyerId || selectedSub.buyer?.id;
+            try {
+              const r = await fetch(`${API}/intake/submissions/${selectedSub.id}/approve`, {
+                method: 'POST', headers: {'Content-Type':'application/json'},
+                body: JSON.stringify(fields),
+              });
+              const data = await r.json();
+              setSelectedSub(null);
+              loadSubmissions();
+              if (buyerId) window.location.href = `/dashboard/buyers/${buyerId}`;
+            } catch(e) {
+              alert('Network error — could not save.');
+            }
           }}
         />
       )}
