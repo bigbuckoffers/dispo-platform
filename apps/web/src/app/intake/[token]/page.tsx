@@ -318,9 +318,12 @@ export default function IntakePage({ params }: { params: { token: string } }) {
             </div>
             <div>
               <label className="text-gray-500 text-xs block mb-2">Rehab Tolerance</label>
-              <div className="space-y-2">
+              <div className="grid grid-cols-2 gap-2">
                 {REHAB_OPTS.map(r=>(
-                  <Chip key={r.v} label={r.l} sub={r.sub} selected={form.rehabTolerance===r.v} onClick={()=>set('rehabTolerance',r.v)} />
+                  <button key={r.v} onClick={()=>set('rehabTolerance',r.v)} className={`px-3 py-3 rounded-xl text-left border transition-all ${form.rehabTolerance===r.v ? 'bg-blue-600 border-blue-500 text-white' : 'bg-gray-800/80 border-gray-700 text-gray-300 hover:border-gray-500'}`}>
+                    <div className="text-sm font-medium">{r.l}</div>
+                    <div className={`text-xs mt-0.5 ${form.rehabTolerance===r.v ? 'text-blue-200' : 'text-gray-500'}`}>{r.sub}</div>
+                  </button>
                 ))}
               </div>
             </div>
