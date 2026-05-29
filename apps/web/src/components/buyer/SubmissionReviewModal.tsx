@@ -70,7 +70,7 @@ export function SubmissionReviewModal({ sub, onClose, onSave }: Props) {
   const formRef = useRef<any>({
     marketPrimary:    b.marketPrimary || d.marketPrimary || '',
     marketSecondary:  (b.marketSecondary || []).join(', ') || d.marketSecondary || '',
-    states:           (bb.states || []).join(', ') || d.states || '',
+    states:           d.states || (bb.states || []).join(', ') || '',
     zipCodes:         (bb.zipCodes || []).join(', ') || d.zipCodes || '',
     excludedAreas:    bb.excludedAreas || d.excludedAreas || '',
     minBeds:          bb.minBeds || d.minBeds || '',
