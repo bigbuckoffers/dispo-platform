@@ -201,6 +201,7 @@ model Buyer {
   @@index([isActive, isSuspended])
   conversations Conversation[]
   intakeToken     String?      @unique
+  intakeSentAt    DateTime?
   intakeSubmittedAt DateTime?
   intakeSubmissions BuyerIntakeSubmission[]
   @@map("buyers")

@@ -60,6 +60,11 @@ let BuyersService = BuyersService_1 = class BuyersService {
                 include: {
                     buyBox: true,
                     _count: { select: { offers: true, purchases: true } },
+                    events: {
+                        where: { eventType: { in: ['INTAKE_OPENED', 'INTAKE_COMPLETED', 'INTAKE_ABANDONED'] } },
+                        orderBy: { createdAt: 'desc' },
+                        take: 1,
+                    },
                 },
             }),
             this.prisma.buyer.count({ where }),

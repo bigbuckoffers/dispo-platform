@@ -208,6 +208,15 @@ export default function BuyersPage() {
   const needsReview = [...allBuyers].filter(b => profileScore(b) < 70 && !(b.tags||[]).includes('profile_reviewed')).sort((a,b) => (b.compositeScore||0)-(a.compositeScore||0));
   const hotBuyers = [...allBuyers].filter(b => b.tier==='VIP'||b.tier==='TIER_1'||getTemp(b).label.includes('Hot')||getTemp(b).label.includes('Active')).sort((a,b) => (b.compositeScore||0)-(a.compositeScore||0));
 
+  const getIntakeStatus = (b) => {
+    const latestEvent = b.events?.[0]?.eventType;
+    if (latestEvent === 'INTAKE_COMPLETED') return { label: '✅ Completed', color: 'text-green-400 bg-green-500/10', priority: 3 };
+    if (latestEvent === 'INTAKE_OPENED') return { label: '👀 Opened', color: 'text-blue-400 bg-blue-500/10', priority: 2 };
+    if (latestEvent === 'INTAKE_ABANDONED') return { label: '⚠️ Abandoned', color: 'text-amber-400 bg-amber-500/10', priority: 1 };
+    if (b.intakeSentAt) return { label: '📤 Sent', color: 'text-gray-400 bg-gray-500/10', priority: 0 };
+    return { label: null, priority: -1 };
+  };
+
   const BuyerRow = ({ b }: { b: any }) => {
     const temp = getTemp(b);
     const ts = getTierStyle(b.tier);
@@ -234,6 +243,9 @@ export default function BuyersPage() {
             <span className="text-xs text-gray-500">{ps}%</span>
           </div>
         </td>
+        <td className="px-4 py-3">
+          {(() => { const is = getIntakeStatus(b); return is.label ? <span className={`text-xs px-2 py-0.5 rounded-full ${is.color}`}>{is.label}</span> : <span className="text-gray-700 text-xs">—</span>; })()}
+        </td>
         <td className="px-4 py-3 text-gray-500 text-xs">{lastContact}</td>
         <td className="px-4 py-3 text-right" onClick={e=>e.stopPropagation()}>
           <button onClick={()=>deleteBuyer(b.id,bname(b))} className="opacity-0 group-hover/row:opacity-100 text-red-500 hover:text-red-400 transition px-2 py-1 rounded hover:bg-red-500/10 text-xs">🗑</button>
@@ -244,7 +256,7 @@ export default function BuyersPage() {
 
   const TH = () => (
     <thead><tr className="border-b border-gray-800">
-      {['Buyer','Tier','Temp','Strategy','Markets','Price Range','Profile','Last Contact',''].map(h=>(
+      {['Buyer','Tier','Temp','Strategy','Markets','Price Range','Profile','Intake','Last Contact',''].map(h=>(
         <th key={h} className="text-left text-gray-500 font-medium px-4 py-3 text-xs uppercase tracking-wide whitespace-nowrap">{h}</th>
       ))}
     </tr></thead>
