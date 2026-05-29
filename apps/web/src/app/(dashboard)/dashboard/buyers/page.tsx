@@ -521,62 +521,35 @@ export default function BuyersPage() {
           onSave={async (fields:any)=>{
             const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
             const buyerId = selectedSub.buyerId || selectedSub.buyer?.id;
-            if (!buyerId) { alert('No buyer ID found'); return; }
+            if (!buyerId) { alert('No buyer ID'); return; }
             try {
               const bf = fields.buyerFields || {};
               const bb = fields.buyBoxFields || {};
               let existing: any = {};
               try { if (selectedSub.buyer?.temperatureNotes) existing = JSON.parse(selectedSub.buyer.temperatureNotes); } catch {}
-              const statusData = {
-                ...existing,
-                buyingStatus: bf.buyingStatus || existing.buyingStatus || null,
-                monthlyCapacity: bf.monthlyCapacity || existing.monthlyCapacity || null,
-                occupancy: bb.occupancy || existing.occupancy || null,
-                hoaOk: bb.hoaOk || existing.hoaOk || null,
-                minArv: bb.minArv || existing.minArv || null,
-                minProfit: bb.minProfit || existing.minProfit || null,
-                hardNoCriteria: bb.hardNoCriteria || existing.hardNoCriteria || null,
-                maxEmd: bb.maxEmd || existing.maxEmd || null,
-                inspectionDays: bb.inspectionDays || existing.inspectionDays || null,
-                preferredContact: bf.preferredContact || existing.preferredContact || null,
-                dealSendFreq: bf.dealSendFreq || existing.dealSendFreq || null,
-                excludedAreas: bb.excludedAreas || existing.excludedAreas || null,
-                privateNotes: bf.privateNotes !== undefined ? bf.privateNotes : (existing.privateNotes || null),
-                propertyTypes: bb.propertyTypes ? bb.propertyTypes.join(', ') : (existing.propertyTypes || null),
-                minYearBuilt: bb.minYearBuilt || existing.minYearBuilt || null,
+              const statusData = { ...existing,
+                buyingStatus: bf.buyingStatus||existing.buyingStatus||null,
+                monthlyCapacity: bf.monthlyCapacity||existing.monthlyCapacity||null,
+                occupancy: bb.occupancy||existing.occupancy||null,
+                hoaOk: bb.hoaOk||existing.hoaOk||null,
+                minArv: bb.minArv||existing.minArv||null,
+                minProfit: bb.minProfit||existing.minProfit||null,
+                hardNoCriteria: bb.hardNoCriteria||existing.hardNoCriteria||null,
+                preferredContact: bf.preferredContact||existing.preferredContact||null,
+                dealSendFreq: bf.dealSendFreq||existing.dealSendFreq||null,
+                excludedAreas: bb.excludedAreas||existing.excludedAreas||null,
+                privateNotes: bf.privateNotes!==undefined?bf.privateNotes:(existing.privateNotes||null),
+                propertyTypes: bb.propertyTypes?.length ? bb.propertyTypes.join(', ') : (existing.propertyTypes||null),
+                minYearBuilt: bb.minYearBuilt||existing.minYearBuilt||null,
               };
-              await fetch(`${API}/buyers/${buyerId}`, {
-                method: 'PUT', headers: {'Content-Type':'application/json'},
-                body: JSON.stringify({
-                  marketPrimary: bf.marketPrimary || null,
-                  marketSecondary: bf.marketSecondary || [],
-                  preferredStrategies: bf.preferredStrategies || [],
-                  notes: bf.notes || null,
-                  avgCloseSpeedDays: bf.avgCloseSpeedDays || null,
-                  proofOfFunds: bf.proofOfFunds || null,
-                  temperatureNotes: JSON.stringify(statusData),
-                }),
-              });
-              await fetch(`${API}/buyers/${buyerId}/buy-box`, {
-                method: 'PUT', headers: {'Content-Type':'application/json'},
-                body: JSON.stringify({
-                  states: bb.states || [], zipCodes: bb.zipCodes || [],
-                  anyZipOk: !!bb.anyZipOk, anyPrice: !!bb.anyPrice,
-                  minPrice: bb.minPrice || null, maxPrice: bb.maxPrice || null,
-                  rehabTolerance: bb.rehabTolerance || null, minBeds: bb.minBeds || null,
-                  propertyTypes: bb.propertyTypes || [],
-                }),
-              });
-              await fetch(`${API}/intake/submissions/${selectedSub.id}/approve`, {
-                method: 'POST', headers: {'Content-Type':'application/json'},
-                body: JSON.stringify({ buyerFields: {}, buyBoxFields: {} }),
-              }).catch(()=>{});
-              setSelectedSub(null);
-              loadSubmissions();
+              await fetch(`${API}/buyers/${buyerId}`, { method:'PUT', headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({ marketPrimary:bf.marketPrimary||null, marketSecondary:bf.marketSecondary||[], preferredStrategies:bf.preferredStrategies||[], notes:bf.notes||null, avgCloseSpeedDays:bf.avgCloseSpeedDays||null, proofOfFunds:bf.proofOfFunds||null, temperatureNotes:JSON.stringify(statusData) }) });
+              await fetch(`${API}/buyers/${buyerId}/buy-box`, { method:'PUT', headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({ states:bb.states||[], zipCodes:bb.zipCodes||[], anyZipOk:!!bb.anyZipOk, anyPrice:!!bb.anyPrice, minPrice:bb.minPrice||null, maxPrice:bb.maxPrice||null, rehabTolerance:bb.rehabTolerance||null, minBeds:bb.minBeds||null, propertyTypes:bb.propertyTypes||[], minArv:bb.minArv||null, minProfit:bb.minProfit||null, hardNoCriteria:bb.hardNoCriteria||null, excludedAreas:bb.excludedAreas||null, occupancy:bb.occupancy||null, hoaOk:bb.hoaOk||null, minYearBuilt:bb.minYearBuilt||null }) });
+              await fetch(`${API}/intake/submissions/${selectedSub.id}/approve`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({buyerFields:{},buyBoxFields:{}}) }).catch(()=>{});
+              setSelectedSub(null); loadSubmissions();
               window.location.href = `/dashboard/buyers/${buyerId}`;
-            } catch(e: any) {
-              alert('Save failed: ' + e.message);
-            }
+            } catch(e:any) { alert('Save failed: '+e.message); }
           }}
         />
       )}
