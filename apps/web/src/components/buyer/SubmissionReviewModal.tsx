@@ -198,6 +198,7 @@ export function SubmissionReviewModal({ sub, onClose, onSave }: Props) {
             </div>
             <div className="grid grid-cols-3 gap-1">
               <FI label="Min Beds" fieldKey="minBeds" type="number" />
+              <FI label="Min Sqft" fieldKey="minSqft" type="number" />
               <FI label="Min Year Built" fieldKey="minYearBuilt" type="number" />
               <div className="p-2">
                 <label className="text-gray-500 text-xs block mb-1">HOA OK? {d.hoaOk&&<span className="text-blue-400">· {d.hoaOk}</span>}</label>
@@ -221,8 +222,8 @@ export function SubmissionReviewModal({ sub, onClose, onSave }: Props) {
               </label>
             </div>
             <div className="grid grid-cols-2 gap-1">
-              <FI label="Min ARV" fieldKey="minArv" type="number" />
-              <FI label="Min Profit" fieldKey="minProfit" type="number" />
+              <FI label="Max Rehab Budget" fieldKey="maxRehab" type="number" />
+              <FI label="Min Cash Flow/mo" fieldKey="minCashFlow" type="number" />
 
 
             </div>
