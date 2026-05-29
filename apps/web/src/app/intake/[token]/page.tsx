@@ -339,14 +339,6 @@ export default function IntakePage({ params }: { params: { token: string } }) {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-gray-500 text-xs block mb-1.5">Min ARV needed (optional)</label>
-                <input type="number" value={form.minArv} onChange={e=>set('minArv',e.target.value)} placeholder="e.g. 100000" className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500" />
-              </div>
-              <div>
-                <label className="text-gray-500 text-xs block mb-1.5">Min profit needed (optional)</label>
-                <input type="number" value={form.minProfit} onChange={e=>set('minProfit',e.target.value)} placeholder="e.g. 25000" className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500" />
-              </div>
-              <div>
                 <label className="text-gray-500 text-xs block mb-1.5">Max rehab budget (optional)</label>
                 <input type="number" value={form.maxRehab} onChange={e=>set('maxRehab',e.target.value)} placeholder="e.g. 50000" className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500" />
               </div>
