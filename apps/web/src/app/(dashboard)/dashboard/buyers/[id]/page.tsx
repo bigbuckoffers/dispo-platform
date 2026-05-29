@@ -121,6 +121,28 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
     } catch (e: any) { toast.error('Failed: ' + e.message); }
   };
 
+  const sendIntakeReminder = async () => {
+    const token = buyer?.intakeToken;
+    if (!token) { toast.error('Create the intake link first.'); return; }
+
+    const link = buyer?.intakeLink || `${window.location.origin}/intake/${token}`;
+    const message = `Quick reminder to complete your buy box so we can send you better-matched deals: ${link}`;
+
+    try {
+      await api.post(`/messages/conversations/${id}/send`, {
+        message,
+        intakeTrackingType: 'reminder',
+      });
+
+      toast.success('Intake reminder sent');
+      qc.invalidateQueries({ queryKey: ['buyer', id] });
+      qc.invalidateQueries({ queryKey: ['buyer-intake-events', id] });
+      refetchIntakeEvents();
+    } catch (e) {
+      toast.error('Could not send reminder');
+    }
+  };
+
   const deleteBuyer = async () => {
     if (!confirm('Delete this buyer permanently? This cannot be undone.')) return;
     try { await api.delete(`/buyers/${id}`); toast.success('Buyer deleted'); window.location.href = '/dashboard/buyers'; }
@@ -227,6 +249,7 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
   const latestIntakeEvent = intakeEventsList[0];
   const reminderCount = intakeEventsList.filter((e:any)=>e.eventType==='INTAKE_REMINDER_SENT').length;
   const intakeCreatedAt = getIntakeEventDate('INTAKE_LINK_CREATED');
+  const canSendIntakeReminder = !!buyer.intakeToken && !buyer.intakeSubmittedAt && ['LINK_SENT','OPENED','STARTED'].includes(buyer.intakeStatus);
   const intakeDates = [['Sent',buyer.intakeSentAt||getIntakeEventDate('INTAKE_LINK_SENT')],['Opened',buyer.intakeOpenedAt||getIntakeEventDate('INTAKE_LINK_OPENED')],['Started',buyer.intakeStartedAt||getIntakeEventDate('INTAKE_FORM_STARTED')],['Submitted',buyer.intakeSubmittedAt||getIntakeEventDate('INTAKE_FORM_SUBMITTED')]];
   const matColor = maturity==='Highly Verified'?'text-green-400 bg-green-500/10 border-green-500/30':maturity==='Mature'?'text-blue-400 bg-blue-500/10 border-blue-500/30':maturity==='Growing'?'text-yellow-400 bg-yellow-500/10 border-yellow-500/30':'text-gray-400 bg-gray-500/10 border-gray-500/30';
   const checks=[{label:'Primary market',done:!!buyer.marketPrimary,p:3},{label:'Price range',done:!!(buyer.buyBox?.minPrice||buyer.buyBox?.maxPrice||buyer.buyBox?.anyPrice),p:5},{label:'Rehab tolerance',done:!!buyer.buyBox?.rehabTolerance,p:4},{label:'Strategy confirmed',done:!!(buyer.preferredStrategies?.length),p:3},{label:'Funding type',done:!!buyer.notes,p:4},{label:'Proof of funds',done:!!(buyer.proofOfFundsUrl||buyer.proofOfFundsWaived),p:5},{label:'Zip codes',done:!!(buyer.buyBox?.zipCodes?.length||buyer.buyBox?.anyZipOk),p:3},{label:'Intel notes',done:!!(buyer.buyerIntelNotes?.length>50),p:4},{label:'Phone verified',done:!!buyer.phone,p:2}];
@@ -260,7 +283,7 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
       </div>
     </div>
     <div className="bg-gray-900 rounded-xl border border-gray-800 p-5 space-y-4">
-      <div className="flex items-start justify-between gap-3"><div><h2 className="text-white font-semibold text-sm flex items-center gap-2"><FileText size={14} className="text-purple-400" />Buy Box Intake Tracking</h2><p className="text-xs text-gray-500 mt-1">Current status: <span className="text-gray-300">{intakeStatusLabel(buyer.intakeStatus)}</span></p></div><div className="flex items-center gap-2 flex-wrap justify-end"><button onClick={sendIntakeLink} className="px-3 py-1.5 bg-purple-900/40 hover:bg-purple-800/60 border border-purple-700/40 text-purple-300 text-xs rounded-lg transition">Copy Intake Link</button><button onClick={()=>refetchIntakeEvents()} className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs rounded-lg transition"><RefreshCw size={11} className={intakeEventsLoading?'animate-spin':''} />Refresh</button></div></div>
+      <div className="flex items-start justify-between gap-3"><div><h2 className="text-white font-semibold text-sm flex items-center gap-2"><FileText size={14} className="text-purple-400" />Buy Box Intake Tracking</h2><p className="text-xs text-gray-500 mt-1">Current status: <span className="text-gray-300">{intakeStatusLabel(buyer.intakeStatus)}</span></p></div><div className="flex items-center gap-2 flex-wrap justify-end"><button onClick={sendIntakeLink} className="px-3 py-1.5 bg-purple-900/40 hover:bg-purple-800/60 border border-purple-700/40 text-purple-300 text-xs rounded-lg transition">Copy Intake Link</button>{canSendIntakeReminder&&<button onClick={sendIntakeReminder} className="px-3 py-1.5 bg-blue-900/40 hover:bg-blue-800/60 border border-blue-700/40 text-blue-300 text-xs rounded-lg transition">Send Reminder</button>}<button onClick={()=>refetchIntakeEvents()} className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs rounded-lg transition"><RefreshCw size={11} className={intakeEventsLoading?'animate-spin':''} />Refresh</button></div></div>
       <div className="grid grid-cols-4 gap-2">{INTAKE_STEPS.map(([eventType,label])=>{ const done=!!getIntakeEventDate(eventType)||(eventType==='INTAKE_LINK_SENT'&&!!buyer.intakeSentAt)||(eventType==='INTAKE_LINK_OPENED'&&!!buyer.intakeOpenedAt)||(eventType==='INTAKE_FORM_STARTED'&&!!buyer.intakeStartedAt)||(eventType==='INTAKE_FORM_SUBMITTED'&&!!buyer.intakeSubmittedAt); return <div key={eventType} className={`rounded-lg border px-2 py-2 text-center ${done?'bg-purple-500/10 border-purple-500/30 text-purple-300':'bg-gray-950/40 border-gray-800 text-gray-600'}`}><div className="text-[11px] font-medium">{label}</div></div>; })}</div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2">{intakeDates.map(([label,value])=><div key={label as string} className="bg-gray-950/40 rounded-lg border border-gray-800 px-3 py-2"><p className="text-[11px] text-gray-500">{label}</p><p className="text-xs text-gray-300 mt-0.5">{formatIntakeDate(value as any)}</p></div>)}</div>
       {intakeCreatedAt&&<p className="text-xs text-gray-500">Intake link ready since <span className="text-gray-300">{formatIntakeDate(intakeCreatedAt as any)}</span></p>}
