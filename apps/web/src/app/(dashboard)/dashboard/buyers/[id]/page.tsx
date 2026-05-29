@@ -295,10 +295,10 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
               <label className="text-gray-500 text-xs block mb-1">Buying Status</label>
               <select value={bbForm.buyingStatus||''} onChange={e=>setBbForm((p:any)=>({...p,buyingStatus:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500">
                 <option value="">Unknown</option>
-                <option value="actively_buying">Actively Buying</option>
-                <option value="buying_soon">Buying Soon</option>
-                <option value="paused">Paused</option>
-                <option value="not_buying">Not Buying</option>
+                <option value="ACTIVELY_BUYING">🔥 Actively Buying</option>
+                <option value="BUYING_SELECTIVELY">👀 Selectively</option>
+                <option value="PAUSED">⏸ Paused</option>
+                <option value="JUST_LOOKING">👋 Just Looking</option>
                 <option value="wholesaler">Wholesaler / JV Partner</option>
               </select>
             </div>
@@ -392,18 +392,17 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
               <label className="text-gray-500 text-xs block mb-1">HOA OK?</label>
               <select value={bbForm.hoaOk||''} onChange={e=>setBbForm((p:any)=>({...p,hoaOk:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none">
                 <option value="">Unknown</option>
-                <option value="yes">Yes</option>
-                <option value="no">No HOA</option>
+                <option value="Yes">Yes</option>
+                <option value="No">No</option>
               </select>
             </div>
             <div className="col-span-2">
               <label className="text-gray-500 text-xs block mb-1">Occupancy</label>
               <select value={bbForm.occupancy||''} onChange={e=>setBbForm((p:any)=>({...p,occupancy:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none">
                 <option value="">No preference</option>
-                <option value="vacant_only">Vacant Only</option>
-                <option value="tenant_ok">Tenant OK</option>
-                <option value="section8_ok">Section 8 OK</option>
-                <option value="no_tenants">No Tenants</option>
+                <option value="Vacant only">Vacant Only</option>
+                <option value="Tenant-occupied OK">Tenant OK</option>
+                <option value="No preference">No Preference</option>
               </select>
             </div>
           </div>
@@ -507,21 +506,20 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
               <label className="text-gray-500 text-xs block mb-1">Preferred Contact</label>
               <select value={bbForm.preferredContact||''} onChange={e=>setBbForm((p:any)=>({...p,preferredContact:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none">
                 <option value="">Unknown</option>
-                <option value="sms">Text / SMS</option>
-                <option value="call">Phone Call</option>
-                <option value="email">Email</option>
-                <option value="facebook">Facebook</option>
-                <option value="whatsapp">WhatsApp</option>
+                <option value="Text only">Text only</option>
+                <option value="Text first, then call">Text first, then call</option>
+                <option value="Call me">Call me</option>
+                <option value="Email">Email</option>
               </select>
             </div>
             <div>
               <label className="text-gray-500 text-xs block mb-1">Deal Send Frequency</label>
               <select value={bbForm.dealSendFreq||''} onChange={e=>setBbForm((p:any)=>({...p,dealSendFreq:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 text-white rounded px-3 py-1.5 text-xs focus:outline-none">
                 <option value="">Unknown</option>
-                <option value="every_match">Every Match</option>
-                <option value="only_best">Only Best Deals</option>
-                <option value="call_first">Call Me First</option>
-                <option value="do_not_blast">Do Not Blast</option>
+                <option value="Every deal">Every deal</option>
+                <option value="Only strong matches">Only strong matches</option>
+                <option value="Weekly digest">Weekly digest</option>
+                <option value="Only top deals">Only top deals</option>
               </select>
             </div>
             <div className="col-span-2">
