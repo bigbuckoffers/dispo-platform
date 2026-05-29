@@ -200,10 +200,22 @@ model Buyer {
   @@index([tier])
   @@index([isActive, isSuspended])
   conversations Conversation[]
-  intakeToken     String?      @unique
-  intakeSentAt    DateTime?
-  intakeSubmittedAt DateTime?
-  intakeSubmissions BuyerIntakeSubmission[]
+
+  // Buy box intake tracking
+  intakeStatus        BuyerIntakeStatus @default(NOT_SENT)
+  intakeToken         String?      @unique
+  intakeLink          String?
+  intakeSentAt        DateTime?
+  intakeOpenedAt      DateTime?
+  intakeStartedAt     DateTime?
+  intakeSubmittedAt   DateTime?
+  intakeLastReminderAt DateTime?
+  intakeCompletedAt   DateTime?
+  intakeExpiresAt     DateTime?
+  intakeSubmissions   BuyerIntakeSubmission[]
+  intakeEvents        BuyerIntakeEvent[]
+
+  @@index([intakeStatus])
   @@map("buyers")
 }
 
@@ -1095,6 +1107,29 @@ enum MessageEventType {
   UNSUBSCRIBED
 }
 
+enum BuyerIntakeEventType {
+  INTAKE_LINK_CREATED
+  INTAKE_LINK_SENT
+  INTAKE_LINK_OPENED
+  INTAKE_FORM_STARTED
+  INTAKE_FORM_SUBMITTED
+  INTAKE_REMINDER_SENT
+  INTAKE_LINK_EXPIRED
+  INTAKE_MANUAL_REVIEW_NEEDED
+}
+
+enum BuyerIntakeStatus {
+  NOT_SENT
+  LINK_CREATED
+  LINK_SENT
+  OPENED
+  STARTED
+  SUBMITTED
+  COMPLETED
+  EXPIRED
+  MANUAL_REVIEW_NEEDED
+}
+
 enum BuyerEventType {
   PROFILE_CREATED
   DEAL_VIEWED
@@ -1218,6 +1253,23 @@ model BuyerIntakeSubmission {
   @@index([buyerId])
   @@index([status])
   @@map("buyer_intake_submissions")
+}
+
+model BuyerIntakeEvent {
+  id          String               @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  buyerId     String               @db.Uuid
+  buyer       Buyer                @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+  intakeToken String?
+  eventType   BuyerIntakeEventType
+  metadata    Json                 @default("{}")
+  createdAt   DateTime             @default(now())
+  createdBy   String?              @db.Uuid
+  source      String?
+
+  @@index([buyerId, createdAt(sort: Desc)])
+  @@index([buyerId, eventType])
+  @@index([intakeToken])
+  @@map("buyer_intake_events")
 }
 
 
