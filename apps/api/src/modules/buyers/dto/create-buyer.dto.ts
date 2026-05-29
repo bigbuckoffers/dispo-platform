@@ -30,6 +30,12 @@ export class CreateBuyBoxDto {
   @IsArray() @IsOptional() investmentStrategy?: string[];
   @IsNumber() @IsOptional() @Min(0) maxAssignmentFee?: number;
   @IsEnum(['COSMETIC_ONLY','LIGHT','MEDIUM','HEAVY','FULL_GUT']) @IsOptional() rehabTolerance?: string;
+  @IsString() @IsOptional() occupancy?: string;
+  @IsString() @IsOptional() hoaOk?: string;
+  @IsString() @IsOptional() hardNoCriteria?: string;
+  @IsString() @IsOptional() excludedAreas?: string;
+  @IsNumber() @IsOptional() minProfit?: number;
+  @IsNumber() @IsOptional() minBaths?: number;
 }
 
 export class CreateBuyerDto {
@@ -62,6 +68,12 @@ export class CreateBuyerDto {
   @ApiPropertyOptional() @IsNumber() @IsOptional() ghostCount?: number;
   @ApiPropertyOptional() @IsString() @IsOptional() aiSummary?: string;
   @ApiPropertyOptional() @IsString() @IsOptional() temperatureNotes?: string;
+  @ApiPropertyOptional() @IsString() @IsOptional() buyingStatus?: string;
+  @ApiPropertyOptional() @IsString() @IsOptional() monthlyCapacity?: string;
+  @ApiPropertyOptional() @IsString() @IsOptional() preferredContact?: string;
+  @ApiPropertyOptional() @IsString() @IsOptional() dealSendFreq?: string;
+  @ApiPropertyOptional() @IsString() @IsOptional() proofOfFunds?: string;
+  @ApiPropertyOptional() @IsString() @IsOptional() privateNotes?: string;
   @ApiPropertyOptional() @IsEnum(BuyerTier) @IsOptional() tier?: BuyerTier;
   @ApiPropertyOptional() @IsString() @IsOptional() aiTemperatureAnalysis?: string;
   @ApiPropertyOptional() @IsString() @IsOptional() proofOfFundsUrl?: string;
