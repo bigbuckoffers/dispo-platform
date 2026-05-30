@@ -389,19 +389,22 @@ export class MessagesService {
         if (!buyer?.phone) throw new Error('Buyer has no phone number');
 
         const link = await this.getOrCreateBuyerBuyBoxLink(buyer);
+        const campaignTemplateKey = freshCampaign.templateKey || 'general';
+        const isReminderCampaign = campaignTemplateKey.startsWith('reminder_');
+
         const message = this.buildBuyBoxBulkMessage(
-          freshCampaign.templateKey || 'general',
+          campaignTemplateKey,
           link,
           freshCampaign.customMessage || undefined,
         );
 
         const sentMessage: any = await this.sendMessage(freshCampaign.organizationId, buyer.id, message, {
-          intakeTrackingType: 'link_sent',
+          intakeTrackingType: isReminderCampaign ? 'reminder' : 'link_sent',
           trackingMetadata: {
-            source: 'bulk_buy_box_send',
+            source: isReminderCampaign ? 'bulk_buy_box_reminder' : 'bulk_buy_box_send',
             method: 'twilio_sms',
             batchId,
-            templateKey: freshCampaign.templateKey || 'general',
+            templateKey: campaignTemplateKey,
             dripRate: '5_per_minute',
             delayMs: freshCampaign.delayMs,
             campaignRecipientId: recipient.id,
@@ -441,6 +444,9 @@ export class MessagesService {
       long_time: `Hey, it’s been a while. We’re cleaning up our buyer list and only want to send deals that fit. Can you update your Buy Box here? ${link}`,
       cold_data: `Hey, we’re updating our buyer network and wanted to confirm what types of deals you’re looking for. Fill out your Buy Box here and we’ll only send relevant opportunities: ${link}`,
       vip: `Hey, we’re updating our VIP buyer profiles so we can keep sending you the right deals first. Can you confirm your current Buy Box here? ${link}`,
+      reminder_1: `Quick reminder to complete your buy box so we can send you better-matched deals: ${link}`,
+      reminder_2: `Following up on your Buy Box form — once this is done, we can send you deals that better match your market, price range, and strategy: ${link}`,
+      reminder_3: `Last reminder on this for now — complete your Buy Box here if you still want us to send deals that match your criteria: ${link}`,
     };
 
     const base = (customMessage || '').trim() || templates[templateKey] || templates.general;
@@ -477,7 +483,9 @@ export class MessagesService {
     } = {},
   ) {
     const delayMs = options.delayMs || 12000;
-    const batchId = `buybox-${Date.now()}`;
+    const templateKey = options.templateKey || 'general';
+    const isReminderCampaign = templateKey.startsWith('reminder_');
+    const batchId = `${isReminderCampaign ? 'buybox-reminder' : 'buybox'}-${Date.now()}`;
 
     const buyers = await this.prisma.buyer.findMany({
       where: { id: { in: buyerIds } },
@@ -506,7 +514,13 @@ export class MessagesService {
       }
 
       const alreadySent = !!buyer.intakeSentAt || ['LINK_SENT', 'OPENED', 'STARTED'].includes(buyer.intakeStatus);
-      if (alreadySent && !options.includeAlreadySent) {
+
+      if (isReminderCampaign && !alreadySent) {
+        skipped.push({ buyerId, reason: 'no_prior_buy_box_send' });
+        continue;
+      }
+
+      if (!isReminderCampaign && alreadySent && !options.includeAlreadySent) {
         skipped.push({ buyerId, reason: 'already_sent' });
         continue;
       }
@@ -521,7 +535,7 @@ export class MessagesService {
         organizationId: orgId,
         type: 'BULK_BUY_BOX_SEND',
         status: eligible.length ? 'QUEUED' : 'NO_ELIGIBLE_BUYERS',
-        templateKey: options.templateKey || 'general',
+        templateKey,
         customMessage: (options.customMessage || '').trim() || null,
         customMessageUsed: !!(options.customMessage || '').trim(),
         includeAlreadySent: !!options.includeAlreadySent,

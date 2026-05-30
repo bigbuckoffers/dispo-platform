@@ -146,6 +146,9 @@ export default function BuyersPage() {
       long_time: `Hey, it’s been a while. We’re cleaning up our buyer list and only want to send deals that fit. Can you update your Buy Box here? {{link}}`,
       cold_data: `Hey, we’re updating our buyer network and wanted to confirm what types of deals you’re looking for. Fill out your Buy Box here and we’ll only send relevant opportunities: {{link}}`,
       vip: `Hey, we’re updating our VIP buyer profiles so we can keep sending you the right deals first. Can you confirm your current Buy Box here? {{link}}`,
+      reminder_1: `Quick reminder to complete your buy box so we can send you better-matched deals: {{link}}`,
+      reminder_2: `Following up on your Buy Box form — once this is done, we can send you deals that better match your market, price range, and strategy: {{link}}`,
+      reminder_3: `Last reminder on this for now — complete your Buy Box here if you still want us to send deals that match your criteria: {{link}}`,
     };
     return templates[template] || templates.general;
   };
@@ -158,6 +161,9 @@ export default function BuyersPage() {
       long_time: `Hey, it’s been a while. We’re cleaning up our buyer list and only want to send deals that fit. Can you update your Buy Box here? ${link}`,
       cold_data: `Hey, we’re updating our buyer network and wanted to confirm what types of deals you’re looking for. Fill out your Buy Box here and we’ll only send relevant opportunities: ${link}`,
       vip: `Hey, we’re updating our VIP buyer profiles so we can keep sending you the right deals first. Can you confirm your current Buy Box here? ${link}`,
+      reminder_1: `Quick reminder to complete your buy box so we can send you better-matched deals: ${link}`,
+      reminder_2: `Following up on your Buy Box form — once this is done, we can send you deals that better match your market, price range, and strategy: ${link}`,
+      reminder_3: `Last reminder on this for now — complete your Buy Box here if you still want us to send deals that match your criteria: ${link}`,
     };
     const base = currentBulkMessage.trim() || bulkCustomMessage.trim() || templates[bulkTemplate] || templates.general;
     return base.includes('{{link}}') ? base.replaceAll('{{link}}', link) : base.includes(link) ? base : `${base} ${link}`;
@@ -190,6 +196,78 @@ export default function BuyersPage() {
     } catch (e: any) {
       alert(`Could not ${action} campaign: ${e.message}`);
     }
+  };
+
+  const getSelectedBuyBoxQueueBulkAction = () => {
+    const selected = getBulkSelectedBuyers();
+
+    if (tab !== 'buybox_followup' || selected.length === 0) {
+      return { type: 'buybox', label: 'Bulk Buy Box Send', templateKey: 'general', includeAlreadySent: false };
+    }
+
+    const actions = selected.map((b: any) => {
+      const key = buyBoxStatusKey(b);
+
+      if (key === 'not_sent') {
+        return { type: 'buybox', templateKey: 'general', includeAlreadySent: false, label: 'Bulk Send Buy Box Forms' };
+      }
+
+      if (['sent','opened','started'].includes(key)) {
+        const nextReminder = getQueueNextReminderNumber(b);
+        if (nextReminder > 3) return { type: 'call', label: 'Call Buyer' };
+        return {
+          type: `reminder_${nextReminder}`,
+          templateKey: `reminder_${nextReminder}`,
+          includeAlreadySent: true,
+          label: `Bulk Send Reminder #${nextReminder}`,
+        };
+      }
+
+      if (key === 'submitted') return { type: 'review', label: 'Review Submissions' };
+      if (key === 'needs_review') return { type: 'profile', label: 'Fix Profiles' };
+
+      return { type: 'unknown', label: 'Mixed Actions' };
+    });
+
+    const uniqueTypes = Array.from(new Set(actions.map((a: any) => a.type)));
+
+    if (uniqueTypes.length > 1) {
+      return { type: 'mixed', label: 'Mixed Bulk Actions' };
+    }
+
+    return actions[0] || { type: 'buybox', label: 'Bulk Buy Box Send', templateKey: 'general', includeAlreadySent: false };
+  };
+
+  const openBulkBuyBoxModal = () => {
+    setBulkResult(null);
+    setShowAllSkippedReasons(false);
+
+    const action: any = getSelectedBuyBoxQueueBulkAction();
+
+    if (tab === 'buybox_followup' && getBulkSelectedBuyers().length > 0) {
+      if (action.type === 'mixed') {
+        alert('Selected buyers require different actions. Filter or select one action group at a time.');
+        return;
+      }
+
+      if (['call','review','profile','unknown'].includes(action.type)) {
+        alert(`${action.label} is not a bulk SMS action. Use the row actions instead.`);
+        return;
+      }
+
+      setBulkTemplate(action.templateKey || 'general');
+      setBulkIncludeAlreadySent(!!action.includeAlreadySent);
+      setBulkCampaignName(`${action.label} - ${new Date().toLocaleDateString()}`);
+      setCurrentBulkMessage(getBulkDefaultTemplateText(action.templateKey || 'general'));
+      loadBulkCampaigns();
+      setShowBulkBuyBoxModal(true);
+      return;
+    }
+
+    setBulkCampaignName(`Buy Box Send - ${new Date().toLocaleDateString()}`);
+    setCurrentBulkMessage(getBulkDefaultTemplateText(bulkTemplate));
+    loadBulkCampaigns();
+    setShowBulkBuyBoxModal(true);
   };
 
   const runBackendBulkBuyBoxSend = () => {
@@ -754,8 +832,8 @@ export default function BuyersPage() {
           <p className="text-gray-400 text-sm mt-1">{total} buyers</p>
         </div>
         <div className="flex gap-2">
-          <button onClick={() => { setBulkResult(null); setShowAllSkippedReasons(false); setBulkCampaignName(`Buy Box Send - ${new Date().toLocaleDateString()}`); setCurrentBulkMessage(getBulkDefaultTemplateText(bulkTemplate)); loadBulkCampaigns(); setShowBulkBuyBoxModal(true); }} className="bg-purple-900/50 hover:bg-purple-800/70 border border-purple-700/50 text-purple-200 px-4 py-2 rounded-lg text-sm font-medium transition">
-            {getBulkSelectedBuyers().length>0 ? `📩 Review & Send Selected (${getBulkSelectedBuyers().length})` : '📩 Bulk Buy Box Send'}
+          <button onClick={openBulkBuyBoxModal} className="bg-purple-900/50 hover:bg-purple-800/70 border border-purple-700/50 text-purple-200 px-4 py-2 rounded-lg text-sm font-medium transition">
+            {getBulkSelectedBuyers().length>0 ? `📩 ${getSelectedBuyBoxQueueBulkAction().label} (${getBulkSelectedBuyers().length})` : '📩 Bulk Buy Box Send'}
           </button>
           <button onClick={() => setShowCreate(true)} className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition">+ Add Buyer</button>
           <button onClick={exportCsv} className="bg-emerald-900/40 hover:bg-emerald-800/60 border border-emerald-700/40 text-emerald-300 px-4 py-2 rounded-lg text-sm font-medium transition">⬇ Export CSV</button>
@@ -1088,7 +1166,7 @@ export default function BuyersPage() {
             <div className="shrink-0 border-b border-gray-800 bg-gradient-to-r from-purple-950/80 to-blue-950/50 px-6 py-5">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <h3 className="text-lg font-semibold text-white">Send Buy Box Forms in Bulk</h3>
+                  <h3 className="text-lg font-semibold text-white">{getSelectedBuyBoxQueueBulkAction().label || "Send Buy Box Forms in Bulk"}</h3>
                   <p className="text-sm text-gray-400 mt-1">Backend drip delivery: 5 texts per minute. Each buyer gets their own unique Buy Box link.</p>
                 </div>
                 <button
@@ -1158,7 +1236,10 @@ export default function BuyersPage() {
                   <option value="long_time">Haven’t Spoken in a While</option>
                   <option value="cold_data">Cold Buyer Data</option>
                   <option value="vip">VIP / Done Deals Before</option>
-                </select>
+                
+                  <option value="reminder_1">Reminder #1</option>
+                  <option value="reminder_2">Reminder #2</option>
+                  <option value="reminder_3">Reminder #3</option></select>
               </div>
 
               <div>
