@@ -79,6 +79,7 @@ export default function BuyersPage() {
   const [bulkCampaigns, setBulkCampaigns] = useState<any[]>([]);
   const [loadingBulkCampaigns, setLoadingBulkCampaigns] = useState(false);
   const [showAllSkippedReasons, setShowAllSkippedReasons] = useState(false);
+  const [showMixedBulkModal, setShowMixedBulkModal] = useState(false);
   const [buyBoxQueueFilter, setBuyBoxQueueFilter] = useState<'all'|'not_sent'|'sent'|'opened'|'started'|'submitted'|'needs_review'>('all');
   const [queueActionLoading, setQueueActionLoading] = useState<Record<string, string>>({});
 
@@ -198,6 +199,66 @@ export default function BuyersPage() {
     }
   };
 
+  const getSelectedBuyBoxQueueBulkBreakdown = () => {
+    const selected = getBulkSelectedBuyers();
+
+    const groups: Record<string, { label: string; count: number; filter?: any; tone: string }> = {};
+
+    selected.forEach((b: any) => {
+      const key = buyBoxStatusKey(b);
+      let groupKey = key;
+      let label = 'Unknown Action';
+      let filter: any = key;
+      let tone = 'bg-gray-800 text-gray-300 border-gray-700';
+
+      if (key === 'not_sent') {
+        groupKey = 'not_sent';
+        label = 'Send Buy Box Forms';
+        filter = 'not_sent';
+        tone = 'bg-green-500/10 text-green-300 border-green-700/40';
+      } else if (['sent','opened','started'].includes(key)) {
+        const nextReminder = getQueueNextReminderNumber(b);
+        if (nextReminder > 3) {
+          groupKey = 'call';
+          label = 'Call Buyer / Stop SMS';
+          filter = key;
+          tone = 'bg-yellow-500/10 text-yellow-300 border-yellow-700/40';
+        } else {
+          groupKey = `reminder_${nextReminder}`;
+          label = `Send Reminder #${nextReminder}`;
+          filter = key;
+          tone = 'bg-blue-500/10 text-blue-300 border-blue-700/40';
+        }
+      } else if (key === 'submitted') {
+        groupKey = 'submitted';
+        label = 'Review Submissions';
+        filter = 'submitted';
+        tone = 'bg-purple-500/10 text-purple-300 border-purple-700/40';
+      } else if (key === 'needs_review') {
+        groupKey = 'needs_review';
+        label = 'Fix Profiles';
+        filter = 'needs_review';
+        tone = 'bg-orange-500/10 text-orange-300 border-orange-700/40';
+      }
+
+      if (!groups[groupKey]) groups[groupKey] = { label, count: 0, filter, tone };
+      groups[groupKey].count += 1;
+    });
+
+    return Object.values(groups);
+  };
+
+  const jumpToBuyBoxQueueFilter = (filter: any) => {
+    setBuyBoxQueueFilter(filter);
+    setShowMixedBulkModal(false);
+
+    const next: Record<string, boolean> = {};
+    getBulkSelectedBuyers().forEach((b: any) => {
+      if (buyBoxStatusKey(b) === filter) next[b.id] = true;
+    });
+    setBulkSelected(next);
+  };
+
   const getSelectedBuyBoxQueueBulkAction = () => {
     const selected = getBulkSelectedBuyers();
 
@@ -246,7 +307,7 @@ export default function BuyersPage() {
 
     if (tab === 'buybox_followup' && getBulkSelectedBuyers().length > 0) {
       if (action.type === 'mixed') {
-        alert('Selected buyers require different actions. Filter or select one action group at a time.');
+        setShowMixedBulkModal(true);
         return;
       }
 
@@ -1160,6 +1221,82 @@ export default function BuyersPage() {
           </div>
         </div>
       )}
+      {showMixedBulkModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm px-4">
+          <div className="w-full max-w-xl rounded-2xl border border-purple-700/40 bg-gray-950 shadow-2xl overflow-hidden">
+            <div className="border-b border-gray-800 bg-gradient-to-r from-purple-950/80 to-blue-950/40 px-6 py-5">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-white">Mixed Bulk Actions Detected</h3>
+                  <p className="mt-1 text-sm text-gray-400">
+                    You selected buyers that need different actions. To protect outreach quality, DispoAI only runs one bulk action at a time.
+                  </p>
+                </div>
+                <button
+                  onClick={()=>setShowMixedBulkModal(false)}
+                  className="rounded-lg px-2 py-1 text-gray-400 hover:bg-gray-800 hover:text-white"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            <div className="px-6 py-5 space-y-4">
+              <div className="rounded-xl border border-gray-800 bg-gray-900/70 p-4">
+                <div className="text-xs font-medium uppercase tracking-wide text-gray-500 mb-3">Selected action groups</div>
+                <div className="space-y-2">
+                  {getSelectedBuyBoxQueueBulkBreakdown().map((group: any, i: number) => (
+                    <div key={i} className="flex items-center justify-between rounded-lg border border-gray-800 bg-gray-950 px-3 py-2">
+                      <div>
+                        <span className={`inline-flex rounded-full border px-2 py-0.5 text-xs font-medium ${group.tone}`}>
+                          {group.label}
+                        </span>
+                      </div>
+                      <div className="text-sm font-semibold text-white">{group.count}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-blue-800/40 bg-blue-950/20 p-4">
+                <div className="text-sm font-medium text-blue-200">Recommended workflow</div>
+                <p className="mt-1 text-xs text-blue-200/70">
+                  Pick one group below, then run the bulk campaign. Example: send all Buy Box forms first, then send Reminder #1 as a separate campaign.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                {getSelectedBuyBoxQueueBulkBreakdown().map((group: any, i: number) => (
+                  <button
+                    key={i}
+                    onClick={()=>jumpToBuyBoxQueueFilter(group.filter)}
+                    className="rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-left text-xs text-gray-300 hover:border-purple-600 hover:bg-purple-950/30 hover:text-white transition"
+                  >
+                    Filter to: <span className="font-semibold">{group.label}</span>
+                    <div className="mt-0.5 text-[10px] text-gray-500">{group.count} selected buyer{group.count === 1 ? '' : 's'}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="border-t border-gray-800 bg-gray-950 px-6 py-4 flex items-center justify-between gap-3">
+              <button
+                onClick={()=>{ setBulkSelected({}); setShowMixedBulkModal(false); }}
+                className="rounded-lg bg-gray-800 px-4 py-2 text-sm text-gray-300 hover:bg-gray-700"
+              >
+                Clear Selection
+              </button>
+              <button
+                onClick={()=>setShowMixedBulkModal(false)}
+                className="rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-500"
+              >
+                Got It
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showBulkBuyBoxModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm px-4">
           <div className="w-full max-w-3xl max-h-[88vh] overflow-hidden rounded-2xl border border-purple-700/40 bg-gray-950 shadow-2xl flex flex-col">
