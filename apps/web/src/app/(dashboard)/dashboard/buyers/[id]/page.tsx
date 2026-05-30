@@ -8,6 +8,7 @@ import { ScoreMeter } from '@/components/buyer/ScoreMeter';
 import { ActivityTimeline } from '@/components/buyer/ActivityTimeline';
 import { formatCurrency } from '@/lib/format';
 import toast from 'react-hot-toast';
+import { ConfirmActionModal } from '@/components/ui/ConfirmActionModal';
 
 const SECTION = ({ title, icon: Icon, iconColor = 'text-gray-400', children, defaultOpen = true, badge }: any) => {
   const [open, setOpen] = useState(defaultOpen);
@@ -149,6 +150,10 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
 
   const [showIntakeSendConfirm, setShowIntakeSendConfirm] = useState(false);
   const [sendingIntakeForm, setSendingIntakeForm] = useState(false);
+  const [showDeleteBuyerConfirm, setShowDeleteBuyerConfirm] = useState(false);
+  const [deletingBuyer, setDeletingBuyer] = useState(false);
+  const [showResetBuyBoxConfirm, setShowResetBuyBoxConfirm] = useState(false);
+  const [resettingBuyBox, setResettingBuyBox] = useState(false);
 
   const getBuyBoxFormMessage = (link: string) => {
     return `Hey, please complete your buy box form so we can send you better-matched deals: ${link}`;
@@ -219,23 +224,33 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
   };
 
   const resetBuyBoxStatus = async () => {
-    if (!confirm('Reset this buyer’s Buy Box status? This will clear their intake link, sent/opened/submitted timestamps, intake events, and submissions.')) return;
-
+    setResettingBuyBox(true);
     try {
       await api.post(`/buyers/${id}/reset-buy-box-status`);
       toast.success('Buy Box status reset');
+      setShowResetBuyBoxConfirm(false);
       qc.invalidateQueries({ queryKey: ['buyer', id] });
       qc.invalidateQueries({ queryKey: ['buyer-intake-events', id] });
       refetchIntakeEvents();
     } catch (e: any) {
       toast.error('Could not reset Buy Box status');
+    } finally {
+      setResettingBuyBox(false);
     }
   };
 
   const deleteBuyer = async () => {
-    if (!confirm('Delete this buyer permanently? This cannot be undone.')) return;
-    try { await api.delete(`/buyers/${id}`); toast.success('Buyer deleted'); window.location.href = '/dashboard/buyers'; }
-    catch { toast.error('Failed to delete buyer'); }
+    setDeletingBuyer(true);
+    try {
+      await api.delete(`/buyers/${id}`);
+      toast.success('Buyer deleted');
+      setShowDeleteBuyerConfirm(false);
+      window.location.href = '/dashboard/buyers';
+    } catch {
+      toast.error('Failed to delete buyer');
+    } finally {
+      setDeletingBuyer(false);
+    }
   };
   const saveIntel = async () => { setSaving(true); try { await api.put(`/buyers/${id}`,{buyerIntelNotes:intelText,dealBreakers}); qc.invalidateQueries({queryKey:['buyer',id]}); toast.success('Saved'); } catch { toast.error('Failed'); } finally { setSaving(false); } };
   const saveDealBreakers = async (updated: string[]) => { try { await api.put(`/buyers/${id}`,{dealBreakers:updated}); qc.invalidateQueries({queryKey:['buyer',id]}); toast.success('Deal breakers saved'); } catch { toast.error('Failed to save'); } };
@@ -479,7 +494,7 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
       </div>
       <div className="flex flex-col gap-2 items-end">
         <div className={`border rounded-xl p-3 text-center min-w-28 ${cpBg}`}><p className="text-gray-500 text-xs">Likely to Close</p><p className={`text-2xl font-bold ${cpColor}`}>{closeProbability}%</p></div>
-        <button onClick={()=>recalculate.mutate()} disabled={recalculate.isPending} className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs rounded-lg transition"><RefreshCw size={11} className={recalculate.isPending?'animate-spin':''} />Recalculate</button><button onClick={markReviewed} className={`flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg transition border font-medium ${ (buyer.tags||[]).includes('profile_reviewed') ? 'bg-green-600 text-white border-green-500' : 'bg-yellow-500 hover:bg-yellow-400 text-black border-yellow-400' }`}><CheckCircle size={11} />{(buyer.tags||[]).includes('profile_reviewed')?'✓ Reviewed':'Mark Reviewed'}</button><button onClick={()=>window.location.href=`/dashboard/messages?buyer=${id}`} className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-900/40 hover:bg-blue-800/60 border border-blue-700/40 text-blue-300 text-xs rounded-lg transition">💬 Message</button><button onClick={sendIntakeLink} className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-900/40 hover:bg-purple-800/60 border border-purple-700/40 text-purple-300 text-xs rounded-lg transition">📋 Copy Buy Box Link</button><button onClick={deleteBuyer} className="flex items-center gap-1.5 px-3 py-1.5 bg-red-900/30 hover:bg-red-900/60 border border-red-700/40 text-red-400 text-xs rounded-lg transition">🗑 Delete</button>
+        <button onClick={()=>recalculate.mutate()} disabled={recalculate.isPending} className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs rounded-lg transition"><RefreshCw size={11} className={recalculate.isPending?'animate-spin':''} />Recalculate</button><button onClick={markReviewed} className={`flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg transition border font-medium ${ (buyer.tags||[]).includes('profile_reviewed') ? 'bg-green-600 text-white border-green-500' : 'bg-yellow-500 hover:bg-yellow-400 text-black border-yellow-400' }`}><CheckCircle size={11} />{(buyer.tags||[]).includes('profile_reviewed')?'✓ Reviewed':'Mark Reviewed'}</button><button onClick={()=>window.location.href=`/dashboard/messages?buyer=${id}`} className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-900/40 hover:bg-blue-800/60 border border-blue-700/40 text-blue-300 text-xs rounded-lg transition">💬 Message</button><button onClick={sendIntakeLink} className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-900/40 hover:bg-purple-800/60 border border-purple-700/40 text-purple-300 text-xs rounded-lg transition">📋 Copy Buy Box Link</button><button onClick={() => setShowDeleteBuyerConfirm(true)} className="flex items-center gap-1.5 px-3 py-1.5 bg-red-900/30 hover:bg-red-900/60 border border-red-700/40 text-red-400 text-xs rounded-lg transition">🗑 Delete</button>
       </div>
     </div>
     <div className="bg-gray-900 rounded-xl border border-gray-800 p-5 space-y-4">
@@ -542,14 +557,50 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
           </div>
         </div>
         <button
-          onClick={resetBuyBoxStatus}
+          onClick={() => setShowResetBuyBoxConfirm(true)}
           className="shrink-0 rounded-lg bg-yellow-500/20 px-3 py-2 text-xs font-medium text-yellow-200 border border-yellow-700/40 hover:bg-yellow-500/30"
         >
           Reset Buy Box Status
         </button>
       </div>
 
-      <SECTION title="AI Buyer Intelligence Summary" icon={Brain} iconColor="text-purple-400" badge={aiConfidence?aiConfidence+'% confidence':undefined}>
+            <ConfirmActionModal
+        open={showResetBuyBoxConfirm}
+        title="Reset Buy Box Status?"
+        description="This will clear this buyer's Buy Box intake status, link token, sent/opened/started/submitted timestamps, intake events, and intake submissions. Use this for testing or resending the form."
+        confirmLabel="Reset Status"
+        cancelLabel="Cancel"
+        variant="warning"
+        loading={resettingBuyBox}
+        onCancel={() => {
+          if (!resettingBuyBox) setShowResetBuyBoxConfirm(false);
+        }}
+        onConfirm={resetBuyBoxStatus}
+      >
+        <div className="rounded-xl border border-yellow-800/40 bg-yellow-900/10 p-3 text-sm text-yellow-100">
+          After reset, this buyer will become eligible to receive a new Buy Box form.
+        </div>
+      </ConfirmActionModal>
+
+      <ConfirmActionModal
+        open={showDeleteBuyerConfirm}
+        title="Delete Buyer?"
+        description="This will delete this buyer profile. This action should only be used when you are sure this record should be removed."
+        confirmLabel="Delete Buyer"
+        cancelLabel="Cancel"
+        variant="danger"
+        loading={deletingBuyer}
+        onCancel={() => {
+          if (!deletingBuyer) setShowDeleteBuyerConfirm(false);
+        }}
+        onConfirm={deleteBuyer}
+      >
+        <div className="rounded-xl border border-red-800/40 bg-red-900/10 p-3 text-sm text-red-100">
+          Buyer: {buyer?.firstName} {buyer?.lastName}
+        </div>
+      </ConfirmActionModal>
+
+<SECTION title="AI Buyer Intelligence Summary" icon={Brain} iconColor="text-purple-400" badge={aiConfidence?aiConfidence+'% confidence':undefined}>
       {aiSummary?(<div className="space-y-3"><p className="text-gray-300 text-sm leading-relaxed bg-purple-500/5 border border-purple-500/20 rounded-lg p-4">{aiSummary}</p><button onClick={generateAiIntel} disabled={generating} className="text-xs text-purple-400 hover:text-purple-300 flex items-center gap-1 disabled:opacity-40"><RefreshCw size={11} className={generating?'animate-spin':''} />{generating?'Regenerating...':'Regenerate Full Intel Report'}</button></div>):(<div className="text-center py-5 space-y-3"><p className="text-gray-500 text-sm">No AI intelligence report generated yet</p><button onClick={generateAiIntel} disabled={generating} className="flex items-center gap-2 px-5 py-2.5 bg-purple-600 hover:bg-purple-500 text-white text-sm rounded-lg transition disabled:opacity-50 mx-auto font-medium"><Sparkles size={14} />{generating?'Generating Report...':'Generate Full Intelligence Report'}</button>{!buyer.buyerIntelNotes&&<p className="text-gray-600 text-xs">Add intel notes below first</p>}</div>)}
     </SECTION>
     <SECTION title={'Likelihood to Close — '+closeProbability+'%'} icon={Target} iconColor={cpColor}>
