@@ -791,7 +791,7 @@ export default function BuyersPage() {
     return (
       <tr className="border-b border-gray-800/50 hover:bg-gray-800/30 cursor-pointer group/row" onClick={()=>window.location.href=`/dashboard/buyers/${b.id}`}>
         <td className="px-4 py-3 min-w-[180px]">
-          <div className="flex items-start gap-3">
+          <div className="flex items-start gap-2">
             <input
               type="checkbox"
               checked={!!bulkSelected[b.id]}
@@ -834,7 +834,7 @@ export default function BuyersPage() {
     return (
       <tr className="border-b border-gray-800/50 hover:bg-gray-800/30 cursor-pointer group/row" onClick={()=>window.location.href=`/dashboard/buyers/${b.id}`}>
         <td className="px-4 py-3">
-          <div className="flex items-start gap-3">
+          <div className="flex items-start gap-2">
             <input
               type="checkbox"
               checked={!!bulkSelected[b.id]}
@@ -1015,7 +1015,7 @@ export default function BuyersPage() {
         </button>
       </div>
       {tab==='all' && (
-        <div className="flex gap-3 mb-4">
+        <div className="flex gap-2 mb-4">
           <input value={search} onChange={e=>{setSearch(e.target.value);setPage(1);}} placeholder="Search buyers..." className="bg-gray-800 border border-gray-700 text-white placeholder-gray-500 rounded-lg px-4 py-2 text-sm w-72 focus:outline-none focus:border-blue-500" />
           <select value={tier} onChange={e=>{setTier(e.target.value);setPage(1);}} className="bg-gray-800 border border-gray-700 text-white rounded-lg px-4 py-2 text-sm">
             <option value="">All Tiers</option>
@@ -1028,7 +1028,7 @@ export default function BuyersPage() {
           <button onClick={load} className="bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-300 px-4 py-2 rounded-lg text-sm">Refresh</button>
         </div>
       )}
-      <div className="bg-gray-900 border border-gray-800 rounded-xl p-3 mb-4 flex items-center justify-between">
+      <div className="bg-gray-900 border border-gray-800 rounded-xl p-2 mb-4 flex items-center justify-between">
         <div className="text-sm text-gray-300">
           Selected buyers: <span className="text-white font-semibold">{getBulkSelectedBuyers().length}</span>
           <span className="text-gray-500 ml-2">Eligible: {getBulkEligibleBuyers().length}</span>
@@ -1113,20 +1113,20 @@ export default function BuyersPage() {
             ))}
           </div>
 
-          <div className="grid grid-cols-4 gap-3 mb-4">
-            <div className="rounded-xl border border-green-800/40 bg-green-900/10 p-3">
+          <div className="grid grid-cols-4 gap-2 mb-4">
+            <div className="rounded-xl border border-green-800/40 bg-green-900/10 p-2">
               <div className="text-xs text-green-400">Send Buy Box Forms</div>
               <div className="text-2xl font-bold text-green-300">{buyBoxQueueCounts.not_sent}</div>
             </div>
-            <div className="rounded-xl border border-blue-800/40 bg-blue-900/10 p-3">
+            <div className="rounded-xl border border-blue-800/40 bg-blue-900/10 p-2">
               <div className="text-xs text-blue-400">Opened / Started</div>
               <div className="text-2xl font-bold text-blue-300">{buyBoxQueueCounts.opened + buyBoxQueueCounts.started}</div>
             </div>
-            <div className="rounded-xl border border-purple-800/40 bg-purple-900/10 p-3">
+            <div className="rounded-xl border border-purple-800/40 bg-purple-900/10 p-2">
               <div className="text-xs text-purple-400">Submitted</div>
               <div className="text-2xl font-bold text-purple-300">{buyBoxQueueCounts.submitted}</div>
             </div>
-            <div className="rounded-xl border border-yellow-800/40 bg-yellow-900/10 p-3">
+            <div className="rounded-xl border border-yellow-800/40 bg-yellow-900/10 p-2">
               <div className="text-xs text-yellow-400">Needs Review</div>
               <div className="text-2xl font-bold text-yellow-300">{buyBoxQueueCounts.needs_review}</div>
             </div>
@@ -1356,7 +1356,7 @@ export default function BuyersPage() {
               </div>
             </div>
 
-            <div className="border-t border-gray-800 bg-gray-950 px-6 py-4 flex items-center justify-end gap-3">
+            <div className="border-t border-gray-800 bg-gray-950 px-6 py-4 flex items-center justify-end gap-2">
               <button
                 onClick={()=>setQueueConfirmAction(null)}
                 className="rounded-lg bg-gray-800 px-4 py-2 text-sm text-gray-300 hover:bg-gray-700"
@@ -1387,7 +1387,7 @@ export default function BuyersPage() {
             queueActionNotice.type === 'error' ? 'bg-red-950/40' :
             'bg-yellow-950/40'
           }`}>
-            <div className="flex items-start justify-between gap-3">
+            <div className="flex items-start justify-between gap-2">
               <div>
                 <div className={`text-sm font-semibold ${
                   queueActionNotice.type === 'success' ? 'text-green-300' :
@@ -1467,7 +1467,7 @@ export default function BuyersPage() {
               </div>
             </div>
 
-            <div className="border-t border-gray-800 bg-gray-950 px-6 py-4 flex items-center justify-between gap-3">
+            <div className="border-t border-gray-800 bg-gray-950 px-6 py-4 flex items-center justify-between gap-2">
               <button
                 onClick={()=>{ setBulkSelected({}); setShowMixedBulkModal(false); }}
                 className="rounded-lg bg-gray-800 px-4 py-2 text-sm text-gray-300 hover:bg-gray-700"
@@ -1505,16 +1505,16 @@ export default function BuyersPage() {
             </div>
 
             <div className="flex-1 overflow-y-auto space-y-5 px-6 py-5">
-              <div className="grid grid-cols-4 gap-3">
-                <div className="rounded-xl border border-gray-800 bg-gray-900/70 p-3"><div className="text-xs text-gray-500">Selected</div><div className="text-2xl font-bold text-white">{getBulkSelectedBuyers().length}</div></div>
-                <div className="rounded-xl border border-green-800/40 bg-green-900/10 p-3"><div className="text-xs text-green-400">Eligible</div><div className="text-2xl font-bold text-green-300">{getBulkEligibleBuyers().length}</div></div>
-                <div className="rounded-xl border border-yellow-800/40 bg-yellow-900/10 p-3"><div className="text-xs text-yellow-400">Skipped</div><div className="text-2xl font-bold text-yellow-300">{getBulkSkippedBuyers().length}</div></div>
-                <div className="rounded-xl border border-blue-800/40 bg-blue-900/10 p-3"><div className="text-xs text-blue-400">Est. Time</div><div className="text-2xl font-bold text-blue-300">~{Math.max(1, Math.ceil(getBulkEligibleBuyers().length / 5))}m</div></div>
+              <div className="grid grid-cols-4 gap-2">
+                <div className="rounded-xl border border-gray-800 bg-gray-900/70 p-2"><div className="text-xs text-gray-500">Selected</div><div className="text-2xl font-bold text-white">{getBulkSelectedBuyers().length}</div></div>
+                <div className="rounded-xl border border-green-800/40 bg-green-900/10 p-2"><div className="text-xs text-green-400">Eligible</div><div className="text-2xl font-bold text-green-300">{getBulkEligibleBuyers().length}</div></div>
+                <div className="rounded-xl border border-yellow-800/40 bg-yellow-900/10 p-2"><div className="text-xs text-yellow-400">Skipped</div><div className="text-2xl font-bold text-yellow-300">{getBulkSkippedBuyers().length}</div></div>
+                <div className="rounded-xl border border-blue-800/40 bg-blue-900/10 p-2"><div className="text-xs text-blue-400">Est. Time</div><div className="text-2xl font-bold text-blue-300">~{Math.max(1, Math.ceil(getBulkEligibleBuyers().length / 5))}m</div></div>
               </div>
 
               {getBulkSkippedBuyers().length > 0 && (
                 <div className="rounded-xl border border-yellow-800/40 bg-yellow-900/10 p-4">
-                  <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center justify-between gap-2">
                     <div>
                       <div className="text-sm font-medium text-yellow-200">Skipped Buyer Reasons</div>
                       <div className="text-xs text-yellow-300/70">
@@ -1532,7 +1532,7 @@ export default function BuyersPage() {
                   {showAllSkippedReasons && (
                     <div className="mt-3 max-h-40 overflow-y-auto space-y-1">
                       {getBulkSkippedBuyers().map((b:any)=>(
-                        <div key={b.id} className="flex items-center justify-between gap-3 rounded-lg bg-gray-950/50 px-3 py-2 text-xs">
+                        <div key={b.id} className="flex items-center justify-between gap-2 rounded-lg bg-gray-950/50 px-3 py-2 text-xs">
                           <span className="truncate text-gray-200">{bname(b)}</span>
                           <span className="shrink-0 text-yellow-300">{getBulkSkipReason(b)}</span>
                         </div>
@@ -1616,7 +1616,7 @@ export default function BuyersPage() {
                   <div className="mb-2 text-sm font-medium text-yellow-200">Backend Skipped Details</div>
                   <div className="max-h-32 overflow-y-auto space-y-1">
                     {bulkResult.skippedDetails.map((s:any, i:number)=>(
-                      <div key={i} className="flex items-center justify-between gap-3 rounded-lg bg-gray-950/50 px-3 py-2 text-xs">
+                      <div key={i} className="flex items-center justify-between gap-2 rounded-lg bg-gray-950/50 px-3 py-2 text-xs">
                         <span className="text-gray-300">{s.buyerId}</span>
                         <span className="text-yellow-300">{String(s.reason || '').replace(/_/g,' ')}</span>
                       </div>
@@ -1626,12 +1626,12 @@ export default function BuyersPage() {
               )}
             </div>
 
-            <div className="shrink-0 flex items-center justify-between gap-3 border-t border-gray-800 bg-gray-950 px-6 py-4">
+            <div className="shrink-0 flex items-center justify-between gap-2 border-t border-gray-800 bg-gray-950 px-6 py-4">
               <div className="text-xs text-gray-500">Rate: 5 texts/minute · backend drip · ~1 SMS every 12 seconds</div>
-              <div className="flex gap-3">
+              <div className="flex gap-2">
                 <button onClick={()=>setShowBulkBuyBoxModal(false)} disabled={bulkSending} className="rounded-lg bg-gray-800 px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 disabled:opacity-50">Close</button>
                 <div className="rounded-xl border border-purple-800/40 bg-purple-950/20 p-4">
-                  <div className="flex items-center justify-between gap-3 mb-3">
+                  <div className="flex items-center justify-between gap-2 mb-3">
                     <div>
                       <div className="text-sm font-medium text-purple-200">Campaign Sending Rules</div>
                       <div className="text-xs text-purple-200/60">Pulled from Settings → Buy Box Sending Rules</div>
@@ -1647,31 +1647,31 @@ export default function BuyersPage() {
                   {loadingBuyBoxSendingRules ? (
                     <div className="text-xs text-gray-500">Loading sending rules...</div>
                   ) : (
-                    <div className="grid grid-cols-3 gap-2 text-xs">
-                      <div className="rounded-lg border border-gray-800 bg-gray-950/60 p-3">
+                    <div className="grid grid-cols-3 gap-1 text-xs sm:grid-cols-3">
+                      <div className="rounded-lg border border-gray-800 bg-gray-950/60 p-2">
                         <div className="text-gray-500 mb-1">Days</div>
                         <div className="font-semibold text-white">{formatSendingDays(getFinalBulkSendingRules().daysOfWeek)}</div>
                       </div>
-                      <div className="rounded-lg border border-gray-800 bg-gray-950/60 p-3">
+                      <div className="rounded-lg border border-gray-800 bg-gray-950/60 p-2">
                         <div className="text-gray-500 mb-1">Send Window</div>
                         <div className="font-semibold text-white">
                           {formatHourLabel(getFinalBulkSendingRules().startHour)} – {formatHourLabel(getFinalBulkSendingRules().endHour)}
                         </div>
                       </div>
-                      <div className="rounded-lg border border-gray-800 bg-gray-950/60 p-3">
+                      <div className="rounded-lg border border-gray-800 bg-gray-950/60 p-2">
                         <div className="text-gray-500 mb-1">Drip Rate</div>
                         <div className="font-semibold text-white">{getFinalBulkSendingRules().maxPerMinute || 5}/min</div>
                       </div>
                     </div>
                   )}
 
-                  <div className="mt-3 rounded-lg border border-blue-800/40 bg-blue-950/20 p-3 text-xs text-blue-200/75">
+                  <div className="mt-3 rounded-lg border border-blue-800/40 bg-blue-950/20 p-2 text-xs text-blue-200/75">
                     Remaining texts pause at the end of the window and resume in the next valid sending window.
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-gray-800 bg-gray-950/70 p-3">
-                  <label className="flex items-center justify-between gap-3 cursor-pointer">
+                <div className="rounded-xl border border-gray-800 bg-gray-950/70 p-2">
+                  <label className="flex items-center justify-between gap-2 cursor-pointer">
                     <div>
                       <div className="text-sm font-medium text-white">Custom rules</div>
                       <div className="text-xs text-gray-500">Off = use Settings defaults.</div>
@@ -1753,7 +1753,7 @@ export default function BuyersPage() {
                         </div>
                       </div>
 
-                      <div className="rounded-lg border border-purple-800/40 bg-purple-950/20 p-3 text-xs text-purple-200/80">
+                      <div className="rounded-lg border border-purple-800/40 bg-purple-950/20 p-2 text-xs text-purple-200/80">
                         This campaign will use: {formatSendingDays(bulkSendingRulesDraft.daysOfWeek)} · {formatHourLabel(bulkSendingRulesDraft.startHour)}–{formatHourLabel(bulkSendingRulesDraft.endHour)} · {bulkSendingRulesDraft.maxPerMinute}/min
                       </div>
                     </div>
@@ -1824,30 +1824,30 @@ export default function BuyersPage() {
         onConfirm={executeBackendBulkBuyBoxSend}
       >
         <div className="space-y-3">
-          <div className="rounded-xl border border-gray-800 bg-gray-900/70 p-3">
+          <div className="rounded-xl border border-gray-800 bg-gray-900/70 p-2">
             <div className="text-xs uppercase tracking-wide text-gray-500">Campaign</div>
             <div className="mt-1 text-sm font-medium text-white">
               {bulkCampaignName || 'Buy Box Send'}
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-xl border border-green-800/40 bg-green-900/10 p-3">
+          <div className="grid grid-cols-2 gap-2">
+            <div className="rounded-xl border border-green-800/40 bg-green-900/10 p-2">
               <div className="text-xs text-green-400">Eligible Recipients</div>
               <div className="text-2xl font-bold text-green-300">{getBulkEligibleBuyers().length}</div>
             </div>
-            <div className="rounded-xl border border-blue-800/40 bg-blue-900/10 p-3">
+            <div className="rounded-xl border border-blue-800/40 bg-blue-900/10 p-2">
               <div className="text-xs text-blue-400">Estimated Time</div>
               <div className="text-2xl font-bold text-blue-300">~{Math.max(1, Math.ceil(getBulkEligibleBuyers().length / 5))}m</div>
             </div>
           </div>
 
-          <div className="rounded-xl border border-gray-800 bg-gray-900/70 p-3">
+          <div className="rounded-xl border border-gray-800 bg-gray-900/70 p-2">
             <div className="text-xs uppercase tracking-wide text-gray-500">Delivery</div>
             <div className="mt-1 text-sm text-gray-300">5 texts per minute · 1 SMS every 12 seconds</div>
           </div>
 
-          <div className="rounded-xl border border-gray-800 bg-gray-900/70 p-3">
+          <div className="rounded-xl border border-gray-800 bg-gray-900/70 p-2">
             <div className="text-xs uppercase tracking-wide text-gray-500">Message Preview</div>
             <div className="mt-2 text-sm leading-relaxed text-gray-200">{getBulkTemplatePreview()}</div>
           </div>
