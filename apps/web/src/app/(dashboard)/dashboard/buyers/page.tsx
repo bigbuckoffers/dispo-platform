@@ -435,7 +435,7 @@ export default function BuyersPage() {
           <p className="text-gray-400 text-sm mt-1">{total} buyers</p>
         </div>
         <div className="flex gap-2">
-          <button onClick={() => { setCurrentBulkMessage(getBulkDefaultTemplateText(bulkTemplate)); loadBulkCampaigns(); setShowBulkBuyBoxModal(true); }} className="bg-purple-900/50 hover:bg-purple-800/70 border border-purple-700/50 text-purple-200 px-4 py-2 rounded-lg text-sm font-medium transition">📩 Bulk Buy Box Send</button>
+          <button onClick={() => { setBulkResult(null); setCurrentBulkMessage(getBulkDefaultTemplateText(bulkTemplate)); loadBulkCampaigns(); setShowBulkBuyBoxModal(true); }} className="bg-purple-900/50 hover:bg-purple-800/70 border border-purple-700/50 text-purple-200 px-4 py-2 rounded-lg text-sm font-medium transition">📩 Bulk Buy Box Send</button>
           <button onClick={() => setShowCreate(true)} className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition">+ Add Buyer</button>
           <button onClick={exportCsv} className="bg-emerald-900/40 hover:bg-emerald-800/60 border border-emerald-700/40 text-emerald-300 px-4 py-2 rounded-lg text-sm font-medium transition">⬇ Export CSV</button>
         </div>
@@ -481,7 +481,7 @@ export default function BuyersPage() {
         <div className="flex gap-2">
           <button onClick={selectVisibleNotSent} className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-xs">Select Visible Not Sent</button>
           <button onClick={clearBulkSelection} className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-xs">Clear</button>
-          <button onClick={()=>{ setCurrentBulkMessage(getBulkDefaultTemplateText(bulkTemplate)); loadBulkCampaigns(); setShowBulkBuyBoxModal(true); }} disabled={getBulkSelectedBuyers().length===0} className="px-3 py-1.5 bg-purple-700 hover:bg-purple-600 text-white rounded-lg text-xs disabled:opacity-40">Send Buy Box Forms</button>
+          <button onClick={()=>{ setBulkResult(null); setCurrentBulkMessage(getBulkDefaultTemplateText(bulkTemplate)); loadBulkCampaigns(); setShowBulkBuyBoxModal(true); }} disabled={getBulkSelectedBuyers().length===0} className="px-3 py-1.5 bg-purple-700 hover:bg-purple-600 text-white rounded-lg text-xs disabled:opacity-40">Send Buy Box Forms</button>
         </div>
       </div>
       {error&&<div className="bg-red-900/30 border border-red-500/30 text-red-300 rounded-lg p-4 mb-4 text-sm">Error: {error}</div>}
@@ -778,7 +778,7 @@ export default function BuyersPage() {
 
               {bulkResult && (
                 <div className="rounded-xl border border-green-800/40 bg-green-900/10 p-4 text-sm text-green-200">
-                  Batch queued: {bulkResult.queued} texts · Skipped: {bulkResult.skipped} · Estimated time: ~{bulkResult.estimatedMinutes}m
+                  Your campaign has been queued. Batch: {bulkResult.batchId} · Queued: {bulkResult.queued} texts · Skipped: {bulkResult.skipped} · Estimated time: ~{bulkResult.estimatedMinutes}m
                 </div>
               )}
             </div>
@@ -787,8 +787,8 @@ export default function BuyersPage() {
               <div className="text-xs text-gray-500">Rate: 5 texts/minute · backend drip · 1 SMS every 12 seconds</div>
               <div className="flex gap-3">
                 <button onClick={()=>setShowBulkBuyBoxModal(false)} disabled={bulkSending} className="rounded-lg bg-gray-800 px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 disabled:opacity-50">Close</button>
-                <button onClick={runBackendBulkBuyBoxSend} disabled={bulkSending || getBulkEligibleBuyers().length===0} className="rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-500 disabled:opacity-50">
-                  {bulkSending ? 'Queuing drip...' : `Confirm Send to ${getBulkEligibleBuyers().length}`}
+                <button onClick={runBackendBulkBuyBoxSend} disabled={bulkSending || !!bulkResult || getBulkEligibleBuyers().length===0} className="rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-500 disabled:opacity-50">
+                  {bulkSending ? 'Queuing drip...' : bulkResult ? 'Campaign Queued' : getBulkEligibleBuyers().length===0 ? 'No Eligible Buyers' : `Confirm Send to ${getBulkEligibleBuyers().length}`}
                 </button>
               </div>
             </div>
