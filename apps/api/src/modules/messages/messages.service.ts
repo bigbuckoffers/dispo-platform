@@ -29,8 +29,21 @@ export class MessagesService {
       orderBy: { lastMessageAt: 'desc' },
       include: {
         buyer: { select: { id: true, firstName: true, lastName: true, phone: true, tier: true } },
+        smsMessages: {
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+          select: {
+            id: true,
+            direction: true,
+            status: true,
+            deliveryStatus: true,
+            deliveryErrorCode: true,
+            deliveryErrorMessage: true,
+            createdAt: true,
+          },
+        },
       },
-    });
+    } as any);
   }
 
   async getMessages(orgId: string, buyerId: string) {

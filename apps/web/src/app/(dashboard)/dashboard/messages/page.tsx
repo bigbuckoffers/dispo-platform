@@ -79,6 +79,42 @@ function smsErrorLabel(m: any) {
   return '';
 }
 
+function conversationDeliveryBadge(c: any) {
+  const last = c?.smsMessages?.[0];
+
+  if (!last) {
+    return { label: 'No SMS', classes: 'bg-gray-800 text-gray-500 border-gray-700', title: 'No SMS messages yet' };
+  }
+
+  if (last.direction === 'INBOUND') {
+    return { label: 'Inbound Reply', classes: 'bg-blue-500/10 text-blue-300 border-blue-700/40', title: 'Last message was an inbound buyer reply' };
+  }
+
+  const status = String(last.deliveryStatus || last.status || '').toUpperCase();
+
+  if (status === 'DELIVERED') {
+    return { label: 'Delivered', classes: 'bg-green-500/10 text-green-300 border-green-700/40', title: 'Last outbound SMS was delivered' };
+  }
+
+  if (status === 'UNDELIVERED') {
+    return { label: 'Undelivered', classes: 'bg-red-500/10 text-red-300 border-red-700/40', title: smsErrorLabel(last) || 'Last outbound SMS was undelivered' };
+  }
+
+  if (status === 'FAILED') {
+    return { label: 'Failed', classes: 'bg-red-500/10 text-red-300 border-red-700/40', title: smsErrorLabel(last) || 'Last outbound SMS failed' };
+  }
+
+  if (status === 'SENT') {
+    return { label: 'Sent', classes: 'bg-blue-500/10 text-blue-300 border-blue-700/40', title: 'Last outbound SMS was sent to Twilio' };
+  }
+
+  if (status === 'PENDING') {
+    return { label: 'Pending', classes: 'bg-yellow-500/10 text-yellow-300 border-yellow-700/40', title: 'Waiting for Twilio delivery update' };
+  }
+
+  return { label: status || 'Outbound', classes: 'bg-gray-800 text-gray-400 border-gray-700', title: 'Last outbound SMS status' };
+}
+
 function getTemp(b: any) {
   try {
     const t = JSON.parse(b?.temperatureNotes || '{}');
@@ -393,6 +429,16 @@ JSON format: {"market":"city name or null","maxPrice":number or null,"minPrice":
                 <div className="flex items-center gap-1 mb-0.5">
                   <span className={`text-[10px] px-1.5 py-0.5 rounded-full border ${getTierBadge(c.buyer.tier)}`}>{getTierLabel(c.buyer.tier)}</span>
                   <span className={`text-[10px] ${t.color}`}>{t.label}</span>
+                </div>
+                <div className="flex items-center gap-1 mb-0.5">
+                  {(() => {
+                    const badge = conversationDeliveryBadge(c);
+                    return (
+                      <span title={badge.title} className={`text-[10px] px-1.5 py-0.5 rounded-full border ${badge.classes}`}>
+                        {badge.label}
+                      </span>
+                    );
+                  })()}
                 </div>
                 <p className="text-gray-500 text-[10px] truncate">{c.lastMessageBody || 'No messages'}</p>
               </div>
