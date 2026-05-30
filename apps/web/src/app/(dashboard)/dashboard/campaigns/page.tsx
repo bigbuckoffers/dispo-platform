@@ -382,7 +382,13 @@ export default function CampaignsPage() {
                             </td>
                             <td className="px-4 py-3 text-gray-400">{r.sentAt ? new Date(r.sentAt).toLocaleString() : '—'}</td>
                             <td className="px-4 py-3 text-gray-400">{r.deliveredAt ? new Date(r.deliveredAt).toLocaleString() : '—'}</td>
-                            <td className="px-4 py-3 text-red-300">{r.error || r.deliveryErrorMessage || r.deliveryErrorCode || '—'}</td>
+                            <td className="px-4 py-3 text-red-300 max-w-xs">
+                              {(r.error || r.deliveryErrorMessage || r.deliveryErrorCode) ? (
+                                <span title={r.error || r.deliveryErrorMessage || r.deliveryErrorCode} className="block truncate">
+                                  {r.error || r.deliveryErrorMessage || r.deliveryErrorCode}
+                                </span>
+                              ) : '—'}
+                            </td>
                           </tr>
                         ))}
                       </tbody>

@@ -1351,21 +1351,29 @@ model BulkSmsCampaign {
 }
 
 model BulkSmsCampaignRecipient {
-  id          String   @id @default(uuid())
-  campaignId  String
-  buyerId     String
-  buyerName   String?
-  phone       String?
-  status      String   @default("PENDING")
-  error       String?
-  sentAt      DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                   String   @id @default(uuid())
+  campaignId           String
+  buyerId              String
+  buyerName            String?
+  phone                String?
+  status               String   @default("PENDING")
+  error                String?
+  twilioSid            String?
+  smsMessageId         String?
+  deliveryStatus       String?  @default("PENDING")
+  deliveryErrorCode    String?
+  deliveryErrorMessage String?
+  deliveredAt          DateTime?
+  failedAt             DateTime?
+  sentAt               DateTime?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
 
-  campaign    BulkSmsCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  campaign             BulkSmsCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
 
   @@index([campaignId])
   @@index([buyerId])
   @@index([status])
+  @@index([twilioSid])
 }
 
