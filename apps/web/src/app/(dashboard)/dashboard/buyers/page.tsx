@@ -1626,56 +1626,43 @@ export default function BuyersPage() {
               )}
             </div>
 
-            <div className="shrink-0 flex items-center justify-between gap-2 border-t border-gray-800 bg-gray-950 px-6 py-4">
-              <div className="text-xs text-gray-500">Rate: 5 texts/minute · backend drip · ~1 SMS every 12 seconds</div>
-              <div className="flex gap-2">
-                <button onClick={()=>setShowBulkBuyBoxModal(false)} disabled={bulkSending} className="rounded-lg bg-gray-800 px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 disabled:opacity-50">Close</button>
-                <div className="rounded-xl border border-purple-800/40 bg-purple-950/20 p-4">
-                  <div className="flex items-center justify-between gap-2 mb-3">
-                    <div>
-                      <div className="text-sm font-medium text-purple-200">Campaign Sending Rules</div>
-                      <div className="text-xs text-purple-200/60">Pulled from Settings → Buy Box Sending Rules</div>
-                    </div>
+            <div className="shrink-0 border-t border-gray-800 bg-gray-950/95 px-6 py-3">
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500">
+                  <span>Backend drip</span>
+                  <span className="text-gray-700">·</span>
+                  <span>{getFinalBulkSendingRules().maxPerMinute || 5} texts/min</span>
+                  <span className="text-gray-700">·</span>
+                  <span>pauses/resumes by window</span>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex items-center gap-2 rounded-lg border border-purple-800/40 bg-purple-950/20 px-3 py-2 text-xs">
+                    <span className="font-semibold uppercase tracking-wide text-purple-200">Rules</span>
+                    {loadingBuyBoxSendingRules ? (
+                      <span className="text-gray-500">Loading...</span>
+                    ) : (
+                      <>
+                        <span className="rounded-md bg-gray-950/70 px-2 py-1 text-white">
+                          {formatSendingDays(getFinalBulkSendingRules().daysOfWeek)}
+                        </span>
+                        <span className="rounded-md bg-gray-950/70 px-2 py-1 text-white">
+                          {formatHourLabel(getFinalBulkSendingRules().startHour)}–{formatHourLabel(getFinalBulkSendingRules().endHour)}
+                        </span>
+                        <span className="rounded-md bg-gray-950/70 px-2 py-1 text-white">
+                          {getFinalBulkSendingRules().maxPerMinute || 5}/min
+                        </span>
+                      </>
+                    )}
                     <button
                       onClick={loadBuyBoxSendingRules}
-                      className="text-xs text-purple-300 hover:text-white"
+                      className="text-purple-300 hover:text-white"
                     >
-                      ↺ Refresh
+                      Refresh
                     </button>
                   </div>
 
-                  {loadingBuyBoxSendingRules ? (
-                    <div className="text-xs text-gray-500">Loading sending rules...</div>
-                  ) : (
-                    <div className="grid grid-cols-3 gap-1 text-xs sm:grid-cols-3">
-                      <div className="rounded-lg border border-gray-800 bg-gray-950/60 p-2">
-                        <div className="text-gray-500 mb-1">Days</div>
-                        <div className="font-semibold text-white">{formatSendingDays(getFinalBulkSendingRules().daysOfWeek)}</div>
-                      </div>
-                      <div className="rounded-lg border border-gray-800 bg-gray-950/60 p-2">
-                        <div className="text-gray-500 mb-1">Send Window</div>
-                        <div className="font-semibold text-white">
-                          {formatHourLabel(getFinalBulkSendingRules().startHour)} – {formatHourLabel(getFinalBulkSendingRules().endHour)}
-                        </div>
-                      </div>
-                      <div className="rounded-lg border border-gray-800 bg-gray-950/60 p-2">
-                        <div className="text-gray-500 mb-1">Drip Rate</div>
-                        <div className="font-semibold text-white">{getFinalBulkSendingRules().maxPerMinute || 5}/min</div>
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="mt-3 rounded-lg border border-blue-800/40 bg-blue-950/20 p-2 text-xs text-blue-200/75">
-                    Remaining texts pause at the end of the window and resume in the next valid sending window.
-                  </div>
-                </div>
-
-                <div className="rounded-xl border border-gray-800 bg-gray-950/70 p-2">
-                  <label className="flex items-center justify-between gap-2 cursor-pointer">
-                    <div>
-                      <div className="text-sm font-medium text-white">Custom rules</div>
-                      <div className="text-xs text-gray-500">Off = use Settings defaults.</div>
-                    </div>
+                  <label className="flex h-9 items-center gap-2 rounded-lg border border-gray-800 bg-gray-950/70 px-3 text-xs text-gray-400">
                     <input
                       type="checkbox"
                       checked={bulkUseCustomSendingRules}
@@ -1683,88 +1670,105 @@ export default function BuyersPage() {
                         setBulkUseCustomSendingRules(e.target.checked);
                         if (e.target.checked) setBulkSendingRulesDraft(buyBoxSendingRules);
                       }}
-                      className="h-4 w-4"
+                      className="h-4 w-4 accent-purple-600"
                     />
+                    <span><span className="text-gray-200">Custom rules</span></span>
                   </label>
 
-                  {bulkUseCustomSendingRules && (
-                    <div className="mt-4 space-y-4">
-                      <div className="grid grid-cols-3 gap-2">
-                        <label className="space-y-1">
-                          <span className="text-xs text-gray-500">Start</span>
-                          <select
-                            value={bulkSendingRulesDraft.startHour}
-                            onChange={e => setBulkSendingRulesDraft((s: any) => ({ ...s, startHour: Number(e.target.value) }))}
-                            className="w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-xs text-white"
-                          >
-                            {Array.from({ length: 24 }).map((_, hour) => (
-                              <option key={hour} value={hour}>{formatHourLabel(hour)}</option>
-                            ))}
-                          </select>
-                        </label>
+                  <button
+                    onClick={()=>setShowBulkBuyBoxModal(false)}
+                    disabled={bulkSending}
+                    className="h-9 rounded-lg bg-gray-800 px-4 text-sm text-gray-200 hover:bg-gray-700 disabled:opacity-50"
+                  >
+                    Close
+                  </button>
 
-                        <label className="space-y-1">
-                          <span className="text-xs text-gray-500">End</span>
-                          <select
-                            value={bulkSendingRulesDraft.endHour}
-                            onChange={e => setBulkSendingRulesDraft((s: any) => ({ ...s, endHour: Number(e.target.value) }))}
-                            className="w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-xs text-white"
-                          >
-                            {Array.from({ length: 24 }).map((_, hour) => (
-                              <option key={hour} value={hour}>{formatHourLabel(hour)}</option>
-                            ))}
-                          </select>
-                        </label>
-
-                        <label className="space-y-1">
-                          <span className="text-xs text-gray-500">Texts/min</span>
-                          <input
-                            type="number"
-                            min={1}
-                            max={20}
-                            value={bulkSendingRulesDraft.maxPerMinute}
-                            onChange={e => setBulkSendingRulesDraft((s: any) => ({ ...s, maxPerMinute: Number(e.target.value) }))}
-                            className="w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-xs text-white"
-                          />
-                        </label>
-                      </div>
-
-                      <div>
-                        <div className="mb-2 text-xs text-gray-500">Days</div>
-                        <div className="flex flex-wrap gap-2">
-                          {Object.entries(dayLabels).map(([day, label]) => {
-                            const dayNumber = Number(day);
-                            const active = (bulkSendingRulesDraft.daysOfWeek || []).map(Number).includes(dayNumber);
-                            return (
-                              <button
-                                type="button"
-                                key={day}
-                                onClick={() => toggleBulkOverrideDay(dayNumber)}
-                                className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition ${
-                                  active
-                                    ? 'border-purple-600 bg-purple-700 text-white'
-                                    : 'border-gray-700 bg-gray-900 text-gray-400 hover:text-white'
-                                }`}
-                              >
-                                {label}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-
-                      <div className="rounded-lg border border-purple-800/40 bg-purple-950/20 p-2 text-xs text-purple-200/80">
-                        This campaign will use: {formatSendingDays(bulkSendingRulesDraft.daysOfWeek)} · {formatHourLabel(bulkSendingRulesDraft.startHour)}–{formatHourLabel(bulkSendingRulesDraft.endHour)} · {bulkSendingRulesDraft.maxPerMinute}/min
-                      </div>
-                    </div>
-                  )}
+                  <button
+                    onClick={runBackendBulkBuyBoxSend}
+                    disabled={bulkSending || !!bulkResult || getBulkEligibleBuyers().length===0}
+                    className="h-9 rounded-lg bg-purple-600 px-5 text-sm font-medium text-white hover:bg-purple-500 disabled:opacity-50"
+                  >
+                    {bulkSending ? 'Sending...' : `Confirm Send to ${getBulkEligibleBuyers().length}`}
+                  </button>
                 </div>
-
-                <button onClick={runBackendBulkBuyBoxSend} disabled={bulkSending || !!bulkResult || getBulkEligibleBuyers().length===0} className="h-10 rounded-lg bg-purple-600 px-4 text-sm font-medium text-white hover:bg-purple-500 disabled:opacity-50">
-                  {bulkSending ? 'Queuing drip...' : bulkResult ? 'Campaign Queued' : getBulkEligibleBuyers().length===0 ? 'No Eligible Buyers' : `Confirm Send to ${getBulkEligibleBuyers().length}`}
-                </button>
               </div>
+
+              {bulkUseCustomSendingRules && (
+                <div className="mt-3 rounded-xl border border-purple-800/40 bg-purple-950/20 p-3">
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <div>
+                      <div className="text-xs font-semibold uppercase tracking-wide text-purple-200">Campaign Override</div>
+                      <div className="text-[11px] text-gray-500">Applies only to this bulk send.</div>
+                    </div>
+                    <div className="text-xs text-purple-200">
+                      {formatSendingDays(bulkSendingRulesDraft.daysOfWeek)} · {formatHourLabel(bulkSendingRulesDraft.startHour)}–{formatHourLabel(bulkSendingRulesDraft.endHour)} · {bulkSendingRulesDraft.maxPerMinute}/min
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+                    <label className="space-y-1">
+                      <span className="text-xs text-gray-500">Start</span>
+                      <select
+                        value={bulkSendingRulesDraft.startHour}
+                        onChange={e => setBulkSendingRulesDraft((s: any) => ({ ...s, startHour: Number(e.target.value) }))}
+                        className="w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-xs text-white"
+                      >
+                        {Array.from({ length: 24 }).map((_, hour) => (
+                          <option key={hour} value={hour}>{formatHourLabel(hour)}</option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <label className="space-y-1">
+                      <span className="text-xs text-gray-500">End</span>
+                      <select
+                        value={bulkSendingRulesDraft.endHour}
+                        onChange={e => setBulkSendingRulesDraft((s: any) => ({ ...s, endHour: Number(e.target.value) }))}
+                        className="w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-xs text-white"
+                      >
+                        {Array.from({ length: 24 }).map((_, hour) => (
+                          <option key={hour} value={hour}>{formatHourLabel(hour)}</option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <label className="space-y-1">
+                      <span className="text-xs text-gray-500">Texts/min</span>
+                      <input
+                        type="number"
+                        min={1}
+                        max={20}
+                        value={bulkSendingRulesDraft.maxPerMinute}
+                        onChange={e => setBulkSendingRulesDraft((s: any) => ({ ...s, maxPerMinute: Number(e.target.value) }))}
+                        className="w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-xs text-white"
+                      />
+                    </label>
+                  </div>
+
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {Object.entries(dayLabels).map(([day, label]) => {
+                      const dayNumber = Number(day);
+                      const active = (bulkSendingRulesDraft.daysOfWeek || []).map(Number).includes(dayNumber);
+                      return (
+                        <button
+                          type="button"
+                          key={day}
+                          onClick={() => toggleBulkOverrideDay(dayNumber)}
+                          className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition ${
+                            active
+                              ? 'border-purple-600 bg-purple-700 text-white'
+                              : 'border-gray-700 bg-gray-900 text-gray-400 hover:text-white'
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
+
           </div>
         </div>
       )}
