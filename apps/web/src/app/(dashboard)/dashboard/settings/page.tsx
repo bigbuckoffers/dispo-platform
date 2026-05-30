@@ -65,6 +65,15 @@ export default function SettingsPage() {
     }
   }
 
+  function formatHourLabel(hour: number) {
+    const h = Number(hour);
+    if (!Number.isFinite(h)) return '—';
+    const normalized = Math.max(0, Math.min(23, h));
+    const suffix = normalized >= 12 ? 'PM' : 'AM';
+    const display = normalized % 12 === 0 ? 12 : normalized % 12;
+    return `${display}:00 ${suffix}`;
+  }
+
   function toggleDay(day: number) {
     setBuyBoxSettings((prev: any) => {
       const exists = prev.daysOfWeek.includes(day);
@@ -103,26 +112,28 @@ export default function SettingsPage() {
               <div className="grid grid-cols-3 gap-3">
                 <label className="space-y-1">
                   <span className="text-xs text-gray-500">Start hour</span>
-                  <input
-                    type="number"
-                    min={0}
-                    max={23}
+                  <select
                     value={buyBoxSettings.startHour}
                     onChange={e => setBuyBoxSettings((s: any) => ({ ...s, startHour: Number(e.target.value) }))}
                     className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:border-purple-500"
-                  />
+                  >
+                    {Array.from({ length: 24 }).map((_, hour) => (
+                      <option key={hour} value={hour}>{formatHourLabel(hour)}</option>
+                    ))}
+                  </select>
                 </label>
 
                 <label className="space-y-1">
                   <span className="text-xs text-gray-500">End hour</span>
-                  <input
-                    type="number"
-                    min={0}
-                    max={23}
+                  <select
                     value={buyBoxSettings.endHour}
                     onChange={e => setBuyBoxSettings((s: any) => ({ ...s, endHour: Number(e.target.value) }))}
                     className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:border-purple-500"
-                  />
+                  >
+                    {Array.from({ length: 24 }).map((_, hour) => (
+                      <option key={hour} value={hour}>{formatHourLabel(hour)}</option>
+                    ))}
+                  </select>
                 </label>
 
                 <label className="space-y-1">
@@ -162,7 +173,7 @@ export default function SettingsPage() {
 
               <div className="flex items-center justify-between gap-3 pt-2">
                 <div className="text-xs text-gray-500">
-                  Current rule: {buyBoxSettings.startHour}:00–{buyBoxSettings.endHour}:00 local time · {buyBoxSettings.maxPerMinute}/min
+                  Current rule: {formatHourLabel(buyBoxSettings.startHour)}–{formatHourLabel(buyBoxSettings.endHour)} local time · {buyBoxSettings.maxPerMinute}/min
                 </div>
                 <button
                   onClick={saveBuyBoxSettings}
