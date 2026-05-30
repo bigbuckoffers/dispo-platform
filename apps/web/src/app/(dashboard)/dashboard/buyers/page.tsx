@@ -80,6 +80,8 @@ export default function BuyersPage() {
   const [loadingBulkCampaigns, setLoadingBulkCampaigns] = useState(false);
   const [showAllSkippedReasons, setShowAllSkippedReasons] = useState(false);
   const [showMixedBulkModal, setShowMixedBulkModal] = useState(false);
+  const [queueConfirmAction, setQueueConfirmAction] = useState<any>(null);
+  const [queueActionNotice, setQueueActionNotice] = useState<any>(null);
   const [buyBoxQueueFilter, setBuyBoxQueueFilter] = useState<'all'|'not_sent'|'sent'|'opened'|'started'|'submitted'|'needs_review'>('all');
   const [queueActionLoading, setQueueActionLoading] = useState<Record<string, string>>({});
 
@@ -423,7 +425,7 @@ export default function BuyersPage() {
 
   const sendBuyBoxFromQueue = async (b: any) => {
     if (!b?.id) return;
-    if (!b?.phone) return alert('This buyer has no phone number.');
+    if (!b?.phone) { setQueueActionNotice({ type: 'error', title: 'Missing phone number', message: 'This buyer has no phone number.' }); return; }
 
     setQueueActionLoading(prev => ({ ...prev, [b.id]: 'send' }));
 
@@ -436,9 +438,9 @@ export default function BuyersPage() {
       await loadAll();
       await load();
 
-      alert('Buy Box form sent');
+      setQueueActionNotice({ type: 'success', title: 'Buy Box form sent', message: `${bname(b)} was sent their Buy Box form.` });
     } catch (e: any) {
-      alert(`Could not send Buy Box form: ${e.message}`);
+      setQueueActionNotice({ type: 'error', title: 'Could not send Buy Box form', message: e.message });
     } finally {
       setQueueActionLoading(prev => {
         const next = { ...prev };
@@ -450,12 +452,12 @@ export default function BuyersPage() {
 
   const sendReminderFromQueue = async (b: any) => {
     if (!b?.id) return;
-    if (!b?.phone) return alert('This buyer has no phone number.');
+    if (!b?.phone) { setQueueActionNotice({ type: 'error', title: 'Missing phone number', message: 'This buyer has no phone number.' }); return; }
 
     const reminderNumber = getQueueNextReminderNumber(b);
 
     if (reminderNumber > 3) {
-      return alert('This buyer already received 3 reminders. Next best action is to call or manually message them.');
+      setQueueActionNotice({ type: 'warning', title: 'Reminder limit reached', message: 'This buyer already received 3 reminders. Next best action is to call or manually message them.' }); return;
     }
 
     setQueueActionLoading(prev => ({ ...prev, [b.id]: 'reminder' }));
@@ -468,9 +470,9 @@ export default function BuyersPage() {
       await loadAll();
       await load();
 
-      alert(`Reminder #${reminderNumber} sent`);
+      setQueueActionNotice({ type: 'success', title: `Reminder #${reminderNumber} sent`, message: `${bname(b)} was sent Buy Box reminder #${reminderNumber}.` });
     } catch (e: any) {
-      alert(`Could not send reminder: ${e.message}`);
+      setQueueActionNotice({ type: 'error', title: 'Could not send reminder', message: e.message });
     } finally {
       setQueueActionLoading(prev => {
         const next = { ...prev };
@@ -772,7 +774,7 @@ export default function BuyersPage() {
           <div className="flex items-center justify-end gap-2">
             {key === 'not_sent' && (
               <button
-                onClick={()=>sendBuyBoxFromQueue(b)}
+                onClick={()=>setQueueConfirmAction({ type: 'send', buyer: b })}
                 disabled={!!queueActionLoading[b.id] || !b.phone}
                 className="px-2 py-1 bg-green-900/40 hover:bg-green-800/70 disabled:opacity-40 text-green-300 rounded text-xs"
                 title={!b.phone ? 'Buyer has no phone number' : 'Send Buy Box form by SMS'}
@@ -783,7 +785,7 @@ export default function BuyersPage() {
 
             {['sent','opened','started'].includes(key) && getQueueNextReminderNumber(b) <= 3 && (
               <button
-                onClick={()=>sendReminderFromQueue(b)}
+                onClick={()=>setQueueConfirmAction({ type: 'reminder', buyer: b, reminderNumber: getQueueNextReminderNumber(b) })}
                 disabled={!!queueActionLoading[b.id] || !b.phone}
                 className="px-2 py-1 bg-blue-900/40 hover:bg-blue-800/70 disabled:opacity-40 text-blue-300 rounded text-xs"
                 title={!b.phone ? 'Buyer has no phone number' : `Send reminder #${getQueueNextReminderNumber(b)}`}
@@ -1221,6 +1223,101 @@ export default function BuyersPage() {
           </div>
         </div>
       )}
+      {/* Confirm Queue SMS Action */}
+      {queueConfirmAction && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm px-4">
+          <div className="w-full max-w-lg rounded-2xl border border-purple-700/40 bg-gray-950 shadow-2xl overflow-hidden">
+            <div className="border-b border-gray-800 bg-gradient-to-r from-purple-950/80 to-blue-950/40 px-6 py-5">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-white">
+                    {queueConfirmAction.type === 'send'
+                      ? 'Send Buy Box Form?'
+                      : `Send Reminder #${queueConfirmAction.reminderNumber}?`}
+                  </h3>
+                  <p className="mt-1 text-sm text-gray-400">
+                    This will send an SMS to the buyer through DispoAI.
+                  </p>
+                </div>
+                <button
+                  onClick={()=>setQueueConfirmAction(null)}
+                  className="rounded-lg px-2 py-1 text-gray-400 hover:bg-gray-800 hover:text-white"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            <div className="px-6 py-5 space-y-4">
+              <div className="rounded-xl border border-gray-800 bg-gray-900/70 p-4">
+                <div className="text-xs font-medium uppercase tracking-wide text-gray-500 mb-2">Buyer</div>
+                <div className="text-sm font-semibold text-white">{bname(queueConfirmAction.buyer)}</div>
+                <div className="text-xs text-gray-500 mt-1">{queueConfirmAction.buyer?.phone || 'No phone number'}</div>
+              </div>
+
+              <div className="rounded-xl border border-blue-800/40 bg-blue-950/20 p-4">
+                <div className="text-sm font-medium text-blue-200">Action</div>
+                <p className="mt-1 text-xs text-blue-200/70">
+                  {queueConfirmAction.type === 'send'
+                    ? 'Send this buyer their unique Buy Box form link.'
+                    : `Send Buy Box reminder #${queueConfirmAction.reminderNumber}. After reminder #3, the queue switches to Call Buyer.`}
+                </p>
+              </div>
+            </div>
+
+            <div className="border-t border-gray-800 bg-gray-950 px-6 py-4 flex items-center justify-end gap-3">
+              <button
+                onClick={()=>setQueueConfirmAction(null)}
+                className="rounded-lg bg-gray-800 px-4 py-2 text-sm text-gray-300 hover:bg-gray-700"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async ()=>{
+                  const action = queueConfirmAction;
+                  setQueueConfirmAction(null);
+                  if (action.type === 'send') await sendBuyBoxFromQueue(action.buyer);
+                  if (action.type === 'reminder') await sendReminderFromQueue(action.buyer);
+                }}
+                className="rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-500"
+              >
+                Confirm & Send
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Queue Action Notice */}
+      {queueActionNotice && (
+        <div className="fixed bottom-5 right-5 z-50 w-full max-w-sm rounded-2xl border border-gray-800 bg-gray-950 shadow-2xl overflow-hidden">
+          <div className={`px-4 py-3 border-b border-gray-800 ${
+            queueActionNotice.type === 'success' ? 'bg-green-950/40' :
+            queueActionNotice.type === 'error' ? 'bg-red-950/40' :
+            'bg-yellow-950/40'
+          }`}>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <div className={`text-sm font-semibold ${
+                  queueActionNotice.type === 'success' ? 'text-green-300' :
+                  queueActionNotice.type === 'error' ? 'text-red-300' :
+                  'text-yellow-300'
+                }`}>
+                  {queueActionNotice.title}
+                </div>
+                <div className="mt-1 text-xs text-gray-400">{queueActionNotice.message}</div>
+              </div>
+              <button
+                onClick={()=>setQueueActionNotice(null)}
+                className="rounded-lg px-2 py-1 text-gray-500 hover:bg-gray-800 hover:text-white text-xs"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showMixedBulkModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm px-4">
           <div className="w-full max-w-xl rounded-2xl border border-purple-700/40 bg-gray-950 shadow-2xl overflow-hidden">
