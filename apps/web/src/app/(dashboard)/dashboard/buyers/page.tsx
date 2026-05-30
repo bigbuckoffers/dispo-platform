@@ -823,8 +823,8 @@ export default function BuyersPage() {
 
               <div className="rounded-xl border border-gray-800 bg-gray-900/60 px-4 py-3 flex items-center justify-between gap-4">
                 <div>
-                  <div className="text-sm font-medium text-white">Campaign history moved</div>
-                  <div className="text-xs text-gray-500">Manage campaign stats, pause, resume, cancel, and recipient results from the Campaigns page.</div>
+                  <div className="text-sm font-medium text-white">Campaigns</div>
+                  <div className="text-xs text-gray-500">View campaign stats, delivery results, pause/resume controls, and recipient details.</div>
                 </div>
                 <button
                   onClick={()=>window.location.href='/dashboard/campaigns'}
