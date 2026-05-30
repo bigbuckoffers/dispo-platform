@@ -109,6 +109,14 @@ export default function BuyersPage() {
 
   const getBulkSkippedBuyers = () => getBulkSelectedBuyers().filter((b: any) => !getBulkEligibleBuyers().some((e: any) => e.id === b.id));
 
+  const getBulkSkipReason = (b: any) => {
+    if (!b) return 'buyer not found';
+    if (!b.phone) return 'missing phone number';
+    if (!!b.intakeSubmittedAt || b.intakeStatus === 'SUBMITTED') return 'already submitted Buy Box form';
+    if (isAlreadySent(b) && !bulkIncludeAlreadySent) return 'already sent Buy Box form';
+    return 'not eligible';
+  };
+
   const toggleBulkBuyer = (buyerId: string) => {
     setBulkSelected(prev => ({ ...prev, [buyerId]: !prev[buyerId] }));
   };
@@ -737,6 +745,26 @@ export default function BuyersPage() {
                 <div className="rounded-xl border border-blue-800/40 bg-blue-900/10 p-4"><div className="text-xs text-blue-400">Est. Time</div><div className="text-2xl font-bold text-blue-300">~{Math.max(1, Math.ceil(getBulkEligibleBuyers().length / 5))}m</div></div>
               </div>
 
+              {getBulkSkippedBuyers().length > 0 && (
+                <div className="rounded-xl border border-yellow-800/40 bg-yellow-900/10 p-4">
+                  <div className="mb-2 flex items-center justify-between">
+                    <div>
+                      <div className="text-sm font-medium text-yellow-200">Skipped Buyer Reasons</div>
+                      <div className="text-xs text-yellow-300/70">These selected buyers will not receive this bulk send.</div>
+                    </div>
+                    <div className="text-xs text-yellow-300">{getBulkSkippedBuyers().length} skipped</div>
+                  </div>
+                  <div className="max-h-32 overflow-y-auto space-y-1">
+                    {getBulkSkippedBuyers().map((b:any)=>(
+                      <div key={b.id} className="flex items-center justify-between gap-3 rounded-lg bg-gray-950/50 px-3 py-2 text-xs">
+                        <span className="text-gray-200">{bname(b)}</span>
+                        <span className="text-yellow-300">{getBulkSkipReason(b)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div>
                 <label className="mb-2 block text-xs font-medium uppercase tracking-wide text-gray-500">Template Context</label>
                 <select value={bulkTemplate} onChange={e=>{ setBulkTemplate(e.target.value); setCurrentBulkMessage(getBulkDefaultTemplateText(e.target.value)); }} className="w-full rounded-lg border border-gray-700 bg-gray-900 px-4 py-2 text-sm text-white">
@@ -823,6 +851,20 @@ export default function BuyersPage() {
               {bulkResult && (
                 <div className="rounded-xl border border-green-800/40 bg-green-900/10 p-4 text-sm text-green-200">
                   Your campaign has been queued. Batch: {bulkResult.batchId} · Queued: {bulkResult.queued} texts · Skipped: {bulkResult.skipped} · Estimated time: ~{bulkResult.estimatedMinutes}m
+                </div>
+              )}
+
+              {bulkResult?.skippedDetails?.length > 0 && (
+                <div className="rounded-xl border border-yellow-800/40 bg-yellow-900/10 p-4">
+                  <div className="mb-2 text-sm font-medium text-yellow-200">Backend Skipped Details</div>
+                  <div className="max-h-32 overflow-y-auto space-y-1">
+                    {bulkResult.skippedDetails.map((s:any, i:number)=>(
+                      <div key={i} className="flex items-center justify-between gap-3 rounded-lg bg-gray-950/50 px-3 py-2 text-xs">
+                        <span className="text-gray-300">{s.buyerId}</span>
+                        <span className="text-yellow-300">{String(s.reason || '').replace(/_/g,' ')}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
