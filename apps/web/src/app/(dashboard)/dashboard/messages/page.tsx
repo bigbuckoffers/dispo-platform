@@ -458,6 +458,40 @@ JSON format: {"market":"city name or null","maxPrice":number or null,"minPrice":
     return true;
   });
 
+  function dealIntentLabel(deal: any, index: number) {
+    const views = deal.viewCount || deal.views || deal.dealViewsCount || 0;
+    const timeSpent = deal.timeSpentSeconds || deal.totalTimeSpentSeconds || 0;
+    const interested = deal.interestStatus || deal.buyerInterestStatus || deal.status;
+
+    if (String(interested || '').toLowerCase().includes('negotiat')) return { label: 'Negotiating', tone: 'text-green-300 bg-green-500/10 border-green-700/40' };
+    if (String(interested || '').toLowerCase().includes('walk')) return { label: 'Walkthrough', tone: 'text-blue-300 bg-blue-500/10 border-blue-700/40' };
+    if (String(interested || '').toLowerCase().includes('interest')) return { label: 'Interested', tone: 'text-purple-300 bg-purple-500/10 border-purple-700/40' };
+    if (views >= 3 || timeSpent >= 180) return { label: 'Warming Up', tone: 'text-yellow-300 bg-yellow-500/10 border-yellow-700/40' };
+    if (index < 3) return { label: 'Good Fit?', tone: 'text-gray-300 bg-gray-800 border-gray-700' };
+
+    return { label: 'Watch', tone: 'text-gray-400 bg-gray-900 border-gray-800' };
+  }
+
+  function dealTokens(deal: any, index: number) {
+    const tokens: string[] = [];
+
+    if (deal.viewCount || deal.views || deal.dealViewsCount) tokens.push('Viewed');
+    if ((deal.viewCount || deal.views || deal.dealViewsCount || 0) >= 3) tokens.push('Repeat Views');
+    if ((deal.timeSpentSeconds || deal.totalTimeSpentSeconds || 0) >= 180) tokens.push('High Time');
+    if (deal.clickedPhotos || deal.photoClicks) tokens.push('Photos');
+    if (deal.clickedComps || deal.compClicks) tokens.push('Comps');
+    if (deal.clickedDocs || deal.documentClicks) tokens.push('Docs');
+    if (deal.interestStatus || deal.buyerInterestStatus) tokens.push(String(deal.interestStatus || deal.buyerInterestStatus));
+    if (index < 2 && tokens.length === 0) tokens.push('Candidate');
+
+    return tokens.slice(0, 4);
+  }
+
+  function formatDealMoney(n: any) {
+    if (!n) return '?';
+    return `$${Math.round(Number(n) / 1000)}k`;
+  }
+
   const totalUnread = conversations.reduce((s, c) => s + (c.unreadCount || 0), 0);
   const temp = buyer ? getTemp(buyer) : null;
   const missing = buyer ? getMissingFields(buyer) : [];
@@ -687,132 +721,207 @@ JSON format: {"market":"city name or null","maxPrice":number or null,"minPrice":
         )}
       </div>
 
-      {/* RIGHT: Buyer Intel Panel */}
+      {/* RIGHT: Buyer Workspace Panel */}
       {selected && showRightPanel && (
-        <div className="w-72 border-l border-gray-800 flex flex-col flex-shrink-0">
-          {/* Tabs */}
-          <div className="flex border-b border-gray-800">
-            {(['intel', 'deals', 'notes'] as const).map(t => (
-              <button key={t} onClick={() => setRightTab(t)} className={`flex-1 py-2.5 text-xs font-medium capitalize transition ${rightTab === t ? 'text-white border-b-2 border-blue-500' : 'text-gray-500 hover:text-gray-300'}`}>{t === 'intel' ? '🧠 Intel' : t === 'deals' ? '🏠 Deals' : '📝 Notes'}</button>
-            ))}
+        <div className="w-80 border-l border-gray-800 flex flex-col flex-shrink-0 bg-gray-950">
+          <div className="border-b border-gray-800 px-3 py-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-sm font-semibold text-white">Buyer Workspace</div>
+                <div className="text-[10px] text-gray-500">Intel, next action, deal intent</div>
+              </div>
+              <button
+                onClick={() => setShowRightPanel(false)}
+                className="rounded-lg px-2 py-1 text-gray-500 hover:bg-gray-800 hover:text-white text-xs"
+              >
+                ✕
+              </button>
+            </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto">
-            {/* INTEL TAB */}
-            {rightTab === 'intel' && buyer && (
-              <div className="p-3 space-y-3">
-                {/* Score + temp */}
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="bg-gray-800/50 rounded-lg p-2 text-center">
-                    <p className="text-gray-500 text-[10px]">Score</p>
-                    <p className={`text-lg font-bold ${(buyer.compositeScore || 50) >= 70 ? 'text-green-400' : (buyer.compositeScore || 50) >= 50 ? 'text-yellow-400' : 'text-red-400'}`}>{buyer.compositeScore || 50}</p>
+          <div className="flex-1 overflow-y-auto p-3 space-y-3">
+            {buyer && (
+              <>
+                {/* Buyer Intel Notes - intentionally high priority */}
+                <div className="rounded-xl border border-blue-800/40 bg-blue-950/20 p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <div>
+                      <div className="text-xs font-semibold text-blue-200">Buyer Intel Notes</div>
+                      <div className="text-[10px] text-blue-300/60">Used by AI for matching, messaging, and deal recommendations.</div>
+                    </div>
+                    <button
+                      onClick={saveNotes}
+                      disabled={savingNotes}
+                      className="rounded-lg bg-blue-600 hover:bg-blue-500 disabled:opacity-40 px-2 py-1 text-[10px] text-white"
+                    >
+                      {savingNotes ? 'Saving...' : 'Save'}
+                    </button>
                   </div>
-                  <div className="bg-gray-800/50 rounded-lg p-2 text-center">
-                    <p className="text-gray-500 text-[10px]">Temp</p>
-                    <p className={`text-xs font-semibold ${temp?.color}`}>{temp?.label}</p>
+                  <textarea
+                    value={notes}
+                    onChange={e => setNotes(e.target.value)}
+                    placeholder="Example: Likes Tampa heavy rehab. Can close hard money in 10 days. Avoids tenant occupied. Needs $40k+ spread. Prefers text first."
+                    className="w-full h-28 bg-gray-950/70 border border-blue-900/40 text-white placeholder-blue-300/30 rounded-lg p-2 text-xs resize-none focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+
+                {/* Snapshot */}
+                <div className="rounded-xl border border-gray-800 bg-gray-900/60 p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="text-xs font-semibold text-white">Buyer Snapshot</div>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full border ${getTierBadge(buyer.tier)}`}>{getTierLabel(buyer.tier)}</span>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="rounded-lg bg-gray-950/70 p-2 text-center">
+                      <div className="text-[10px] text-gray-500">Score</div>
+                      <div className={`text-base font-bold ${(buyer.compositeScore || 50) >= 70 ? 'text-green-400' : (buyer.compositeScore || 50) >= 50 ? 'text-yellow-400' : 'text-red-400'}`}>{buyer.compositeScore || 50}</div>
+                    </div>
+                    <div className="rounded-lg bg-gray-950/70 p-2 text-center">
+                      <div className="text-[10px] text-gray-500">Temp</div>
+                      <div className={`text-[10px] font-semibold ${temp?.color}`}>{temp?.label?.replace('— ', '')}</div>
+                    </div>
+                    <div className="rounded-lg bg-gray-950/70 p-2 text-center">
+                      <div className="text-[10px] text-gray-500">Missing</div>
+                      <div className={`text-base font-bold ${missing.length ? 'text-orange-300' : 'text-green-300'}`}>{missing.length}</div>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 space-y-1.5 text-xs">
+                    <div className="flex justify-between gap-2">
+                      <span className="text-gray-500">Market</span>
+                      <span className="text-gray-300 truncate">{buyer.marketPrimary || buyer.buyBox?.states?.join(', ') || 'Unknown'}</span>
+                    </div>
+                    <div className="flex justify-between gap-2">
+                      <span className="text-gray-500">Strategy</span>
+                      <span className="text-gray-300 truncate">{buyer.preferredStrategies?.[0] || 'Unknown'}</span>
+                    </div>
+                    <div className="flex justify-between gap-2">
+                      <span className="text-gray-500">Price</span>
+                      <span className="text-gray-300 truncate">
+                        {buyer.buyBox?.anyPrice ? 'Any' : buyer.buyBox?.minPrice || buyer.buyBox?.maxPrice ? `${formatDealMoney(buyer.buyBox?.minPrice)}–${formatDealMoney(buyer.buyBox?.maxPrice)}` : 'Unknown'}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
-                {/* Tier */}
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-500 text-xs">Tier</span>
-                  <span className={`text-xs px-2 py-0.5 rounded-full border ${getTierBadge(buyer.tier)}`}>{getTierLabel(buyer.tier)}</span>
+                {/* Next Best Action */}
+                <div className="rounded-xl border border-amber-800/40 bg-amber-950/20 p-3">
+                  <div className="text-xs font-semibold text-amber-200 mb-1">Next Best Action</div>
+                  <div className="text-xs text-amber-100/90">
+                    {nextQ || (missing.length ? `Complete missing profile info: ${missing[0]}` : 'Profile looks usable. Watch replies and deal engagement.')}
+                  </div>
+                  <div className="mt-2 flex gap-2">
+                    {nextQ && (
+                      <>
+                        <button
+                          onClick={() => setInput(nextQ)}
+                          className="rounded-lg bg-amber-600/20 hover:bg-amber-600/30 px-2 py-1 text-[10px] text-amber-200 border border-amber-700/40"
+                        >
+                          Use Draft
+                        </button>
+                        <button
+                          onClick={() => sendMessage(nextQ)}
+                          className="rounded-lg bg-amber-600 hover:bg-amber-500 px-2 py-1 text-[10px] text-white"
+                        >
+                          Send Now
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </div>
 
-                {/* Market + Strategy */}
-                {buyer.marketPrimary && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-500 text-xs">Market</span>
-                    <span className="text-gray-300 text-xs">{buyer.marketPrimary}</span>
+                {/* Quick Actions */}
+                <div className="rounded-xl border border-gray-800 bg-gray-900/60 p-3">
+                  <div className="text-xs font-semibold text-white mb-2">Quick Actions</div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <a href={`/dashboard/buyers/${selected.buyer.id}`} className="rounded-lg bg-gray-800 hover:bg-gray-700 px-2 py-1.5 text-center text-[10px] text-gray-200">Open Profile</a>
+                    <button onClick={() => { if (buyer?.phone) window.location.href = `tel:${buyer.phone}`; }} className="rounded-lg bg-gray-800 hover:bg-gray-700 px-2 py-1.5 text-[10px] text-gray-200">Call Buyer</button>
+                    <button onClick={() => {
+                      const link = `https://dispo-platform-web.vercel.app/intake/${buyer?.intakeToken || buyer?.id || ''}`;
+                      navigator.clipboard?.writeText(link);
+                    }} className="rounded-lg bg-gray-800 hover:bg-gray-700 px-2 py-1.5 text-[10px] text-gray-200">Copy Buy Box</button>
+                    <button onClick={() => setInput(`Hey ${buyer?.firstName || ''}! Fill out your buy box here so we can match deals directly to you: https://dispo-platform-web.vercel.app/intake/${buyer?.intakeToken || buyer?.id || ''}`)} className="rounded-lg bg-purple-900/40 hover:bg-purple-800/60 px-2 py-1.5 text-[10px] text-purple-200">Draft Buy Box</button>
                   </div>
-                )}
-                {buyer.preferredStrategies?.length > 0 && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-500 text-xs">Strategy</span>
-                    <span className="text-gray-300 text-xs truncate ml-2">{buyer.preferredStrategies[0]}</span>
-                  </div>
-                )}
-                {buyer.notes && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-500 text-xs">Funding</span>
-                    <span className="text-gray-300 text-xs">{buyer.notes}</span>
-                  </div>
-                )}
-                {buyer.buyBox?.minPrice || buyer.buyBox?.maxPrice ? (
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-500 text-xs">Price</span>
-                    <span className="text-gray-300 text-xs">{buyer.buyBox?.anyPrice ? 'Any' : `$${buyer.buyBox.minPrice ? Math.round(buyer.buyBox.minPrice/1000)+'k' : '?'}–$${buyer.buyBox.maxPrice ? Math.round(buyer.buyBox.maxPrice/1000)+'k' : '?'}`}</span>
-                  </div>
-                ) : null}
+                </div>
 
-                {/* Missing fields */}
+                {/* Missing Info */}
                 {missing.length > 0 && (
-                  <div>
-                    <p className="text-gray-500 text-[10px] uppercase tracking-wide mb-1.5">Missing Info</p>
+                  <div className="rounded-xl border border-orange-800/40 bg-orange-950/20 p-3">
+                    <div className="text-xs font-semibold text-orange-200 mb-2">Profile Gaps</div>
                     <div className="flex flex-wrap gap-1">
                       {missing.map((m, i) => (
-                        <span key={i} className="text-[10px] bg-orange-500/10 text-orange-400 border border-orange-500/20 px-1.5 py-0.5 rounded">{m}</span>
+                        <span key={i} className="text-[10px] bg-orange-500/10 text-orange-300 border border-orange-500/20 px-1.5 py-0.5 rounded">{m}</span>
                       ))}
                     </div>
                   </div>
                 )}
 
-                {/* Quick tier change */}
-                <div>
-                  <p className="text-gray-500 text-[10px] uppercase tracking-wide mb-1.5">Quick Tier</p>
-                  <div className="flex gap-1 flex-wrap">
-                    {['VIP', 'TIER_1', 'TIER_2', 'TIER_3'].map(t => (
-                      <button key={t} onClick={async () => {
-                        await fetch(`${API}/buyers/${buyer.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tier: t }) });
-                        loadBuyer(buyer.id);
-                      }} className={`text-[10px] px-2 py-0.5 rounded-full border transition ${buyer.tier === t ? getTierBadge(t) + ' ring-1 ring-white/20' : 'border-gray-700 text-gray-500 hover:text-gray-300'}`}>
-                        {getTierLabel(t)}
-                      </button>
-                    ))}
+                {/* Deal Activity / Intent Radar */}
+                <div className="rounded-xl border border-gray-800 bg-gray-900/60 p-3">
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div>
+                      <div className="text-xs font-semibold text-white">Deal Intent Radar</div>
+                      <div className="text-[10px] text-gray-500">Tracks attention signals so you know who is warming up.</div>
+                    </div>
+                    <span className="rounded-full border border-gray-700 bg-gray-800 px-2 py-0.5 text-[10px] text-gray-400">V1</span>
                   </div>
-                </div>
-              </div>
-            )}
 
-            {/* DEALS TAB */}
-            {rightTab === 'deals' && (
-              <div className="p-3 space-y-2">
-                <p className="text-gray-500 text-xs">Deals to send this buyer</p>
-                {deals.length === 0 ? (
-                  <p className="text-gray-600 text-xs">No deals found</p>
-                ) : deals.slice(0, 8).map((deal: any) => (
-                  <div key={deal.id} className="bg-gray-800/50 border border-gray-700/50 rounded-lg p-2">
-                    <p className="text-white text-xs font-medium truncate">{deal.address}</p>
-                    <div className="flex items-center justify-between mt-1">
-                      <span className="text-gray-500 text-[10px]">{deal.city}, {deal.state} · ${deal.askingPrice ? Math.round(deal.askingPrice/1000)+'k' : '?'}</span>
-                      <button onClick={() => {
-                        const msg = `Hey! New deal: ${deal.address}, ${deal.city} ${deal.state}. Asking $${deal.askingPrice?.toLocaleString()}${deal.arv ? `, ARV ~$${deal.arv.toLocaleString()}` : ''}. Interested?`;
-                        setInput(msg);
-                      }} className="text-[10px] text-blue-400 hover:text-blue-300">Send →</button>
+                  <div className="rounded-lg border border-dashed border-gray-700 bg-gray-950/50 p-2 mb-2">
+                    <div className="text-[10px] text-gray-400">
+                      Live tracking tokens to connect next:
+                    </div>
+                    <div className="mt-1 flex flex-wrap gap-1">
+                      {['Viewed', 'Repeat Views', 'High Time', 'Photos', 'Comps', 'Docs', 'Interested', 'Walkthrough', 'Negotiating'].map(token => (
+                        <span key={token} className="rounded bg-gray-800 px-1.5 py-0.5 text-[10px] text-gray-400">{token}</span>
+                      ))}
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
 
-            {/* NOTES TAB */}
-            {rightTab === 'notes' && (
-              <div className="p-3 space-y-2">
-                <p className="text-gray-500 text-xs">Intel notes (saves to buyer profile)</p>
-                <textarea
-                  value={notes}
-                  onChange={e => setNotes(e.target.value)}
-                  placeholder="Add notes, call transcripts, objections..."
-                  className="w-full h-48 bg-gray-800 border border-gray-700 text-white placeholder-gray-600 rounded-lg p-2 text-xs resize-none focus:outline-none focus:border-blue-500"
-                />
-                <button onClick={saveNotes} disabled={savingNotes} className="w-full py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-white text-xs rounded-lg transition">
-                  {savingNotes ? 'Saving...' : 'Save Notes'}
-                </button>
-              </div>
+                  {deals.length === 0 ? (
+                    <div className="text-xs text-gray-600">No deals loaded yet.</div>
+                  ) : (
+                    <div className="space-y-2">
+                      {deals.slice(0, 4).map((deal: any, index: number) => {
+                        const intent = dealIntentLabel(deal, index);
+                        const tokens = dealTokens(deal, index);
+                        return (
+                          <div key={deal.id} className="rounded-lg bg-gray-950/70 border border-gray-800 p-2">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="min-w-0">
+                                <div className="truncate text-xs font-medium text-white">{deal.address}</div>
+                                <div className="text-[10px] text-gray-500 truncate">{deal.city}, {deal.state} · Ask {formatDealMoney(deal.askingPrice)}</div>
+                              </div>
+                              <span className={`shrink-0 rounded-full border px-1.5 py-0.5 text-[10px] ${intent.tone}`}>{intent.label}</span>
+                            </div>
+
+                            {tokens.length > 0 && (
+                              <div className="mt-2 flex flex-wrap gap-1">
+                                {tokens.map(token => (
+                                  <span key={token} className="rounded bg-blue-500/10 px-1.5 py-0.5 text-[10px] text-blue-300">{token}</span>
+                                ))}
+                              </div>
+                            )}
+
+                            <div className="mt-2 flex justify-between gap-2">
+                              <button onClick={() => {
+                                const msg = `Hey! New deal: ${deal.address}, ${deal.city} ${deal.state}. Asking $${deal.askingPrice?.toLocaleString()}${deal.arv ? `, ARV ~$${deal.arv.toLocaleString()}` : ''}. Interested?`;
+                                setInput(msg);
+                              }} className="text-[10px] text-blue-400 hover:text-blue-300">Draft SMS →</button>
+                              <a href={`/dashboard/deals/${deal.id}`} className="text-[10px] text-gray-500 hover:text-gray-300">Open Deal</a>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </>
             )}
           </div>
         </div>
       )}
+
     </div>
   );
 }
