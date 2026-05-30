@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { UserButton } from '@clerk/nextjs';
 import { motion } from 'framer-motion';
-import { LayoutDashboard, Users, Home, Zap, BarChart3, ShoppingBag, Bell, Settings, ChevronLeft, ChevronRight, MessageSquare } from 'lucide-react';
+import { LayoutDashboard, Users, Home, Zap, BarChart3, ShoppingBag, Bell, Settings, ChevronLeft, ChevronRight, MessageSquare, Megaphone } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { AuthProvider } from '@/components/AuthProvider';
 
@@ -12,6 +12,7 @@ const NAV_ITEMS = [
   { href: '/dashboard/deals', icon: Home, label: 'Deals' },
   { href: '/dashboard/buyers', icon: Users, label: 'Buyers' },
   { href: '/dashboard/matching', icon: Zap, label: 'AI Matching' },
+  { href: '/dashboard/campaigns', icon: Megaphone, label: 'Campaigns' },
   { href: '/dashboard/messages', icon: MessageSquare, label: 'Messages' },
   { href: '/dashboard/dispo', icon: MessageSquare, label: 'Dispo' },
   { href: '/dashboard/marketplace', icon: ShoppingBag, label: 'Marketplace' },
