@@ -73,6 +73,8 @@ export default function BuyersPage() {
   const [bulkIncludeAlreadySent, setBulkIncludeAlreadySent] = useState(false);
   const [bulkSending, setBulkSending] = useState(false);
   const [bulkResult, setBulkResult] = useState<any>(null);
+  const [bulkCampaigns, setBulkCampaigns] = useState<any[]>([]);
+  const [loadingBulkCampaigns, setLoadingBulkCampaigns] = useState(false);
 
 
   const getVisibleBulkBuyers = () => {
@@ -134,6 +136,16 @@ export default function BuyersPage() {
     return base.includes('{{link}}') ? base.replaceAll('{{link}}', link) : base.includes(link) ? base : `${base} ${link}`;
   };
 
+  const loadBulkCampaigns = async () => {
+    setLoadingBulkCampaigns(true);
+    try {
+      const res = await fetch(`${API}/messages/bulk-campaigns`);
+      const data = await res.json();
+      setBulkCampaigns(Array.isArray(data) ? data : []);
+    } catch {}
+    finally { setLoadingBulkCampaigns(false); }
+  };
+
   const runBackendBulkBuyBoxSend = async () => {
     const eligible = getBulkEligibleBuyers();
     if (!eligible.length) return alert('No eligible buyers selected.');
@@ -160,6 +172,7 @@ export default function BuyersPage() {
       if (!res.ok) throw new Error(data?.message || `API error ${res.status}`);
 
       setBulkResult(data);
+      loadBulkCampaigns();
       load();
       loadAll();
     } catch (e: any) {
@@ -422,7 +435,7 @@ export default function BuyersPage() {
           <p className="text-gray-400 text-sm mt-1">{total} buyers</p>
         </div>
         <div className="flex gap-2">
-          <button onClick={() => { setCurrentBulkMessage(getBulkDefaultTemplateText(bulkTemplate)); setShowBulkBuyBoxModal(true); }} className="bg-purple-900/50 hover:bg-purple-800/70 border border-purple-700/50 text-purple-200 px-4 py-2 rounded-lg text-sm font-medium transition">📩 Bulk Buy Box Send</button>
+          <button onClick={() => { setCurrentBulkMessage(getBulkDefaultTemplateText(bulkTemplate)); loadBulkCampaigns(); setShowBulkBuyBoxModal(true); }} className="bg-purple-900/50 hover:bg-purple-800/70 border border-purple-700/50 text-purple-200 px-4 py-2 rounded-lg text-sm font-medium transition">📩 Bulk Buy Box Send</button>
           <button onClick={() => setShowCreate(true)} className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition">+ Add Buyer</button>
           <button onClick={exportCsv} className="bg-emerald-900/40 hover:bg-emerald-800/60 border border-emerald-700/40 text-emerald-300 px-4 py-2 rounded-lg text-sm font-medium transition">⬇ Export CSV</button>
         </div>
@@ -468,7 +481,7 @@ export default function BuyersPage() {
         <div className="flex gap-2">
           <button onClick={selectVisibleNotSent} className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-xs">Select Visible Not Sent</button>
           <button onClick={clearBulkSelection} className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-xs">Clear</button>
-          <button onClick={()=>{ setCurrentBulkMessage(getBulkDefaultTemplateText(bulkTemplate)); setShowBulkBuyBoxModal(true); }} disabled={getBulkSelectedBuyers().length===0} className="px-3 py-1.5 bg-purple-700 hover:bg-purple-600 text-white rounded-lg text-xs disabled:opacity-40">Send Buy Box Forms</button>
+          <button onClick={()=>{ setCurrentBulkMessage(getBulkDefaultTemplateText(bulkTemplate)); loadBulkCampaigns(); setShowBulkBuyBoxModal(true); }} disabled={getBulkSelectedBuyers().length===0} className="px-3 py-1.5 bg-purple-700 hover:bg-purple-600 text-white rounded-lg text-xs disabled:opacity-40">Send Buy Box Forms</button>
         </div>
       </div>
       {error&&<div className="bg-red-900/30 border border-red-500/30 text-red-300 rounded-lg p-4 mb-4 text-sm">Error: {error}</div>}
@@ -722,6 +735,41 @@ export default function BuyersPage() {
               <div>
                 <div className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">Preview</div>
                 <div className="rounded-xl border border-gray-800 bg-gray-900/70 p-4 text-sm leading-relaxed text-gray-200">{getBulkTemplatePreview()}</div>
+              </div>
+
+              <div className="rounded-xl border border-gray-800 bg-gray-900/60 p-4">
+                <div className="mb-3 flex items-center justify-between">
+                  <div>
+                    <div className="text-sm font-medium text-white">Recent Bulk Campaigns</div>
+                    <div className="text-xs text-gray-500">Track queued, sent, failed, skipped, and completion status.</div>
+                  </div>
+                  <button onClick={loadBulkCampaigns} className="text-xs text-gray-400 hover:text-white">{loadingBulkCampaigns ? 'Loading...' : 'Refresh'}</button>
+                </div>
+
+                {bulkCampaigns.length===0 ? (
+                  <div className="text-xs text-gray-500">No bulk campaigns yet.</div>
+                ) : (
+                  <div className="max-h-52 overflow-y-auto space-y-2">
+                    {bulkCampaigns.slice(0,5).map((c:any)=>(
+                      <div key={c.batchId} className="rounded-lg border border-gray-800 bg-gray-950/70 p-3">
+                        <div className="flex items-center justify-between gap-3">
+                          <div>
+                            <div className="text-xs font-medium text-gray-200">{c.batchId}</div>
+                            <div className="text-xs text-gray-500">{new Date(c.startedAt).toLocaleString()} · Template: {c.templateKey}</div>
+                          </div>
+                          <span className={`text-xs px-2 py-1 rounded-full ${c.status==='COMPLETED'?'bg-green-500/10 text-green-300':c.status==='COMPLETED_WITH_ERRORS'?'bg-yellow-500/10 text-yellow-300':c.status==='SENDING'?'bg-blue-500/10 text-blue-300':'bg-gray-500/10 text-gray-300'}`}>{c.status}</span>
+                        </div>
+                        <div className="mt-2 grid grid-cols-5 gap-2 text-xs">
+                          <div className="text-gray-500">Selected <span className="text-gray-200">{c.selected}</span></div>
+                          <div className="text-gray-500">Queued <span className="text-gray-200">{c.queued}</span></div>
+                          <div className="text-gray-500">Sent <span className="text-green-300">{c.sent}</span></div>
+                          <div className="text-gray-500">Failed <span className="text-red-300">{c.failed}</span></div>
+                          <div className="text-gray-500">Skipped <span className="text-yellow-300">{c.skipped}</span></div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="rounded-xl border border-yellow-700/30 bg-yellow-900/10 p-4 text-xs text-yellow-200">

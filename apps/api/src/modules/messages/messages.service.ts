@@ -3,6 +3,8 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../shared/prisma/prisma.service';
 import * as twilio from 'twilio';
 import { randomBytes } from 'crypto';
+import * as fs from 'fs';
+import * as path from 'path';
 import { IntakeService } from '../intake/intake.service';
 
 @Injectable()
@@ -120,6 +122,70 @@ export class MessagesService {
     }
   }
 
+  private getCampaignStorePath() {
+    const dir = path.join(process.cwd(), 'bulk-campaigns');
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    return path.join(dir, 'campaigns.json');
+  }
+
+  private readBulkCampaigns() {
+    const file = this.getCampaignStorePath();
+    if (!fs.existsSync(file)) return [];
+    try {
+      return JSON.parse(fs.readFileSync(file, 'utf8'));
+    } catch {
+      return [];
+    }
+  }
+
+  private writeBulkCampaigns(campaigns: any[]) {
+    const file = this.getCampaignStorePath();
+    fs.writeFileSync(file, JSON.stringify(campaigns.slice(0, 100), null, 2));
+  }
+
+  private upsertBulkCampaign(campaign: any) {
+    const campaigns = this.readBulkCampaigns();
+    const idx = campaigns.findIndex((c: any) => c.batchId === campaign.batchId);
+    if (idx >= 0) campaigns[idx] = { ...campaigns[idx], ...campaign, updatedAt: new Date().toISOString() };
+    else campaigns.unshift({ ...campaign, updatedAt: new Date().toISOString() });
+    this.writeBulkCampaigns(campaigns);
+  }
+
+  private updateBulkCampaignResult(batchId: string, result: any) {
+    const campaigns = this.readBulkCampaigns();
+    const idx = campaigns.findIndex((c: any) => c.batchId === batchId);
+    if (idx === -1) return;
+
+    const campaign = campaigns[idx];
+    campaign.results = campaign.results || [];
+    campaign.results.push({ ...result, at: new Date().toISOString() });
+
+    if (result.status === 'sent') campaign.sent = (campaign.sent || 0) + 1;
+    if (result.status === 'failed') campaign.failed = (campaign.failed || 0) + 1;
+
+    const completed = (campaign.sent || 0) + (campaign.failed || 0);
+    if (completed >= campaign.queued) {
+      campaign.status = campaign.failed > 0 ? 'COMPLETED_WITH_ERRORS' : 'COMPLETED';
+      campaign.completedAt = new Date().toISOString();
+    } else {
+      campaign.status = 'SENDING';
+    }
+
+    campaign.updatedAt = new Date().toISOString();
+    campaigns[idx] = campaign;
+    this.writeBulkCampaigns(campaigns);
+  }
+
+  getBulkCampaigns(orgId: string) {
+    return this.readBulkCampaigns()
+      .filter((c: any) => c.orgId === orgId)
+      .sort((a: any, b: any) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime());
+  }
+
+  getBulkCampaign(orgId: string, batchId: string) {
+    return this.readBulkCampaigns().find((c: any) => c.orgId === orgId && c.batchId === batchId) || null;
+  }
+
   private buildBuyBoxBulkMessage(templateKey: string, link: string, customMessage?: string) {
     const templates: Record<string, string> = {
       general: `Hey, can you complete your Buy Box form so we can send you deals that actually match what you buy? ${link}`,
@@ -198,6 +264,26 @@ export class MessagesService {
       eligible.push(buyer);
     }
 
+    this.upsertBulkCampaign({
+      batchId,
+      orgId,
+      type: 'BULK_BUY_BOX_SEND',
+      status: eligible.length ? 'QUEUED' : 'NO_ELIGIBLE_BUYERS',
+      templateKey: options.templateKey || 'general',
+      customMessageUsed: !!(options.customMessage || '').trim(),
+      selected: buyerIds.length,
+      queued: eligible.length,
+      skipped: skipped.length,
+      sent: 0,
+      failed: 0,
+      skippedDetails: skipped,
+      dripRate: '5 texts per minute',
+      delayMs,
+      estimatedMinutes: Math.max(1, Math.ceil(eligible.length / 5)),
+      startedAt: new Date().toISOString(),
+      results: [],
+    });
+
     eligible.forEach((buyer: any, index: number) => {
       setTimeout(async () => {
         try {
@@ -216,8 +302,25 @@ export class MessagesService {
             },
           });
 
+          this.updateBulkCampaignResult(batchId, {
+            buyerId: buyer.id,
+            buyerName: `${buyer.firstName || ''} ${buyer.lastName || ''}`.trim(),
+            phone: buyer.phone,
+            status: 'sent',
+            templateKey: options.templateKey || 'general',
+          });
+
           this.logger.log(`Bulk Buy Box sent to buyer ${buyer.id} in batch ${batchId}`);
         } catch (e: any) {
+          this.updateBulkCampaignResult(batchId, {
+            buyerId: buyer.id,
+            buyerName: `${buyer.firstName || ''} ${buyer.lastName || ''}`.trim(),
+            phone: buyer.phone,
+            status: 'failed',
+            error: e.message,
+            templateKey: options.templateKey || 'general',
+          });
+
           this.logger.error(`Bulk Buy Box failed for buyer ${buyer.id} in batch ${batchId}: ${e.message}`);
         }
       }, index * delayMs);

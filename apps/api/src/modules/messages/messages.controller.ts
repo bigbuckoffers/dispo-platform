@@ -26,6 +26,18 @@ export class MessagesController {
     return this.messagesService.sendMessage(body.orgId || defaultOrg, buyerId, body.message, { intakeTrackingType: body.intakeTrackingType });
   }
 
+  @Get('bulk-campaigns')
+  getBulkCampaigns(@Query('orgId') orgId: string) {
+    const defaultOrg = 'c87f4e63-fd29-4ff5-823f-e4926daa0820';
+    return this.messagesService.getBulkCampaigns(orgId || defaultOrg);
+  }
+
+  @Get('bulk-campaigns/:batchId')
+  getBulkCampaign(@Param('batchId') batchId: string, @Query('orgId') orgId: string) {
+    const defaultOrg = 'c87f4e63-fd29-4ff5-823f-e4926daa0820';
+    return this.messagesService.getBulkCampaign(orgId || defaultOrg, batchId);
+  }
+
   @Post('bulk-buybox')
   sendBulkBuyBox(@Body() body: {
     buyerIds: string[];
