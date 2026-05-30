@@ -127,6 +127,15 @@ export class BuyersController {
     return this.buyersService.recalculateScores(orgId, id);
   }
 
+  @Get(':id/duplicates')
+  @ApiOperation({ summary: 'Get possible duplicate buyers' })
+  getPossibleDuplicates(
+    @OrgId() orgId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.buyersService.getPossibleDuplicates(orgId, id);
+  }
+
   @Get(':id/buy-box')
   @ApiOperation({ summary: 'Get stated buy box' })
   getBuyBox(

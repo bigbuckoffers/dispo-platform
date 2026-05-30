@@ -59,6 +59,7 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
   const { data: buyer, isLoading, isError } = useQuery({ queryKey: ['buyer', id], queryFn: () => api.get(`/buyers/${id}`).then(r => r.data), retry: 1 });
   const { data: analytics } = useQuery({ queryKey: ['buyer-analytics', id], queryFn: () => api.get(`/buyers/${id}/analytics`).then(r => r.data), enabled: !!buyer, retry: 1 });
   const { data: intakeEvents = [], isFetching: intakeEventsLoading, isError: intakeEventsError, refetch: refetchIntakeEvents } = useQuery({ queryKey: ['buyer-intake-events', id], queryFn: () => api.get(`/intake/buyers/${id}/events`).then(r => r.data), enabled: !!buyer, retry: 1 });
+  const { data: possibleDuplicates = [] } = useQuery({ queryKey: ['buyer-duplicates', id], queryFn: () => api.get(`/buyers/${id}/duplicates`).then(r => r.data), enabled: !!buyer, retry: 1 });
   useEffect(() => {
     if (buyer?.buyerIntelNotes) setIntelText(buyer.buyerIntelNotes);
     if (buyer?.aiSummary) setAiSummary(buyer.aiSummary);
@@ -491,6 +492,48 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
     </div>
     
       
+      {possibleDuplicates.length > 0 && (
+        <div className="mb-4 rounded-xl border border-orange-800/50 bg-orange-950/20 p-4">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <div className="text-sm font-semibold text-orange-200">Possible Duplicate Buyer</div>
+              <div className="mt-1 text-xs text-orange-300/70">
+                Found {possibleDuplicates.length} buyer record{possibleDuplicates.length === 1 ? '' : 's'} that may match this profile.
+              </div>
+            </div>
+            <span className="rounded-full border border-orange-700/40 bg-orange-900/30 px-2 py-1 text-xs text-orange-200">
+              Review
+            </span>
+          </div>
+
+          <div className="mt-3 space-y-2">
+            {possibleDuplicates.slice(0, 3).map((dup:any) => (
+              <div key={dup.id} className="flex items-center justify-between gap-3 rounded-lg bg-gray-950/50 px-3 py-2 text-xs">
+                <div className="min-w-0">
+                  <div className="truncate font-medium text-gray-100">{dup.name}</div>
+                  <div className="truncate text-gray-500">
+                    {dup.phone || 'No phone'} · {dup.email || 'No email'} · {dup.intakeStatus || 'No intake status'}
+                  </div>
+                </div>
+                <div className="flex shrink-0 items-center gap-2">
+                  {(dup.reasons || []).map((reason:string) => (
+                    <span key={reason} className="rounded-full bg-orange-900/40 px-2 py-0.5 text-orange-200">
+                      {reason.replace('same_', 'same ')}
+                    </span>
+                  ))}
+                  <button
+                    onClick={() => window.location.href = `/dashboard/buyers/${dup.id}`}
+                    className="rounded bg-gray-800 px-2 py-1 text-gray-200 hover:bg-gray-700"
+                  >
+                    Open
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="mb-4 rounded-xl border border-yellow-800/40 bg-yellow-900/10 p-4 flex items-center justify-between gap-4">
         <div>
           <div className="text-sm font-medium text-yellow-200">Admin Testing: Reset Buy Box Status</div>

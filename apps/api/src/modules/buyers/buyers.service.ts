@@ -276,6 +276,87 @@ export class BuyersService {
     };
   }
 
+  async getPossibleDuplicates(orgId: string, id: string) {
+    const buyer: any = await this.findOne(orgId, id);
+
+    const normalizedPhone = buyer.phone ? String(buyer.phone).replace(/\D/g, '') : null;
+    const email = buyer.email ? String(buyer.email).trim().toLowerCase() : null;
+    const firstName = buyer.firstName ? String(buyer.firstName).trim() : null;
+    const lastName = buyer.lastName ? String(buyer.lastName).trim() : null;
+
+    const or: any[] = [];
+
+    if (normalizedPhone) {
+      or.push({ phone: { contains: normalizedPhone.slice(-7), mode: 'insensitive' } });
+    }
+
+    if (email) {
+      or.push({ email: { equals: email, mode: 'insensitive' } });
+    }
+
+    if (firstName && lastName) {
+      or.push({
+        AND: [
+          { firstName: { equals: firstName, mode: 'insensitive' } },
+          { lastName: { equals: lastName, mode: 'insensitive' } },
+        ],
+      });
+    }
+
+    if (!or.length) return [];
+
+    const matches: any[] = await this.prisma.buyer.findMany({
+      where: {
+        organizationId: orgId,
+        id: { not: id },
+        isActive: true,
+        OR: or,
+      },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        company: true,
+        phone: true,
+        email: true,
+        intakeStatus: true,
+        createdAt: true,
+      },
+      take: 10,
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return matches.map((m: any) => {
+      const reasons: string[] = [];
+
+      const mPhone = m.phone ? String(m.phone).replace(/\D/g, '') : null;
+      if (normalizedPhone && mPhone && mPhone.slice(-7) === normalizedPhone.slice(-7)) {
+        reasons.push('same_phone');
+      }
+
+      if (email && m.email && String(m.email).trim().toLowerCase() === email) {
+        reasons.push('same_email');
+      }
+
+      if (
+        firstName &&
+        lastName &&
+        m.firstName &&
+        m.lastName &&
+        String(m.firstName).trim().toLowerCase() === firstName.toLowerCase() &&
+        String(m.lastName).trim().toLowerCase() === lastName.toLowerCase()
+      ) {
+        reasons.push('same_name');
+      }
+
+      return {
+        ...m,
+        name: `${m.firstName || ''} ${m.lastName || ''}`.trim() || m.company || 'Unnamed Buyer',
+        reasons,
+      };
+    });
+  }
+
   async getBuyBox(orgId: string, id: string) {
     await this.findOne(orgId, id);
     return this.prisma.buyBox.findUnique({ where: { buyerId: id } });
