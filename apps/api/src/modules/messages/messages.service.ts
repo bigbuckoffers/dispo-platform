@@ -385,13 +385,28 @@ export class MessagesService {
 
       
       if (!checkBuyBoxSendingWindow()) {
-        // pause until next day start
         const now = new Date();
         const nextStart = new Date();
-        nextStart.setDate(now.getDate() + 1);
-        nextStart.setHours(BUY_BOX_DEFAULT_START_HOUR, 0, 0, 0);
-        const waitMs = nextStart.getTime() - now.getTime();
-        await this.sleep(waitMs);
+
+        if (now.getHours() < BUY_BOX_DEFAULT_START_HOUR) {
+          nextStart.setHours(BUY_BOX_DEFAULT_START_HOUR, 0, 0, 0);
+        } else {
+          nextStart.setDate(now.getDate() + 1);
+          nextStart.setHours(BUY_BOX_DEFAULT_START_HOUR, 0, 0, 0);
+        }
+
+        const resumeInMs = Math.max(60000, nextStart.getTime() - now.getTime());
+
+        await this.prisma.bulkSmsCampaign.update({
+          where: { id: freshCampaign.id },
+          data: { status: 'QUEUED' },
+        } as any);
+
+        setTimeout(() => {
+          void this.processBulkCampaign(batchId);
+        }, resumeInMs);
+
+        return;
       }
 
       const recipient: any = await this.prisma.bulkSmsCampaignRecipient.findFirst({
@@ -449,13 +464,8 @@ export class MessagesService {
         } as any);
 
         await this.recalcBulkCampaignCounts(freshCampaign.id);
-
-        
-      // enforce max messages per minute
       const sendIntervalMs = Math.floor(60000 / BUY_BOX_MAX_PER_MINUTE);
-      await this.sleep(sendIntervalMs);
-
-      await this.sleep(freshCampaign.delayMs || 12000);
+      await this.sleep(Math.max(freshCampaign.delayMs || 12000, sendIntervalMs));
       } catch (e: any) {
         await this.prisma.bulkSmsCampaignRecipient.update({
           where: { id: recipient.id },
