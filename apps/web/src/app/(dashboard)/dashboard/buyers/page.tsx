@@ -68,6 +68,14 @@ export default function BuyersPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [bulkSelected, setBulkSelected] = useState<Record<string, boolean>>({});
   const [showBulkBuyBoxModal, setShowBulkBuyBoxModal] = useState(false);
+  const [buyBoxSendingRules, setBuyBoxSendingRules] = useState<any>({
+    startHour: 9,
+    endHour: 18,
+    maxPerMinute: 5,
+    daysOfWeek: [1, 2, 3, 4, 5],
+    timezoneMode: 'local',
+  });
+  const [loadingBuyBoxSendingRules, setLoadingBuyBoxSendingRules] = useState(false);
   const [bulkTemplate, setBulkTemplate] = useState('general');
   const [bulkCampaignName, setBulkCampaignName] = useState('');
   const [bulkCustomMessage, setBulkCustomMessage] = useState('');
@@ -141,6 +149,55 @@ export default function BuyersPage() {
   };
 
   const clearBulkSelection = () => setBulkSelected({});
+
+  const dayLabels: Record<number, string> = {
+    0: 'Sun',
+    1: 'Mon',
+    2: 'Tue',
+    3: 'Wed',
+    4: 'Thu',
+    5: 'Fri',
+    6: 'Sat',
+  };
+
+  const formatHourLabel = (hour: number) => {
+    const h = Number(hour);
+    if (!Number.isFinite(h)) return '—';
+    const normalized = Math.max(0, Math.min(23, h));
+    const suffix = normalized >= 12 ? 'PM' : 'AM';
+    const display = normalized % 12 === 0 ? 12 : normalized % 12;
+    return `${display}:00 ${suffix}`;
+  };
+
+  const formatSendingDays = (days: any) => {
+    const normalized = Array.isArray(days) ? days.map((d: any) => Number(d)).filter((d: number) => d >= 0 && d <= 6) : [1,2,3,4,5];
+
+    if (normalized.length === 7) return 'Every day';
+    if (normalized.join(',') === '1,2,3,4,5') return 'Mon–Fri';
+    if (normalized.join(',') === '0,6') return 'Weekends';
+
+    return normalized.map((d: number) => dayLabels[d]).filter(Boolean).join(', ');
+  };
+
+  const loadBuyBoxSendingRules = async () => {
+    try {
+      setLoadingBuyBoxSendingRules(true);
+      const r = await fetch(`${API}/settings/buy-box-sending`);
+      if (!r.ok) throw new Error('Could not load sending rules');
+      const d = await r.json();
+      setBuyBoxSendingRules(d);
+    } catch (e) {
+      setBuyBoxSendingRules({
+        startHour: 9,
+        endHour: 18,
+        maxPerMinute: 5,
+        daysOfWeek: [1, 2, 3, 4, 5],
+        timezoneMode: 'local',
+      });
+    } finally {
+      setLoadingBuyBoxSendingRules(false);
+    }
+  };
 
   const getBulkDefaultTemplateText = (template: string) => {
     const templates: Record<string, string> = {
@@ -302,6 +359,7 @@ export default function BuyersPage() {
   };
 
   const openBulkBuyBoxModal = () => {
+    void loadBuyBoxSendingRules();
     setBulkResult(null);
     setShowAllSkippedReasons(false);
 
@@ -1539,6 +1597,46 @@ export default function BuyersPage() {
               <div className="text-xs text-gray-500">Rate: 5 texts/minute · backend drip · 1 SMS every 12 seconds</div>
               <div className="flex gap-3">
                 <button onClick={()=>setShowBulkBuyBoxModal(false)} disabled={bulkSending} className="rounded-lg bg-gray-800 px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 disabled:opacity-50">Close</button>
+                <div className="rounded-xl border border-purple-800/40 bg-purple-950/20 p-4">
+                  <div className="flex items-center justify-between gap-3 mb-3">
+                    <div>
+                      <div className="text-sm font-medium text-purple-200">Campaign Sending Rules</div>
+                      <div className="text-xs text-purple-200/60">Pulled from Settings → Buy Box Sending Rules</div>
+                    </div>
+                    <button
+                      onClick={loadBuyBoxSendingRules}
+                      className="text-xs text-purple-300 hover:text-white"
+                    >
+                      ↺ Refresh
+                    </button>
+                  </div>
+
+                  {loadingBuyBoxSendingRules ? (
+                    <div className="text-xs text-gray-500">Loading sending rules...</div>
+                  ) : (
+                    <div className="grid grid-cols-3 gap-2 text-xs">
+                      <div className="rounded-lg border border-gray-800 bg-gray-950/60 p-3">
+                        <div className="text-gray-500 mb-1">Days</div>
+                        <div className="font-semibold text-white">{formatSendingDays(buyBoxSendingRules.daysOfWeek)}</div>
+                      </div>
+                      <div className="rounded-lg border border-gray-800 bg-gray-950/60 p-3">
+                        <div className="text-gray-500 mb-1">Send Window</div>
+                        <div className="font-semibold text-white">
+                          {formatHourLabel(buyBoxSendingRules.startHour)} – {formatHourLabel(buyBoxSendingRules.endHour)}
+                        </div>
+                      </div>
+                      <div className="rounded-lg border border-gray-800 bg-gray-950/60 p-3">
+                        <div className="text-gray-500 mb-1">Drip Rate</div>
+                        <div className="font-semibold text-white">{buyBoxSendingRules.maxPerMinute || 5}/min</div>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="mt-3 rounded-lg border border-blue-800/40 bg-blue-950/20 p-3 text-xs text-blue-200/75">
+                    Remaining texts pause at the end of the window and resume in the next valid sending window.
+                  </div>
+                </div>
+
                 <button onClick={runBackendBulkBuyBoxSend} disabled={bulkSending || !!bulkResult || getBulkEligibleBuyers().length===0} className="rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-500 disabled:opacity-50">
                   {bulkSending ? 'Queuing drip...' : bulkResult ? 'Campaign Queued' : getBulkEligibleBuyers().length===0 ? 'No Eligible Buyers' : `Confirm Send to ${getBulkEligibleBuyers().length}`}
                 </button>
