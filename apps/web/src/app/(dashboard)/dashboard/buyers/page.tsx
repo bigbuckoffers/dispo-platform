@@ -84,7 +84,19 @@ export default function BuyersPage() {
     return buyers;
   };
 
-  const getBulkSelectedBuyers = () => getVisibleBulkBuyers().filter((b: any) => bulkSelected[b.id]);
+  const getAllKnownBulkBuyers = () => {
+    const byId = new Map<string, any>();
+    [...allBuyers, ...buyers].forEach((b: any) => {
+      if (b?.id) byId.set(b.id, b);
+    });
+    return Array.from(byId.values());
+  };
+
+  const getBulkSelectedBuyers = () => {
+    const known = getAllKnownBulkBuyers();
+    const selectedIds = Object.keys(bulkSelected).filter((id) => bulkSelected[id]);
+    return selectedIds.map((id) => known.find((b: any) => b.id === id)).filter(Boolean);
+  };
 
   const isAlreadySent = (b: any) => !!b.intakeSentAt || ['LINK_SENT','OPENED','STARTED'].includes(b.intakeStatus);
 
@@ -454,7 +466,9 @@ export default function BuyersPage() {
           <p className="text-gray-400 text-sm mt-1">{total} buyers</p>
         </div>
         <div className="flex gap-2">
-          <button onClick={() => { setBulkResult(null); setCurrentBulkMessage(getBulkDefaultTemplateText(bulkTemplate)); loadBulkCampaigns(); setShowBulkBuyBoxModal(true); }} className="bg-purple-900/50 hover:bg-purple-800/70 border border-purple-700/50 text-purple-200 px-4 py-2 rounded-lg text-sm font-medium transition">📩 Bulk Buy Box Send</button>
+          <button onClick={() => { setBulkResult(null); setCurrentBulkMessage(getBulkDefaultTemplateText(bulkTemplate)); loadBulkCampaigns(); setShowBulkBuyBoxModal(true); }} className="bg-purple-900/50 hover:bg-purple-800/70 border border-purple-700/50 text-purple-200 px-4 py-2 rounded-lg text-sm font-medium transition">
+            {getBulkSelectedBuyers().length>0 ? `📩 Review & Send Selected (${getBulkSelectedBuyers().length})` : '📩 Bulk Buy Box Send'}
+          </button>
           <button onClick={() => setShowCreate(true)} className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition">+ Add Buyer</button>
           <button onClick={exportCsv} className="bg-emerald-900/40 hover:bg-emerald-800/60 border border-emerald-700/40 text-emerald-300 px-4 py-2 rounded-lg text-sm font-medium transition">⬇ Export CSV</button>
         </div>
@@ -500,7 +514,6 @@ export default function BuyersPage() {
         <div className="flex gap-2">
           <button onClick={selectVisibleNotSent} className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-xs">Select Visible Not Sent</button>
           <button onClick={clearBulkSelection} className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-xs">Clear</button>
-          <button onClick={()=>{ setBulkResult(null); setCurrentBulkMessage(getBulkDefaultTemplateText(bulkTemplate)); loadBulkCampaigns(); setShowBulkBuyBoxModal(true); }} disabled={getBulkSelectedBuyers().length===0} className="px-3 py-1.5 bg-purple-700 hover:bg-purple-600 text-white rounded-lg text-xs disabled:opacity-40">Send Buy Box Forms</button>
         </div>
       </div>
       {error&&<div className="bg-red-900/30 border border-red-500/30 text-red-300 rounded-lg p-4 mb-4 text-sm">Error: {error}</div>}
