@@ -686,6 +686,71 @@ export default function BuyersPage() {
           </div>
         </div>
       )}
+      {tab==='buybox_followup'&&(
+        <div>
+          <div className="bg-purple-500/10 border border-purple-500/20 rounded-xl p-4 mb-4">
+            <p className="text-purple-300 text-sm font-medium">📋 Buy Box Completion Queue</p>
+            <p className="text-gray-400 text-xs mt-1">Track who needs a form, reminder, call, or submission review.</p>
+          </div>
+
+          <div className="flex flex-wrap gap-2 mb-4">
+            {[
+              ['all','All'],
+              ['not_sent','Not Sent'],
+              ['sent','Sent'],
+              ['opened','Opened'],
+              ['started','Started'],
+              ['submitted','Submitted'],
+              ['needs_review','Needs Review'],
+            ].map(([key,label]) => (
+              <button
+                key={key}
+                onClick={()=>setBuyBoxQueueFilter(key as any)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition ${buyBoxQueueFilter===key ? 'bg-purple-700 border-purple-600 text-white' : 'bg-gray-900 border-gray-800 text-gray-400 hover:text-white'}`}
+              >
+                {label} <span className="ml-1 text-[10px] opacity-70">{(buyBoxQueueCounts as any)[key]}</span>
+              </button>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-4 gap-3 mb-4">
+            <div className="rounded-xl border border-green-800/40 bg-green-900/10 p-3">
+              <div className="text-xs text-green-400">Send Forms</div>
+              <div className="text-2xl font-bold text-green-300">{buyBoxQueueCounts.not_sent}</div>
+            </div>
+            <div className="rounded-xl border border-blue-800/40 bg-blue-900/10 p-3">
+              <div className="text-xs text-blue-400">Opened / Started</div>
+              <div className="text-2xl font-bold text-blue-300">{buyBoxQueueCounts.opened + buyBoxQueueCounts.started}</div>
+            </div>
+            <div className="rounded-xl border border-purple-800/40 bg-purple-900/10 p-3">
+              <div className="text-xs text-purple-400">Submitted</div>
+              <div className="text-2xl font-bold text-purple-300">{buyBoxQueueCounts.submitted}</div>
+            </div>
+            <div className="rounded-xl border border-yellow-800/40 bg-yellow-900/10 p-3">
+              <div className="text-xs text-yellow-400">Needs Review</div>
+              <div className="text-2xl font-bold text-yellow-300">{buyBoxQueueCounts.needs_review}</div>
+            </div>
+          </div>
+
+          <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-800">
+                  {['Buyer','Next Action','Status','Last Activity','Market',''].map(h=>(
+                    <th key={h} className="text-left text-gray-500 font-medium px-4 py-3 text-xs uppercase tracking-wide">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {loadingAll ? [...Array(6)].map((_,i)=><tr key={i}>{[...Array(6)].map((_,j)=><td key={j} className="px-4 py-3"><div className="h-4 bg-gray-800 rounded animate-pulse"/></td>)}</tr>)
+                : buyBoxFollowUpBuyers.length===0 ? <tr><td colSpan={6} className="px-4 py-12 text-center text-gray-500">No buyers in this queue.</td></tr>
+                : buyBoxFollowUpBuyers.map((b:any)=><BuyBoxFollowUpRow key={b.id} b={b}/>)}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       {tab==='submissions'&&!selectedSub&&(
         <div>
           <div className="bg-purple-500/10 border border-purple-500/20 rounded-xl p-4 mb-4 flex items-center justify-between">
