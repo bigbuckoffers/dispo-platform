@@ -146,6 +146,25 @@ export default function BuyersPage() {
     finally { setLoadingBulkCampaigns(false); }
   };
 
+  const bulkCampaignAction = async (batchId: string, action: 'pause' | 'resume' | 'cancel') => {
+    const label = action === 'cancel' ? 'cancel remaining messages for' : action;
+    if (!confirm(`Are you sure you want to ${label} this campaign?`)) return;
+
+    try {
+      const res = await fetch(`${API}/messages/bulk-campaigns/${batchId}/${action}`, {
+        method: 'POST',
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.message || `API error ${res.status}`);
+
+      await loadBulkCampaigns();
+      alert(`Campaign ${action} successful`);
+    } catch (e: any) {
+      alert(`Could not ${action} campaign: ${e.message}`);
+    }
+  };
+
   const runBackendBulkBuyBoxSend = async () => {
     const eligible = getBulkEligibleBuyers();
     if (!eligible.length) return alert('No eligible buyers selected.');
@@ -757,14 +776,26 @@ export default function BuyersPage() {
                             <div className="text-xs font-medium text-gray-200">{c.batchId}</div>
                             <div className="text-xs text-gray-500">{new Date(c.startedAt).toLocaleString()} · Template: {c.templateKey}</div>
                           </div>
-                          <span className={`text-xs px-2 py-1 rounded-full ${c.status==='COMPLETED'?'bg-green-500/10 text-green-300':c.status==='COMPLETED_WITH_ERRORS'?'bg-yellow-500/10 text-yellow-300':c.status==='SENDING'?'bg-blue-500/10 text-blue-300':'bg-gray-500/10 text-gray-300'}`}>{c.status}</span>
+                          <div className="flex items-center gap-2">
+                            <span className={`text-xs px-2 py-1 rounded-full ${c.status==='COMPLETED'?'bg-green-500/10 text-green-300':c.status==='COMPLETED_WITH_ERRORS'?'bg-yellow-500/10 text-yellow-300':c.status==='SENDING'?'bg-blue-500/10 text-blue-300':c.status==='PAUSED'?'bg-orange-500/10 text-orange-300':c.status==='CANCELLED'?'bg-red-500/10 text-red-300':'bg-gray-500/10 text-gray-300'}`}>{c.status}</span>
+                            {['QUEUED','SENDING'].includes(c.status)&&(
+                              <button onClick={()=>bulkCampaignAction(c.batchId,'pause')} className="rounded bg-orange-900/40 px-2 py-1 text-xs text-orange-300 hover:bg-orange-800/60">Pause</button>
+                            )}
+                            {c.status==='PAUSED'&&(
+                              <button onClick={()=>bulkCampaignAction(c.batchId,'resume')} className="rounded bg-green-900/40 px-2 py-1 text-xs text-green-300 hover:bg-green-800/60">Resume</button>
+                            )}
+                            {['QUEUED','SENDING','PAUSED'].includes(c.status)&&(
+                              <button onClick={()=>bulkCampaignAction(c.batchId,'cancel')} className="rounded bg-red-900/40 px-2 py-1 text-xs text-red-300 hover:bg-red-800/60">Cancel Remaining</button>
+                            )}
+                          </div>
                         </div>
-                        <div className="mt-2 grid grid-cols-5 gap-2 text-xs">
+                        <div className="mt-2 grid grid-cols-6 gap-2 text-xs">
                           <div className="text-gray-500">Selected <span className="text-gray-200">{c.selected}</span></div>
                           <div className="text-gray-500">Queued <span className="text-gray-200">{c.queued}</span></div>
                           <div className="text-gray-500">Sent <span className="text-green-300">{c.sent}</span></div>
                           <div className="text-gray-500">Failed <span className="text-red-300">{c.failed}</span></div>
                           <div className="text-gray-500">Skipped <span className="text-yellow-300">{c.skipped}</span></div>
+                          <div className="text-gray-500">Cancelled <span className="text-red-300">{c.cancelled||0}</span></div>
                         </div>
                       </div>
                     ))}
