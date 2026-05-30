@@ -821,51 +821,17 @@ export default function BuyersPage() {
                 <div className="rounded-xl border border-gray-800 bg-gray-900/70 p-4 text-sm leading-relaxed text-gray-200">{getBulkTemplatePreview()}</div>
               </div>
 
-              <div className="rounded-xl border border-gray-800 bg-gray-900/60 p-4">
-                <div className="mb-3 flex items-center justify-between">
-                  <div>
-                    <div className="text-sm font-medium text-white">Recent Bulk Campaigns</div>
-                    <div className="text-xs text-gray-500">Track queued, sent, failed, skipped, and completion status.</div>
-                  </div>
-                  <button onClick={loadBulkCampaigns} className="text-xs text-gray-400 hover:text-white">{loadingBulkCampaigns ? 'Loading...' : 'Refresh'}</button>
+              <div className="rounded-xl border border-gray-800 bg-gray-900/60 px-4 py-3 flex items-center justify-between gap-4">
+                <div>
+                  <div className="text-sm font-medium text-white">Campaign history moved</div>
+                  <div className="text-xs text-gray-500">Manage campaign stats, pause, resume, cancel, and recipient results from the Campaigns page.</div>
                 </div>
-
-                {bulkCampaigns.length===0 ? (
-                  <div className="text-xs text-gray-500">No bulk campaigns yet.</div>
-                ) : (
-                  <div className="max-h-52 overflow-y-auto space-y-2">
-                    {bulkCampaigns.slice(0,5).map((c:any)=>(
-                      <div key={c.batchId} className="rounded-lg border border-gray-800 bg-gray-950/70 p-3">
-                        <div className="flex items-center justify-between gap-3">
-                          <div>
-                            <div className="text-xs font-medium text-gray-200">{c.campaignName || c.batchId}</div>
-                            <div className="text-xs text-gray-500">{c.batchId} · {new Date(c.startedAt).toLocaleString()} · Template: {c.templateKey}</div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className={`text-xs px-2 py-1 rounded-full ${c.status==='COMPLETED'?'bg-green-500/10 text-green-300':c.status==='COMPLETED_WITH_ERRORS'?'bg-yellow-500/10 text-yellow-300':c.status==='SENDING'?'bg-blue-500/10 text-blue-300':c.status==='PAUSED'?'bg-orange-500/10 text-orange-300':c.status==='CANCELLED'?'bg-red-500/10 text-red-300':'bg-gray-500/10 text-gray-300'}`}>{c.status}</span>
-                            {['QUEUED','SENDING'].includes(c.status)&&(
-                              <button onClick={()=>bulkCampaignAction(c.batchId,'pause')} className="rounded bg-orange-900/40 px-2 py-1 text-xs text-orange-300 hover:bg-orange-800/60">Pause</button>
-                            )}
-                            {c.status==='PAUSED'&&(
-                              <button onClick={()=>bulkCampaignAction(c.batchId,'resume')} className="rounded bg-green-900/40 px-2 py-1 text-xs text-green-300 hover:bg-green-800/60">Resume</button>
-                            )}
-                            {['QUEUED','SENDING','PAUSED'].includes(c.status)&&(
-                              <button onClick={()=>bulkCampaignAction(c.batchId,'cancel')} className="rounded bg-red-900/40 px-2 py-1 text-xs text-red-300 hover:bg-red-800/60">Cancel Remaining</button>
-                            )}
-                          </div>
-                        </div>
-                        <div className="mt-2 grid grid-cols-6 gap-2 text-xs">
-                          <div className="text-gray-500">Selected <span className="text-gray-200">{c.selected}</span></div>
-                          <div className="text-gray-500">Queued <span className="text-gray-200">{c.queued}</span></div>
-                          <div className="text-gray-500">Sent <span className="text-green-300">{c.sent}</span></div>
-                          <div className="text-gray-500">Failed <span className="text-red-300">{c.failed}</span></div>
-                          <div className="text-gray-500">Skipped <span className="text-yellow-300">{c.skipped}</span></div>
-                          <div className="text-gray-500">Cancelled <span className="text-red-300">{c.cancelled||0}</span></div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                <button
+                  onClick={()=>window.location.href='/dashboard/campaigns'}
+                  className="shrink-0 rounded-lg bg-purple-900/40 px-3 py-1.5 text-xs text-purple-200 hover:bg-purple-800/60"
+                >
+                  View Campaigns →
+                </button>
               </div>
 
               <div className="rounded-xl border border-yellow-700/30 bg-yellow-900/10 p-4 text-xs text-yellow-200">
