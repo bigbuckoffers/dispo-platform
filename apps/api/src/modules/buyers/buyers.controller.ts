@@ -127,6 +127,17 @@ export class BuyersController {
     return this.buyersService.recalculateScores(orgId, id);
   }
 
+  @Post(':id/merge-duplicate')
+  @Roles(TeamRole.ADMIN, TeamRole.OWNER)
+  @ApiOperation({ summary: 'Merge/archive a duplicate buyer into this primary buyer' })
+  mergeDuplicateBuyer(
+    @OrgId() orgId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body('duplicateBuyerId', ParseUUIDPipe) duplicateBuyerId: string,
+  ) {
+    return this.buyersService.mergeDuplicateBuyer(orgId, id, duplicateBuyerId);
+  }
+
   @Get(':id/duplicates')
   @ApiOperation({ summary: 'Get possible duplicate buyers' })
   getPossibleDuplicates(

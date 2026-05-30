@@ -152,6 +152,8 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
   const [sendingIntakeForm, setSendingIntakeForm] = useState(false);
   const [showDeleteBuyerConfirm, setShowDeleteBuyerConfirm] = useState(false);
   const [deletingBuyer, setDeletingBuyer] = useState(false);
+  const [duplicateToMerge, setDuplicateToMerge] = useState<any>(null);
+  const [mergingDuplicate, setMergingDuplicate] = useState(false);
   const [showResetBuyBoxConfirm, setShowResetBuyBoxConfirm] = useState(false);
   const [resettingBuyBox, setResettingBuyBox] = useState(false);
 
@@ -236,6 +238,26 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
       toast.error('Could not reset Buy Box status');
     } finally {
       setResettingBuyBox(false);
+    }
+  };
+
+  const mergeDuplicateBuyer = async () => {
+    if (!duplicateToMerge?.id) return;
+
+    setMergingDuplicate(true);
+    try {
+      await api.post(`/buyers/${id}/merge-duplicate`, {
+        duplicateBuyerId: duplicateToMerge.id,
+      });
+
+      toast.success('Duplicate buyer merged and archived');
+      setDuplicateToMerge(null);
+      qc.invalidateQueries({ queryKey: ['buyer', id] });
+      qc.invalidateQueries({ queryKey: ['buyer-duplicates', id] });
+    } catch (e: any) {
+      toast.error('Could not merge duplicate buyer');
+    } finally {
+      setMergingDuplicate(false);
     }
   };
 
@@ -537,6 +559,12 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
                     </span>
                   ))}
                   <button
+                    onClick={() => setDuplicateToMerge(dup)}
+                    className="rounded bg-orange-900/40 px-2 py-1 text-orange-200 hover:bg-orange-800/60"
+                  >
+                    Merge
+                  </button>
+                  <button
                     onClick={() => window.location.href = `/dashboard/buyers/${dup.id}`}
                     className="rounded bg-gray-800 px-2 py-1 text-gray-200 hover:bg-gray-700"
                   >
@@ -597,6 +625,34 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
       >
         <div className="rounded-xl border border-red-800/40 bg-red-900/10 p-3 text-sm text-red-100">
           Buyer: {buyer?.firstName} {buyer?.lastName}
+        </div>
+      </ConfirmActionModal>
+
+      <ConfirmActionModal
+        open={!!duplicateToMerge}
+        title="Merge Duplicate Buyer?"
+        description="This will copy missing profile details from the duplicate into this buyer, then archive the duplicate record. This does not hard-delete the duplicate."
+        confirmLabel="Merge Duplicate"
+        cancelLabel="Cancel"
+        variant="warning"
+        loading={mergingDuplicate}
+        onCancel={() => {
+          if (!mergingDuplicate) setDuplicateToMerge(null);
+        }}
+        onConfirm={mergeDuplicateBuyer}
+      >
+        <div className="space-y-3">
+          <div className="rounded-xl border border-gray-800 bg-gray-900/70 p-3 text-sm">
+            <div className="text-xs uppercase tracking-wide text-gray-500">Primary buyer</div>
+            <div className="mt-1 font-medium text-white">{buyer?.firstName} {buyer?.lastName}</div>
+            <div className="text-xs text-gray-500">{buyer?.phone || 'No phone'} · {buyer?.email || 'No email'}</div>
+          </div>
+
+          <div className="rounded-xl border border-orange-800/40 bg-orange-900/10 p-3 text-sm">
+            <div className="text-xs uppercase tracking-wide text-orange-300/70">Duplicate to archive</div>
+            <div className="mt-1 font-medium text-orange-100">{duplicateToMerge?.name}</div>
+            <div className="text-xs text-orange-300/70">{duplicateToMerge?.phone || 'No phone'} · {duplicateToMerge?.email || 'No email'}</div>
+          </div>
         </div>
       </ConfirmActionModal>
 

@@ -276,6 +276,88 @@ export class BuyersService {
     };
   }
 
+  async mergeDuplicateBuyer(orgId: string, primaryBuyerId: string, duplicateBuyerId: string) {
+    if (primaryBuyerId === duplicateBuyerId) {
+      throw new Error('Cannot merge buyer into itself');
+    }
+
+    const primary: any = await this.findOne(orgId, primaryBuyerId);
+    const duplicate: any = await this.findOne(orgId, duplicateBuyerId);
+
+    const pickPrimary = (primaryValue: any, duplicateValue: any) => {
+      if (primaryValue === null || primaryValue === undefined || primaryValue === '') return duplicateValue;
+      if (Array.isArray(primaryValue) && primaryValue.length === 0) return duplicateValue;
+      return primaryValue;
+    };
+
+    const mergeArrays = (a?: any[], b?: any[]) => {
+      return Array.from(new Set([...(a || []), ...(b || [])].filter(Boolean)));
+    };
+
+    const mergedNotes = [
+      primary.notes || '',
+      duplicate.notes ? `\n\n[Merged from duplicate ${duplicate.id}]\n${duplicate.notes}` : '',
+    ].join('').trim() || null;
+
+    const mergedIntelNotes = [
+      primary.buyerIntelNotes || '',
+      duplicate.buyerIntelNotes ? `\n\n[Merged from duplicate ${duplicate.id}]\n${duplicate.buyerIntelNotes}` : '',
+    ].join('').trim() || null;
+
+    const updatedPrimary = await this.prisma.buyer.update({
+      where: { id: primaryBuyerId },
+      data: {
+        firstName: pickPrimary(primary.firstName, duplicate.firstName),
+        lastName: pickPrimary(primary.lastName, duplicate.lastName),
+        company: pickPrimary(primary.company, duplicate.company),
+        phone: pickPrimary(primary.phone, duplicate.phone),
+        email: pickPrimary(primary.email, duplicate.email),
+        marketPrimary: pickPrimary(primary.marketPrimary, duplicate.marketPrimary),
+        marketSecondary: mergeArrays(primary.marketSecondary, duplicate.marketSecondary),
+        preferredStrategies: mergeArrays(primary.preferredStrategies, duplicate.preferredStrategies),
+        dealBreakers: mergeArrays(primary.dealBreakers, duplicate.dealBreakers),
+        notes: mergedNotes,
+        buyerIntelNotes: mergedIntelNotes,
+        preferredContact: pickPrimary(primary.preferredContact, duplicate.preferredContact),
+        buyingStatus: pickPrimary(primary.buyingStatus, duplicate.buyingStatus),
+        monthlyCapacity: pickPrimary(primary.monthlyCapacity, duplicate.monthlyCapacity),
+        proofOfFunds: pickPrimary(primary.proofOfFunds, duplicate.proofOfFunds),
+        lastContactDate: pickPrimary(primary.lastContactDate, duplicate.lastContactDate),
+        lastActiveDate: pickPrimary(primary.lastActiveDate, duplicate.lastActiveDate),
+      } as any,
+    });
+
+    await this.prisma.buyer.update({
+      where: { id: duplicateBuyerId },
+      data: {
+        isActive: false,
+        notes: `${duplicate.notes || ''}\n\n[Archived as duplicate. Merged into buyer ${primaryBuyerId} on ${new Date().toISOString()}]`.trim(),
+      } as any,
+    });
+
+    await this.prisma.buyerEvent.create({
+      data: {
+        buyerId: primaryBuyerId,
+        eventType: 'NOTE_ADDED' as any,
+        description: `Merged duplicate buyer ${duplicateBuyerId}`,
+        metadata: {
+          duplicateBuyerId,
+          duplicateName: `${duplicate.firstName || ''} ${duplicate.lastName || ''}`.trim(),
+          duplicatePhone: duplicate.phone,
+          duplicateEmail: duplicate.email,
+        } as any,
+      } as any,
+    }).catch(() => null);
+
+    return {
+      success: true,
+      primaryBuyerId,
+      duplicateBuyerId,
+      archivedDuplicate: true,
+      buyer: updatedPrimary,
+    };
+  }
+
   async getPossibleDuplicates(orgId: string, id: string) {
     const buyer: any = await this.findOne(orgId, id);
 
