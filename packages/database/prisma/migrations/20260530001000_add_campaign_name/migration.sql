@@ -1,1 +1,1 @@
-ALTER TABLE "BulkSmsCampaign" ADD COLUMN IF NOT EXISTS "campaignName" TEXT;\n
+ALTER TABLE "BulkSmsCampaign" ADD COLUMN IF NOT EXISTS "campaignName" TEXT;
