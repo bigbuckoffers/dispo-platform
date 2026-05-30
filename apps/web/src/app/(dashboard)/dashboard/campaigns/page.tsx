@@ -61,6 +61,76 @@ function deliveryCounts(c: Campaign | null) {
   };
 }
 
+
+function campaignHealth(c: Campaign | null) {
+  const recipients = c?.recipients || [];
+  const total = recipients.length || c?.queued || 0;
+
+  const delivered = recipients.filter((r:any) => r.deliveryStatus === 'DELIVERED').length;
+  const undelivered = recipients.filter((r:any) => r.deliveryStatus === 'UNDELIVERED').length;
+  const failed = recipients.filter((r:any) => r.deliveryStatus === 'FAILED' || r.status === 'FAILED').length;
+  const waiting = recipients.filter((r:any) => ['PENDING','SENT'].includes(r.deliveryStatus || 'PENDING') && r.status !== 'FAILED').length;
+
+  const deliveryRate = total ? Math.round((delivered / total) * 100) : 0;
+  const failureRate = total ? Math.round(((undelivered + failed) / total) * 100) : 0;
+
+  const errorCounts: Record<string, number> = {};
+  recipients.forEach((r:any) => {
+    const key = r.deliveryErrorCode || r.deliveryErrorMessage || r.error;
+    if (key) errorCounts[String(key)] = (errorCounts[String(key)] || 0) + 1;
+  });
+
+  const topError = Object.entries(errorCounts).sort((a,b) => b[1] - a[1])[0];
+
+  let label = 'Healthy';
+  let tone = 'green';
+  let recommendation = 'Campaign delivery looks good. Continue monitoring replies and buyer engagement.';
+
+  if (waiting > 0 && delivered + undelivered + failed < total) {
+    label = 'Still Updating';
+    tone = 'blue';
+    recommendation = 'Some delivery statuses are still pending. Refresh shortly to confirm final delivery results.';
+  }
+
+  if (failureRate >= 25) {
+    label = 'Needs Attention';
+    tone = 'yellow';
+    recommendation = 'Review undelivered buyers and verify phone numbers before sending future campaigns.';
+  }
+
+  if (failureRate >= 50) {
+    label = 'Poor Delivery';
+    tone = 'red';
+    recommendation = 'High failure rate. Check phone quality, Twilio/carrier filtering, and buyer number validity before sending more.';
+  }
+
+  if (topError?.[0] === '30034') {
+    recommendation = 'Twilio/carrier marked one or more messages as undelivered. Verify those phone numbers before future campaigns.';
+  }
+
+  return {
+    total,
+    delivered,
+    undelivered,
+    failed,
+    waiting,
+    deliveryRate,
+    failureRate,
+    topErrorCode: topError?.[0] || null,
+    topErrorCount: topError?.[1] || 0,
+    label,
+    tone,
+    recommendation,
+  };
+}
+
+function healthToneClasses(tone: string) {
+  if (tone === 'green') return 'border-green-800/40 bg-green-950/20 text-green-200';
+  if (tone === 'red') return 'border-red-800/40 bg-red-950/20 text-red-200';
+  if (tone === 'blue') return 'border-blue-800/40 bg-blue-950/20 text-blue-200';
+  return 'border-yellow-800/40 bg-yellow-950/20 text-yellow-200';
+}
+
 function formatDeliveryError(code?: string, message?: string, fallback?: string) {
   const raw = message || fallback || code || '';
 
@@ -380,7 +450,40 @@ export default function CampaignsPage() {
 
               <div className="rounded-xl border border-gray-800 bg-gray-900/70 overflow-hidden">
                 <div className="border-b border-gray-800 px-4 py-3 flex items-center justify-between">
-                  <div>
+                  {selectedCampaign && (() => {
+                  const health = campaignHealth(selectedCampaign);
+                  return (
+                    <div className={`mb-4 rounded-xl border p-4 ${healthToneClasses(health.tone)}`}>
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <div className="text-sm font-semibold">Campaign Health: {health.label}</div>
+                          <div className="mt-1 text-xs opacity-80">
+                            {health.delivered} delivered · {health.undelivered} undelivered · {health.failed} failed · {health.waiting} waiting
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-2xl font-bold">{health.deliveryRate}%</div>
+                          <div className="text-xs opacity-70">Delivery Rate</div>
+                        </div>
+                      </div>
+
+                      <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div className="rounded-lg bg-black/20 p-3">
+                          <div className="text-xs uppercase tracking-wide opacity-60">Top Issue</div>
+                          <div className="mt-1 text-sm font-medium">
+                            {health.topErrorCode ? formatDeliveryError(health.topErrorCode) + ` (${health.topErrorCount})` : 'No major delivery issue detected'}
+                          </div>
+                        </div>
+                        <div className="rounded-lg bg-black/20 p-3">
+                          <div className="text-xs uppercase tracking-wide opacity-60">Recommended Action</div>
+                          <div className="mt-1 text-sm">{health.recommendation}</div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                <div>
                     <div className="text-sm font-medium text-white">Buyer-Level Results</div>
                     <div className="text-xs text-gray-500">Recipient status, phone, sent time, and error details.</div>
                   </div>
