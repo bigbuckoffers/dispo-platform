@@ -3,8 +3,6 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../shared/prisma/prisma.service';
 import * as twilio from 'twilio';
 import { randomBytes } from 'crypto';
-import * as fs from 'fs';
-import * as path from 'path';
 import { IntakeService } from '../intake/intake.service';
 
 @Injectable()
@@ -17,6 +15,12 @@ export class MessagesService {
       config.get('TWILIO_ACCOUNT_SID'),
       config.get('TWILIO_AUTH_TOKEN'),
     );
+
+    setTimeout(() => {
+      this.resumeActiveBulkCampaigns().catch((e) =>
+        this.logger.error(`Failed to resume active bulk campaigns: ${e.message}`),
+      );
+    }, 5000);
   }
 
   async getConversations(orgId: string) {
@@ -122,68 +126,209 @@ export class MessagesService {
     }
   }
 
-  private getCampaignStorePath() {
-    const dir = path.join(process.cwd(), 'bulk-campaigns');
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    return path.join(dir, 'campaigns.json');
+  private sleep(ms: number) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
-  private readBulkCampaigns() {
-    const file = this.getCampaignStorePath();
-    if (!fs.existsSync(file)) return [];
-    try {
-      return JSON.parse(fs.readFileSync(file, 'utf8'));
-    } catch {
-      return [];
+  async getBulkCampaigns(orgId: string) {
+    return this.prisma.bulkSmsCampaign.findMany({
+      where: { organizationId: orgId },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+      include: {
+        recipients: {
+          orderBy: { createdAt: 'asc' },
+          take: 200,
+        },
+      },
+    } as any);
+  }
+
+  async getBulkCampaign(orgId: string, batchId: string) {
+    return this.prisma.bulkSmsCampaign.findFirst({
+      where: { organizationId: orgId, batchId },
+      include: {
+        recipients: { orderBy: { createdAt: 'asc' } },
+      },
+    } as any);
+  }
+
+  private async recalcBulkCampaignCounts(campaignId: string) {
+    const recipients = await this.prisma.bulkSmsCampaignRecipient.findMany({
+      where: { campaignId },
+      select: { status: true },
+    } as any);
+
+    const counts = {
+      pending: recipients.filter((r: any) => r.status === 'PENDING').length,
+      sent: recipients.filter((r: any) => r.status === 'SENT').length,
+      failed: recipients.filter((r: any) => r.status === 'FAILED').length,
+      cancelled: recipients.filter((r: any) => r.status === 'CANCELLED').length,
+    };
+
+    const campaign: any = await this.prisma.bulkSmsCampaign.findUnique({ where: { id: campaignId } } as any);
+    if (!campaign) return counts;
+
+    const finished = counts.pending === 0;
+    let status = campaign.status;
+
+    if (campaign.status !== 'PAUSED' && campaign.status !== 'CANCELLED') {
+      if (finished) status = counts.failed > 0 ? 'COMPLETED_WITH_ERRORS' : 'COMPLETED';
+      else status = 'SENDING';
     }
+
+    await this.prisma.bulkSmsCampaign.update({
+      where: { id: campaignId },
+      data: {
+        pending: counts.pending,
+        sent: counts.sent,
+        failed: counts.failed,
+        cancelled: counts.cancelled,
+        status,
+        completedAt: finished && status.startsWith('COMPLETED') ? new Date() : campaign.completedAt,
+      },
+    } as any);
+
+    return counts;
   }
 
-  private writeBulkCampaigns(campaigns: any[]) {
-    const file = this.getCampaignStorePath();
-    fs.writeFileSync(file, JSON.stringify(campaigns.slice(0, 100), null, 2));
+  async pauseBulkCampaign(orgId: string, batchId: string) {
+    const campaign: any = await this.prisma.bulkSmsCampaign.findFirst({ where: { organizationId: orgId, batchId } } as any);
+    if (!campaign) throw new Error('Campaign not found');
+
+    if (!['QUEUED', 'SENDING'].includes(campaign.status)) return campaign;
+
+    return this.prisma.bulkSmsCampaign.update({
+      where: { id: campaign.id },
+      data: { status: 'PAUSED', pausedAt: new Date() },
+    } as any);
   }
 
-  private upsertBulkCampaign(campaign: any) {
-    const campaigns = this.readBulkCampaigns();
-    const idx = campaigns.findIndex((c: any) => c.batchId === campaign.batchId);
-    if (idx >= 0) campaigns[idx] = { ...campaigns[idx], ...campaign, updatedAt: new Date().toISOString() };
-    else campaigns.unshift({ ...campaign, updatedAt: new Date().toISOString() });
-    this.writeBulkCampaigns(campaigns);
+  async resumeBulkCampaign(orgId: string, batchId: string) {
+    const campaign: any = await this.prisma.bulkSmsCampaign.findFirst({ where: { organizationId: orgId, batchId } } as any);
+    if (!campaign) throw new Error('Campaign not found');
+
+    const updated = await this.prisma.bulkSmsCampaign.update({
+      where: { id: campaign.id },
+      data: { status: 'SENDING', pausedAt: null },
+    } as any);
+
+    void this.processBulkCampaign(batchId);
+
+    return updated;
   }
 
-  private updateBulkCampaignResult(batchId: string, result: any) {
-    const campaigns = this.readBulkCampaigns();
-    const idx = campaigns.findIndex((c: any) => c.batchId === batchId);
-    if (idx === -1) return;
+  async cancelBulkCampaign(orgId: string, batchId: string) {
+    const campaign: any = await this.prisma.bulkSmsCampaign.findFirst({ where: { organizationId: orgId, batchId } } as any);
+    if (!campaign) throw new Error('Campaign not found');
 
-    const campaign = campaigns[idx];
-    campaign.results = campaign.results || [];
-    campaign.results.push({ ...result, at: new Date().toISOString() });
+    await this.prisma.bulkSmsCampaignRecipient.updateMany({
+      where: { campaignId: campaign.id, status: 'PENDING' },
+      data: { status: 'CANCELLED' },
+    } as any);
 
-    if (result.status === 'sent') campaign.sent = (campaign.sent || 0) + 1;
-    if (result.status === 'failed') campaign.failed = (campaign.failed || 0) + 1;
+    const cancelledCount = await this.prisma.bulkSmsCampaignRecipient.count({
+      where: { campaignId: campaign.id, status: 'CANCELLED' },
+    } as any);
 
-    const completed = (campaign.sent || 0) + (campaign.failed || 0);
-    if (completed >= campaign.queued) {
-      campaign.status = campaign.failed > 0 ? 'COMPLETED_WITH_ERRORS' : 'COMPLETED';
-      campaign.completedAt = new Date().toISOString();
-    } else {
-      campaign.status = 'SENDING';
+    return this.prisma.bulkSmsCampaign.update({
+      where: { id: campaign.id },
+      data: {
+        status: 'CANCELLED',
+        cancelledAt: new Date(),
+        cancelled: cancelledCount,
+      },
+    } as any);
+  }
+
+  private async resumeActiveBulkCampaigns() {
+    const campaigns: any[] = await this.prisma.bulkSmsCampaign.findMany({
+      where: { status: { in: ['QUEUED', 'SENDING'] } },
+      select: { batchId: true },
+    } as any);
+
+    campaigns.forEach((c: any) => {
+      void this.processBulkCampaign(c.batchId);
+    });
+  }
+
+  private async processBulkCampaign(batchId: string) {
+    const campaign: any = await this.prisma.bulkSmsCampaign.findUnique({
+      where: { batchId },
+    } as any);
+
+    if (!campaign) return;
+
+    await this.prisma.bulkSmsCampaign.update({
+      where: { id: campaign.id },
+      data: { status: 'SENDING' },
+    } as any);
+
+    while (true) {
+      const freshCampaign: any = await this.prisma.bulkSmsCampaign.findUnique({
+        where: { batchId },
+      } as any);
+
+      if (!freshCampaign) return;
+      if (freshCampaign.status === 'PAUSED' || freshCampaign.status === 'CANCELLED') return;
+      if (!['QUEUED', 'SENDING'].includes(freshCampaign.status)) return;
+
+      const recipient: any = await this.prisma.bulkSmsCampaignRecipient.findFirst({
+        where: { campaignId: freshCampaign.id, status: 'PENDING' },
+        orderBy: { createdAt: 'asc' },
+      } as any);
+
+      if (!recipient) {
+        await this.recalcBulkCampaignCounts(freshCampaign.id);
+        return;
+      }
+
+      try {
+        await this.prisma.bulkSmsCampaignRecipient.update({
+          where: { id: recipient.id },
+          data: { status: 'SENDING' },
+        } as any);
+
+        const buyer: any = await this.prisma.buyer.findUnique({ where: { id: recipient.buyerId } });
+        if (!buyer?.phone) throw new Error('Buyer has no phone number');
+
+        const link = await this.getOrCreateBuyerBuyBoxLink(buyer);
+        const message = this.buildBuyBoxBulkMessage(
+          freshCampaign.templateKey || 'general',
+          link,
+          freshCampaign.customMessage || undefined,
+        );
+
+        await this.sendMessage(freshCampaign.organizationId, buyer.id, message, {
+          intakeTrackingType: 'link_sent',
+          trackingMetadata: {
+            source: 'bulk_buy_box_send',
+            method: 'twilio_sms',
+            batchId,
+            templateKey: freshCampaign.templateKey || 'general',
+            dripRate: '5_per_minute',
+            delayMs: freshCampaign.delayMs,
+            campaignRecipientId: recipient.id,
+          },
+        });
+
+        await this.prisma.bulkSmsCampaignRecipient.update({
+          where: { id: recipient.id },
+          data: { status: 'SENT', sentAt: new Date(), error: null },
+        } as any);
+
+        await this.recalcBulkCampaignCounts(freshCampaign.id);
+
+        await this.sleep(freshCampaign.delayMs || 12000);
+      } catch (e: any) {
+        await this.prisma.bulkSmsCampaignRecipient.update({
+          where: { id: recipient.id },
+          data: { status: 'FAILED', error: e.message || 'Unknown error' },
+        } as any);
+
+        await this.recalcBulkCampaignCounts(freshCampaign.id);
+      }
     }
-
-    campaign.updatedAt = new Date().toISOString();
-    campaigns[idx] = campaign;
-    this.writeBulkCampaigns(campaigns);
-  }
-
-  getBulkCampaigns(orgId: string) {
-    return this.readBulkCampaigns()
-      .filter((c: any) => c.orgId === orgId)
-      .sort((a: any, b: any) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime());
-  }
-
-  getBulkCampaign(orgId: string, batchId: string) {
-    return this.readBulkCampaigns().find((c: any) => c.orgId === orgId && c.batchId === batchId) || null;
   }
 
   private buildBuyBoxBulkMessage(templateKey: string, link: string, customMessage?: string) {
@@ -240,6 +385,7 @@ export class MessagesService {
 
     for (const buyerId of buyerIds) {
       const buyer: any = buyerById.get(buyerId);
+
       if (!buyer) {
         skipped.push({ buyerId, reason: 'buyer_not_found' });
         continue;
@@ -264,70 +410,44 @@ export class MessagesService {
       eligible.push(buyer);
     }
 
-    this.upsertBulkCampaign({
-      batchId,
-      orgId,
-      type: 'BULK_BUY_BOX_SEND',
-      status: eligible.length ? 'QUEUED' : 'NO_ELIGIBLE_BUYERS',
-      templateKey: options.templateKey || 'general',
-      customMessageUsed: !!(options.customMessage || '').trim(),
-      selected: buyerIds.length,
-      queued: eligible.length,
-      skipped: skipped.length,
-      sent: 0,
-      failed: 0,
-      skippedDetails: skipped,
-      dripRate: '5 texts per minute',
-      delayMs,
-      estimatedMinutes: Math.max(1, Math.ceil(eligible.length / 5)),
-      startedAt: new Date().toISOString(),
-      results: [],
-    });
+    const campaign: any = await this.prisma.bulkSmsCampaign.create({
+      data: {
+        batchId,
+        organizationId: orgId,
+        type: 'BULK_BUY_BOX_SEND',
+        status: eligible.length ? 'QUEUED' : 'NO_ELIGIBLE_BUYERS',
+        templateKey: options.templateKey || 'general',
+        customMessage: (options.customMessage || '').trim() || null,
+        customMessageUsed: !!(options.customMessage || '').trim(),
+        includeAlreadySent: !!options.includeAlreadySent,
+        selected: buyerIds.length,
+        queued: eligible.length,
+        pending: eligible.length,
+        skipped: skipped.length,
+        skippedDetails: skipped as any,
+        dripRate: '5 texts per minute',
+        delayMs,
+        estimatedMinutes: Math.max(1, Math.ceil(eligible.length / 5)),
+      },
+    } as any);
 
-    eligible.forEach((buyer: any, index: number) => {
-      setTimeout(async () => {
-        try {
-          const link = await this.getOrCreateBuyerBuyBoxLink(buyer);
-          const message = this.buildBuyBoxBulkMessage(options.templateKey || 'general', link, options.customMessage);
+    if (eligible.length) {
+      await this.prisma.bulkSmsCampaignRecipient.createMany({
+        data: eligible.map((buyer: any) => ({
+          campaignId: campaign.id,
+          buyerId: buyer.id,
+          buyerName: `${buyer.firstName || ''} ${buyer.lastName || ''}`.trim(),
+          phone: buyer.phone,
+          status: 'PENDING',
+        })),
+      } as any);
 
-          await this.sendMessage(orgId, buyer.id, message, {
-            intakeTrackingType: 'link_sent',
-            trackingMetadata: {
-              source: 'bulk_buy_box_send',
-              method: 'twilio_sms',
-              batchId,
-              templateKey: options.templateKey || 'general',
-              dripRate: '5_per_minute',
-              delayMs,
-            },
-          });
-
-          this.updateBulkCampaignResult(batchId, {
-            buyerId: buyer.id,
-            buyerName: `${buyer.firstName || ''} ${buyer.lastName || ''}`.trim(),
-            phone: buyer.phone,
-            status: 'sent',
-            templateKey: options.templateKey || 'general',
-          });
-
-          this.logger.log(`Bulk Buy Box sent to buyer ${buyer.id} in batch ${batchId}`);
-        } catch (e: any) {
-          this.updateBulkCampaignResult(batchId, {
-            buyerId: buyer.id,
-            buyerName: `${buyer.firstName || ''} ${buyer.lastName || ''}`.trim(),
-            phone: buyer.phone,
-            status: 'failed',
-            error: e.message,
-            templateKey: options.templateKey || 'general',
-          });
-
-          this.logger.error(`Bulk Buy Box failed for buyer ${buyer.id} in batch ${batchId}: ${e.message}`);
-        }
-      }, index * delayMs);
-    });
+      void this.processBulkCampaign(batchId);
+    }
 
     return {
       batchId,
+      campaignId: campaign.id,
       selected: buyerIds.length,
       queued: eligible.length,
       skipped: skipped.length,
@@ -335,6 +455,7 @@ export class MessagesService {
       dripRate: '5 texts per minute',
       delayMs,
       estimatedMinutes: Math.max(1, Math.ceil(eligible.length / 5)),
+      status: campaign.status,
     };
   }
 

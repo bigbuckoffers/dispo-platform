@@ -38,6 +38,24 @@ export class MessagesController {
     return this.messagesService.getBulkCampaign(orgId || defaultOrg, batchId);
   }
 
+  @Post('bulk-campaigns/:batchId/pause')
+  pauseBulkCampaign(@Param('batchId') batchId: string, @Query('orgId') orgId: string) {
+    const defaultOrg = 'c87f4e63-fd29-4ff5-823f-e4926daa0820';
+    return this.messagesService.pauseBulkCampaign(orgId || defaultOrg, batchId);
+  }
+
+  @Post('bulk-campaigns/:batchId/resume')
+  resumeBulkCampaign(@Param('batchId') batchId: string, @Query('orgId') orgId: string) {
+    const defaultOrg = 'c87f4e63-fd29-4ff5-823f-e4926daa0820';
+    return this.messagesService.resumeBulkCampaign(orgId || defaultOrg, batchId);
+  }
+
+  @Post('bulk-campaigns/:batchId/cancel')
+  cancelBulkCampaign(@Param('batchId') batchId: string, @Query('orgId') orgId: string) {
+    const defaultOrg = 'c87f4e63-fd29-4ff5-823f-e4926daa0820';
+    return this.messagesService.cancelBulkCampaign(orgId || defaultOrg, batchId);
+  }
+
   @Post('bulk-buybox')
   sendBulkBuyBox(@Body() body: {
     buyerIds: string[];

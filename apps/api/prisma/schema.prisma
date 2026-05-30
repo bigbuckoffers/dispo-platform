@@ -1307,3 +1307,58 @@ model SmsMessage {
   @@index([conversationId, createdAt])
   @@map("sms_messages")
 }
+
+model BulkSmsCampaign {
+  id                 String   @id @default(uuid())
+  batchId            String   @unique
+  organizationId     String
+  type               String   @default("BULK_BUY_BOX_SEND")
+  status             String   @default("QUEUED")
+  templateKey        String?
+  customMessage      String?
+  customMessageUsed  Boolean  @default(false)
+  includeAlreadySent Boolean  @default(false)
+  selected           Int      @default(0)
+  queued             Int      @default(0)
+  pending            Int      @default(0)
+  sent               Int      @default(0)
+  failed             Int      @default(0)
+  skipped            Int      @default(0)
+  cancelled          Int      @default(0)
+  skippedDetails     Json?
+  dripRate           String   @default("5 texts per minute")
+  delayMs            Int      @default(12000)
+  estimatedMinutes   Int      @default(1)
+  startedAt          DateTime @default(now())
+  completedAt        DateTime?
+  pausedAt           DateTime?
+  cancelledAt        DateTime?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  recipients         BulkSmsCampaignRecipient[]
+
+  @@index([organizationId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model BulkSmsCampaignRecipient {
+  id          String   @id @default(uuid())
+  campaignId  String
+  buyerId     String
+  buyerName   String?
+  phone       String?
+  status      String   @default("PENDING")
+  error       String?
+  sentAt      DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  campaign    BulkSmsCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@index([campaignId])
+  @@index([buyerId])
+  @@index([status])
+}
+
