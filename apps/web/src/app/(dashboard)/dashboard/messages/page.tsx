@@ -174,6 +174,7 @@ export default function MessagesPage() {
   const [generatingDraft, setGeneratingDraft] = useState(false);
   const [aiDetected, setAiDetected] = useState<any>(null);
   const [rightTab, setRightTab] = useState<'intel'|'deals'|'notes'>('intel');
+  const [autoOpenedBuyerId, setAutoOpenedBuyerId] = useState<string | null>(null);
   const [showRightPanel, setShowRightPanel] = useState(false);
   const [notes, setNotes] = useState('');
   const [savingNotes, setSavingNotes] = useState(false);
@@ -181,43 +182,49 @@ export default function MessagesPage() {
 
   useEffect(() => { loadConversations(); }, []);
 
-  // Auto-open buyer from URL param
+  // Auto-open buyer from URL param once, not on every background refresh
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const buyerParam = params.get('buyer');
-    if (!buyerParam) return;
+
+    if (!buyerParam || autoOpenedBuyerId === buyerParam) return;
+
     const conv = conversations.find((c:any) => c.buyer.id === buyerParam);
     if (conv) {
       setSelected(conv);
+      setAutoOpenedBuyerId(buyerParam);
     } else {
       fetch(`${API}/buyers/${buyerParam}`).then(r=>r.json()).then(b => {
         const placeholder = { id: null, buyer: { id: b.id, firstName: b.firstName, lastName: b.lastName, phone: b.phone, tier: b.tier }, lastMessageBody: null, lastMessageAt: null, unreadCount: 0 };
         setSelected(placeholder);
         setBuyer(b);
+        setAutoOpenedBuyerId(buyerParam);
       }).catch(()=>{});
     }
-  }, [conversations]);
+  }, [conversations, autoOpenedBuyerId]);
   useEffect(() => { if (selected) { if (selected.id) loadMessages(selected.buyer.id); loadBuyer(selected.buyer.id); } }, [selected]);
   useEffect(() => {
     if (!selected?.id) return;
-    const interval = setInterval(() => loadMessages(selected.buyer.id), 10000);
+    const interval = setInterval(() => loadMessages(selected.buyer.id, true), 10000);
     return () => clearInterval(interval);
   }, [selected]);
   useEffect(() => {
-    const interval = setInterval(loadConversations, 15000);
+    const interval = setInterval(() => loadConversations(true), 15000);
     return () => clearInterval(interval);
   }, []);
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
   useEffect(() => { if (buyer) { setNotes(buyer.buyerIntelNotes || ''); loadDeals(); } }, [buyer]);
 
-  async function loadConversations() {
-    setLoading(true);
+  async function loadConversations(background = false) {
+    if (!background) setLoading(true);
     try {
       const r = await fetch(`${API}/messages/conversations`);
       const d = await r.json();
       setConversations(Array.isArray(d) ? d : []);
     } catch {}
-    finally { setLoading(false); }
+    finally {
+      if (!background) setLoading(false);
+    }
   }
 
   async function loadBuyer(buyerId: string) {
@@ -227,16 +234,21 @@ export default function MessagesPage() {
     } catch {}
   }
 
-  async function loadMessages(buyerId: string) {
-    setLoadingMsgs(true);
-    setAiDetected(null);
+  async function loadMessages(buyerId: string, background = false) {
+    if (!background) {
+      setLoadingMsgs(true);
+      setAiDetected(null);
+    }
+
     try {
       const r = await fetch(`${API}/messages/conversations/${buyerId}`);
       const d = await r.json();
       setMessages(d?.smsMessages || []);
       setConversations(prev => prev.map(c => c.buyer.id === buyerId ? { ...c, unreadCount: 0 } : c));
     } catch {}
-    finally { setLoadingMsgs(false); }
+    finally {
+      if (!background) setLoadingMsgs(false);
+    }
   }
 
   async function loadDeals() {
