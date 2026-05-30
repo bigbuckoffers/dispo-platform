@@ -178,11 +178,18 @@ export default function BuyersPage() {
   };
 
   const formatSendingDays = (days: any) => {
-    const normalized = Array.isArray(days) ? days.map((d: any) => Number(d)).filter((d: number) => d >= 0 && d <= 6) : [1,2,3,4,5];
+    const normalized = Array.isArray(days)
+      ? Array.from(new Set(days.map((d: any) => Number(d)).filter((d: number) => d >= 0 && d <= 6))).sort((a: number, b: number) => a - b)
+      : [1, 2, 3, 4, 5];
 
     if (normalized.length === 7) return 'Every day';
     if (normalized.join(',') === '1,2,3,4,5') return 'Mon–Fri';
-    if (normalized.join(',') === '0,6') return 'Weekends';
+    if (normalized.join(',') === '0,6') return 'Sat–Sun';
+
+    const isContiguous = normalized.every((d: number, i: number) => i === 0 || d === normalized[i - 1] + 1);
+    if (isContiguous && normalized.length >= 2) {
+      return `${dayLabels[normalized[0]]}–${dayLabels[normalized[normalized.length - 1]]}`;
+    }
 
     return normalized.map((d: number) => dayLabels[d]).filter(Boolean).join(', ');
   };
@@ -1620,7 +1627,7 @@ export default function BuyersPage() {
             </div>
 
             <div className="shrink-0 flex items-center justify-between gap-3 border-t border-gray-800 bg-gray-950 px-6 py-4">
-              <div className="text-xs text-gray-500">Rate: 5 texts/minute · backend drip · 1 SMS every 12 seconds</div>
+              <div className="text-xs text-gray-500">Rate: 5 texts/minute · backend drip · ~1 SMS every 12 seconds</div>
               <div className="flex gap-3">
                 <button onClick={()=>setShowBulkBuyBoxModal(false)} disabled={bulkSending} className="rounded-lg bg-gray-800 px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 disabled:opacity-50">Close</button>
                 <div className="rounded-xl border border-purple-800/40 bg-purple-950/20 p-4">
@@ -1682,7 +1689,7 @@ export default function BuyersPage() {
 
                   {bulkUseCustomSendingRules && (
                     <div className="mt-4 space-y-4">
-                      <div className="grid grid-cols-3 gap-3">
+                      <div className="grid grid-cols-3 gap-2">
                         <label className="space-y-1">
                           <span className="text-xs text-gray-500">Start</span>
                           <select
