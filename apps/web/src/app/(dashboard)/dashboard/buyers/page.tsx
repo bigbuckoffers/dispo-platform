@@ -1670,11 +1670,11 @@ export default function BuyersPage() {
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-gray-800 bg-gray-950/70 p-4">
+                <div className="rounded-xl border border-gray-800 bg-gray-950/70 p-3">
                   <label className="flex items-center justify-between gap-3 cursor-pointer">
                     <div>
-                      <div className="text-sm font-medium text-white">Customize for this campaign</div>
-                      <div className="text-xs text-gray-500">Leave off to use the default rules from Settings.</div>
+                      <div className="text-sm font-medium text-white">Custom rules</div>
+                      <div className="text-xs text-gray-500">Off = use Settings defaults.</div>
                     </div>
                     <input
                       type="checkbox"
@@ -1760,7 +1760,7 @@ export default function BuyersPage() {
                   )}
                 </div>
 
-                <button onClick={runBackendBulkBuyBoxSend} disabled={bulkSending || !!bulkResult || getBulkEligibleBuyers().length===0} className="rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-500 disabled:opacity-50">
+                <button onClick={runBackendBulkBuyBoxSend} disabled={bulkSending || !!bulkResult || getBulkEligibleBuyers().length===0} className="h-10 rounded-lg bg-purple-600 px-4 text-sm font-medium text-white hover:bg-purple-500 disabled:opacity-50">
                   {bulkSending ? 'Queuing drip...' : bulkResult ? 'Campaign Queued' : getBulkEligibleBuyers().length===0 ? 'No Eligible Buyers' : `Confirm Send to ${getBulkEligibleBuyers().length}`}
                 </button>
               </div>
