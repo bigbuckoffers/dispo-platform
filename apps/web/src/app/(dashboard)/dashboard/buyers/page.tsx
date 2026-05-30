@@ -80,6 +80,7 @@ export default function BuyersPage() {
   const [loadingBulkCampaigns, setLoadingBulkCampaigns] = useState(false);
   const [showAllSkippedReasons, setShowAllSkippedReasons] = useState(false);
   const [buyBoxQueueFilter, setBuyBoxQueueFilter] = useState<'all'|'not_sent'|'sent'|'opened'|'started'|'submitted'|'needs_review'>('all');
+  const [queueActionLoading, setQueueActionLoading] = useState<Record<string, string>>({});
 
 
   const getVisibleBulkBuyers = () => {
@@ -232,6 +233,110 @@ export default function BuyersPage() {
       alert('Bulk send failed: ' + e.message);
     } finally {
       setBulkSending(false);
+    }
+  };
+
+  const getQueueReminderCount = (b: any) => {
+    const events = Array.isArray(b?.events) ? b.events : [];
+    const eventCount = events.filter((e: any) => e.eventType === 'INTAKE_REMINDER_SENT').length;
+    return Number(b?.intakeReminderCount || b?.reminderCount || eventCount || 0);
+  };
+
+  const getQueueNextReminderNumber = (b: any) => getQueueReminderCount(b) + 1;
+
+  const getQueueReminderMessage = (b: any, link: string) => {
+    const reminderNumber = getQueueNextReminderNumber(b);
+
+    if (reminderNumber === 1) {
+      return `Quick reminder to complete your buy box so we can send you better-matched deals: ${link}`;
+    }
+
+    if (reminderNumber === 2) {
+      return `Following up on your Buy Box form — once this is done, we can send you deals that better match your market, price range, and strategy: ${link}`;
+    }
+
+    return `Last reminder on this for now — complete your Buy Box here if you still want us to send deals that match your criteria: ${link}`;
+  };
+
+  const getQueueBuyBoxLink = async (buyerId: string) => {
+    const r = await fetch(`${API}/intake/generate/${buyerId}`, { method: 'POST' });
+    const d = await r.json().catch(() => ({}));
+
+    if (!r.ok) throw new Error(d?.message || `Could not create Buy Box link`);
+
+    return d.link || d.url || d.intakeLink || `${window.location.origin}/intake/${d.token || d.intakeToken}`;
+  };
+
+  const sendQueueSms = async (buyerId: string, message: string, intakeTrackingType: 'link_sent' | 'reminder', reminderNumber?: number) => {
+    const r = await fetch(`${API}/messages/conversations/${buyerId}/send`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message, intakeTrackingType, reminderNumber }),
+    });
+
+    const d = await r.json().catch(() => ({}));
+
+    if (!r.ok) throw new Error(d?.message || `SMS send failed`);
+
+    return d;
+  };
+
+  const sendBuyBoxFromQueue = async (b: any) => {
+    if (!b?.id) return;
+    if (!b?.phone) return alert('This buyer has no phone number.');
+
+    setQueueActionLoading(prev => ({ ...prev, [b.id]: 'send' }));
+
+    try {
+      const link = await getQueueBuyBoxLink(b.id);
+      const firstName = b.firstName && b.firstName !== 'Unknown' ? b.firstName : '';
+      const message = `Hey${firstName ? ' ' + firstName : ''}, can you complete your Buy Box form so we can send you deals that actually match what you buy? ${link}`;
+
+      await sendQueueSms(b.id, message, 'link_sent');
+      await loadAll();
+      await load();
+
+      alert('Buy Box form sent');
+    } catch (e: any) {
+      alert(`Could not send Buy Box form: ${e.message}`);
+    } finally {
+      setQueueActionLoading(prev => {
+        const next = { ...prev };
+        delete next[b.id];
+        return next;
+      });
+    }
+  };
+
+  const sendReminderFromQueue = async (b: any) => {
+    if (!b?.id) return;
+    if (!b?.phone) return alert('This buyer has no phone number.');
+
+    const reminderNumber = getQueueNextReminderNumber(b);
+
+    if (reminderNumber > 3) {
+      return alert('This buyer already received 3 reminders. Next best action is to call or manually message them.');
+    }
+
+    setQueueActionLoading(prev => ({ ...prev, [b.id]: 'reminder' }));
+
+    try {
+      const link = await getQueueBuyBoxLink(b.id);
+      const message = getQueueReminderMessage(b, link);
+
+      await sendQueueSms(b.id, message, 'reminder', reminderNumber);
+      await loadAll();
+      await load();
+
+      alert(`Reminder #${reminderNumber} sent`);
+    } catch (e: any) {
+      alert(`Could not send reminder: ${e.message}`);
+    } finally {
+      setQueueActionLoading(prev => {
+        const next = { ...prev };
+        delete next[b.id];
+        return next;
+      });
     }
   };
 
@@ -514,9 +619,60 @@ export default function BuyersPage() {
         </td>
         <td className="px-4 py-3 text-right" onClick={e=>e.stopPropagation()}>
           <div className="flex items-center justify-end gap-2">
+            {key === 'not_sent' && (
+              <button
+                onClick={()=>sendBuyBoxFromQueue(b)}
+                disabled={!!queueActionLoading[b.id] || !b.phone}
+                className="px-2 py-1 bg-green-900/40 hover:bg-green-800/70 disabled:opacity-40 text-green-300 rounded text-xs"
+                title={!b.phone ? 'Buyer has no phone number' : 'Send Buy Box form by SMS'}
+              >
+                {queueActionLoading[b.id] === 'send' ? 'Sending...' : 'Send Buy Box'}
+              </button>
+            )}
+
+            {['sent','opened','started'].includes(key) && getQueueNextReminderNumber(b) <= 3 && (
+              <button
+                onClick={()=>sendReminderFromQueue(b)}
+                disabled={!!queueActionLoading[b.id] || !b.phone}
+                className="px-2 py-1 bg-blue-900/40 hover:bg-blue-800/70 disabled:opacity-40 text-blue-300 rounded text-xs"
+                title={!b.phone ? 'Buyer has no phone number' : `Send reminder #${getQueueNextReminderNumber(b)}`}
+              >
+                {queueActionLoading[b.id] === 'reminder' ? 'Sending...' : `Reminder #${getQueueNextReminderNumber(b)}`}
+              </button>
+            )}
+
+            {['sent','opened','started'].includes(key) && getQueueNextReminderNumber(b) > 3 && (
+              <button
+                onClick={()=>{ if (b.phone) window.location.href = `tel:${b.phone}`; }}
+                disabled={!b.phone}
+                className="px-2 py-1 bg-yellow-900/40 hover:bg-yellow-800/70 disabled:opacity-40 text-yellow-300 rounded text-xs"
+                title="3 reminders already sent. Call buyer next."
+              >
+                Call Buyer
+              </button>
+            )}
+
+            {key === 'submitted' && (
+              <button
+                onClick={()=>{ setTab('submissions'); loadSubmissions(); }}
+                className="px-2 py-1 bg-purple-900/40 hover:bg-purple-800/70 text-purple-300 rounded text-xs"
+              >
+                Review
+              </button>
+            )}
+
+            {key === 'needs_review' && (
+              <button
+                onClick={()=>window.location.href=`/dashboard/buyers/${b.id}`}
+                className="px-2 py-1 bg-yellow-900/40 hover:bg-yellow-800/70 text-yellow-300 rounded text-xs"
+              >
+                Fix Profile
+              </button>
+            )}
+
             <button
               onClick={()=>window.location.href=`/dashboard/messages?buyer=${b.id}`}
-              className="px-2 py-1 bg-blue-900/30 hover:bg-blue-900/60 text-blue-300 rounded text-xs"
+              className="px-2 py-1 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded text-xs"
             >
               Message
             </button>
