@@ -22,6 +22,63 @@ function timeAgo(d: string) {
   return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
+function smsDeliveryLabel(m: any) {
+  const status = String(m?.deliveryStatus || m?.status || '').toUpperCase();
+
+  if (status === 'DELIVERED') return 'Delivered';
+  if (status === 'UNDELIVERED') return 'Undelivered';
+  if (status === 'FAILED') return 'Failed';
+  if (status === 'SENT') return 'Sent';
+  if (status === 'PENDING') return 'Pending';
+
+  return status || 'Sent';
+}
+
+function smsDeliveryClasses(m: any) {
+  const status = String(m?.deliveryStatus || m?.status || '').toUpperCase();
+
+  if (status === 'DELIVERED') return 'text-green-400';
+  if (status === 'UNDELIVERED') return 'text-red-400';
+  if (status === 'FAILED') return 'text-red-400';
+  if (status === 'SENT') return 'text-blue-400';
+  if (status === 'PENDING') return 'text-yellow-400';
+
+  return 'text-gray-600';
+}
+
+function smsDeliveryIcon(m: any) {
+  const status = String(m?.deliveryStatus || m?.status || '').toUpperCase();
+
+  if (status === 'DELIVERED') return '✓✓';
+  if (status === 'UNDELIVERED') return '!';
+  if (status === 'FAILED') return '!';
+  if (status === 'SENT') return '✓';
+  if (status === 'PENDING') return '…';
+
+  return '✓';
+}
+
+function smsErrorLabel(m: any) {
+  const code = String(m?.deliveryErrorCode || '').trim();
+  const message = String(m?.deliveryErrorMessage || '').trim();
+
+  const known: Record<string, string> = {
+    '30034': 'Undelivered by Twilio/carrier',
+    '30003': 'Unreachable handset',
+    '30004': 'Message blocked',
+    '30005': 'Unknown destination handset',
+    '30006': 'Landline or unreachable carrier',
+    '30007': 'Carrier filtering',
+    '30008': 'Unknown delivery failure',
+  };
+
+  if (code && known[code]) return `${code} — ${known[code]}`;
+  if (code) return code;
+  if (message) return message;
+
+  return '';
+}
+
 function getTemp(b: any) {
   try {
     const t = JSON.parse(b?.temperatureNotes || '{}');
@@ -417,7 +474,14 @@ JSON format: {"market":"city name or null","maxPrice":number or null,"minPrice":
                       </div>
                       <div className={`flex items-center gap-1 mt-0.5 ${isInbound ? 'justify-start' : 'justify-end'}`}>
                         <span className="text-[10px] text-gray-600">{timeAgo(m.createdAt)}</span>
-                        {!isInbound && <span className="text-[10px] text-gray-600">{m.status === 'DELIVERED' ? '✓✓' : '✓'}</span>}
+                        {!isInbound && (
+                          <span
+                            title={smsErrorLabel(m) || smsDeliveryLabel(m)}
+                            className={`text-[10px] ${smsDeliveryClasses(m)}`}
+                          >
+                            {smsDeliveryIcon(m)} {smsDeliveryLabel(m)}
+                          </span>
+                        )}
                         {isInbound && isLast && (
                           <button onClick={() => detectBuyBoxFromMessage(m.body)} className="text-[10px] text-purple-500 hover:text-purple-400 ml-1">🤖 detect</button>
                         )}
