@@ -61,6 +61,7 @@ export class MessagesController {
     buyerIds: string[];
     templateKey?: string;
     customMessage?: string;
+    campaignName?: string;
     includeAlreadySent?: boolean;
     delayMs?: number;
     orgId?: string;
@@ -69,6 +70,7 @@ export class MessagesController {
     return this.messagesService.sendBulkBuyBox(body.orgId || defaultOrg, body.buyerIds || [], {
       templateKey: body.templateKey || 'general',
       customMessage: body.customMessage || '',
+      campaignName: body.campaignName || '',
       includeAlreadySent: !!body.includeAlreadySent,
       delayMs: body.delayMs || 12000,
     });

@@ -368,6 +368,7 @@ export class MessagesService {
     options: {
       templateKey?: string;
       customMessage?: string;
+      campaignName?: string;
       includeAlreadySent?: boolean;
       delayMs?: number;
     } = {},
@@ -413,6 +414,7 @@ export class MessagesService {
     const campaign: any = await this.prisma.bulkSmsCampaign.create({
       data: {
         batchId,
+        campaignName: (options.campaignName || '').trim() || `Buy Box Send - ${new Date().toLocaleDateString('en-US')}`,
         organizationId: orgId,
         type: 'BULK_BUY_BOX_SEND',
         status: eligible.length ? 'QUEUED' : 'NO_ELIGIBLE_BUYERS',

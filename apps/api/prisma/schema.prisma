@@ -1311,6 +1311,7 @@ model SmsMessage {
 model BulkSmsCampaign {
   id                 String   @id @default(uuid())
   batchId            String   @unique
+  campaignName       String?
   organizationId     String
   type               String   @default("BULK_BUY_BOX_SEND")
   status             String   @default("QUEUED")

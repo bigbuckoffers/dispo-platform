@@ -8,6 +8,7 @@ const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
 type Campaign = {
   id: string;
   batchId: string;
+  campaignName?: string;
   type: string;
   status: string;
   templateKey?: string;
@@ -204,7 +205,7 @@ export default function CampaignsPage() {
                   <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <div className="text-white font-semibold">{typeLabel(c.type)}</div>
+                        <div className="text-white font-semibold">{c.campaignName || typeLabel(c.type)}</div>
                         <span className={`text-xs px-2 py-1 rounded-full border ${statusClass(c.status)}`}>{c.status}</span>
                         <span className="text-xs text-gray-500">Template: {c.templateKey || 'general'}</span>
                       </div>
@@ -280,7 +281,7 @@ export default function CampaignsPage() {
             <div className="shrink-0 border-b border-gray-800 bg-gradient-to-r from-purple-950/80 to-blue-950/50 px-6 py-5">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <h3 className="text-lg font-semibold text-white">{typeLabel(selectedCampaign.type)}</h3>
+                  <h3 className="text-lg font-semibold text-white">{selectedCampaign.campaignName || typeLabel(selectedCampaign.type)}</h3>
                   <p className="text-sm text-gray-400 mt-1">{selectedCampaign.batchId}</p>
                 </div>
                 <button

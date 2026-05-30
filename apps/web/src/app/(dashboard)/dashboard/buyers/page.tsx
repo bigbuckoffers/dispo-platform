@@ -68,6 +68,7 @@ export default function BuyersPage() {
   const [bulkSelected, setBulkSelected] = useState<Record<string, boolean>>({});
   const [showBulkBuyBoxModal, setShowBulkBuyBoxModal] = useState(false);
   const [bulkTemplate, setBulkTemplate] = useState('general');
+  const [bulkCampaignName, setBulkCampaignName] = useState('');
   const [bulkCustomMessage, setBulkCustomMessage] = useState('');
   const [currentBulkMessage, setCurrentBulkMessage] = useState('');
   const [bulkIncludeAlreadySent, setBulkIncludeAlreadySent] = useState(false);
@@ -202,6 +203,7 @@ export default function BuyersPage() {
         body: JSON.stringify({
           buyerIds: getBulkSelectedBuyers().map((b: any) => b.id),
           templateKey: bulkTemplate,
+          campaignName: bulkCampaignName,
           customMessage: currentBulkMessage || bulkCustomMessage,
           includeAlreadySent: bulkIncludeAlreadySent,
           delayMs: 12000,
@@ -475,7 +477,7 @@ export default function BuyersPage() {
           <p className="text-gray-400 text-sm mt-1">{total} buyers</p>
         </div>
         <div className="flex gap-2">
-          <button onClick={() => { setBulkResult(null); setShowAllSkippedReasons(false); setCurrentBulkMessage(getBulkDefaultTemplateText(bulkTemplate)); loadBulkCampaigns(); setShowBulkBuyBoxModal(true); }} className="bg-purple-900/50 hover:bg-purple-800/70 border border-purple-700/50 text-purple-200 px-4 py-2 rounded-lg text-sm font-medium transition">
+          <button onClick={() => { setBulkResult(null); setShowAllSkippedReasons(false); setBulkCampaignName(`Buy Box Send - ${new Date().toLocaleDateString()}`); setCurrentBulkMessage(getBulkDefaultTemplateText(bulkTemplate)); loadBulkCampaigns(); setShowBulkBuyBoxModal(true); }} className="bg-purple-900/50 hover:bg-purple-800/70 border border-purple-700/50 text-purple-200 px-4 py-2 rounded-lg text-sm font-medium transition">
             {getBulkSelectedBuyers().length>0 ? `📩 Review & Send Selected (${getBulkSelectedBuyers().length})` : '📩 Bulk Buy Box Send'}
           </button>
           <button onClick={() => setShowCreate(true)} className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition">+ Add Buyer</button>
@@ -777,6 +779,17 @@ export default function BuyersPage() {
               )}
 
               <div>
+                <label className="mb-2 block text-xs font-medium uppercase tracking-wide text-gray-500">Campaign Name</label>
+                <input
+                  value={bulkCampaignName}
+                  onChange={e=>setBulkCampaignName(e.target.value)}
+                  placeholder="Ex: May Buyer Reactivation, VIP Buy Box Cleanup"
+                  className="w-full rounded-lg border border-gray-700 bg-gray-900 px-4 py-2 text-sm text-white placeholder-gray-500 focus:border-purple-500 focus:outline-none"
+                />
+                <p className="mt-2 text-xs text-gray-500">This name appears in campaign history and reporting.</p>
+              </div>
+
+              <div>
                 <label className="mb-2 block text-xs font-medium uppercase tracking-wide text-gray-500">Template Context</label>
                 <select value={bulkTemplate} onChange={e=>{ setBulkTemplate(e.target.value); setCurrentBulkMessage(getBulkDefaultTemplateText(e.target.value)); }} className="w-full rounded-lg border border-gray-700 bg-gray-900 px-4 py-2 text-sm text-white">
                   <option value="general">General Buyer Intake</option>
@@ -825,8 +838,8 @@ export default function BuyersPage() {
                       <div key={c.batchId} className="rounded-lg border border-gray-800 bg-gray-950/70 p-3">
                         <div className="flex items-center justify-between gap-3">
                           <div>
-                            <div className="text-xs font-medium text-gray-200">{c.batchId}</div>
-                            <div className="text-xs text-gray-500">{new Date(c.startedAt).toLocaleString()} · Template: {c.templateKey}</div>
+                            <div className="text-xs font-medium text-gray-200">{c.campaignName || c.batchId}</div>
+                            <div className="text-xs text-gray-500">{c.batchId} · {new Date(c.startedAt).toLocaleString()} · Template: {c.templateKey}</div>
                           </div>
                           <div className="flex items-center gap-2">
                             <span className={`text-xs px-2 py-1 rounded-full ${c.status==='COMPLETED'?'bg-green-500/10 text-green-300':c.status==='COMPLETED_WITH_ERRORS'?'bg-yellow-500/10 text-yellow-300':c.status==='SENDING'?'bg-blue-500/10 text-blue-300':c.status==='PAUSED'?'bg-orange-500/10 text-orange-300':c.status==='CANCELLED'?'bg-red-500/10 text-red-300':'bg-gray-500/10 text-gray-300'}`}>{c.status}</span>
