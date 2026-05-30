@@ -448,42 +448,42 @@ export default function CampaignsPage() {
                 ))}
               </div>
 
-              <div className="rounded-xl border border-gray-800 bg-gray-900/70 overflow-hidden">
-                <div className="border-b border-gray-800 px-4 py-3 flex items-center justify-between">
-                  {selectedCampaign && (() => {
-                  const health = campaignHealth(selectedCampaign);
-                  return (
-                    <div className={`mb-4 rounded-xl border p-4 ${healthToneClasses(health.tone)}`}>
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <div className="text-sm font-semibold">Campaign Health: {health.label}</div>
-                          <div className="mt-1 text-xs opacity-80">
-                            {health.delivered} delivered · {health.undelivered} undelivered · {health.failed} failed · {health.waiting} waiting
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-2xl font-bold">{health.deliveryRate}%</div>
-                          <div className="text-xs opacity-70">Delivery Rate</div>
+              {selectedCampaign && (() => {
+                const health = campaignHealth(selectedCampaign);
+                return (
+                  <div className={`rounded-xl border p-4 ${healthToneClasses(health.tone)}`}>
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <div className="text-sm font-semibold">Campaign Health: {health.label}</div>
+                        <div className="mt-1 text-xs opacity-80">
+                          {health.delivered} delivered · {health.undelivered} undelivered · {health.failed} failed · {health.waiting} waiting
                         </div>
                       </div>
-
-                      <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <div className="rounded-lg bg-black/20 p-3">
-                          <div className="text-xs uppercase tracking-wide opacity-60">Top Issue</div>
-                          <div className="mt-1 text-sm font-medium">
-                            {health.topErrorCode ? formatDeliveryError(health.topErrorCode) + ` (${health.topErrorCount})` : 'No major delivery issue detected'}
-                          </div>
-                        </div>
-                        <div className="rounded-lg bg-black/20 p-3">
-                          <div className="text-xs uppercase tracking-wide opacity-60">Recommended Action</div>
-                          <div className="mt-1 text-sm">{health.recommendation}</div>
-                        </div>
+                      <div className="text-right">
+                        <div className="text-2xl font-bold">{health.deliveryRate}%</div>
+                        <div className="text-xs opacity-70">Delivery Rate</div>
                       </div>
                     </div>
-                  );
-                })()}
 
-                <div>
+                    <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div className="rounded-lg bg-black/20 p-3">
+                        <div className="text-xs uppercase tracking-wide opacity-60">Top Issue</div>
+                        <div className="mt-1 text-sm font-medium">
+                          {health.topErrorCode ? formatDeliveryError(health.topErrorCode) + ` (${health.topErrorCount})` : 'No major delivery issue detected'}
+                        </div>
+                      </div>
+                      <div className="rounded-lg bg-black/20 p-3">
+                        <div className="text-xs uppercase tracking-wide opacity-60">Recommended Action</div>
+                        <div className="mt-1 text-sm">{health.recommendation}</div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              <div className="rounded-xl border border-gray-800 bg-gray-900/70 overflow-hidden">
+                <div className="border-b border-gray-800 px-4 py-3 flex items-center justify-between">
+                  <div>
                     <div className="text-sm font-medium text-white">Buyer-Level Results</div>
                     <div className="text-xs text-gray-500">Recipient status, phone, sent time, and error details.</div>
                   </div>
