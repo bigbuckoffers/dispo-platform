@@ -8,9 +8,28 @@ import { IntakeService } from '../intake/intake.service';
 // Buy Box reminder sending window defaults
 // using DB settings now // 9 AM
 // using DB settings now  // 6 PM
-// using DB settings now
+
+// Buy Box reminder sending window defaults
+const BUY_BOX_DEFAULT_START_HOUR = 9; // 9 AM
+const BUY_BOX_DEFAULT_END_HOUR = 18;  // 6 PM
+const BUY_BOX_MAX_PER_MINUTE = 5;
+
+
+// Buy Box reminder sending window defaults
+
+const BUY_BOX_DEFAULT_START_HOUR = 9; // 9 AM
+
+const BUY_BOX_DEFAULT_END_HOUR = 18;  // 6 PM
+
+const BUY_BOX_MAX_PER_MINUTE = 5;
 
 @Injectable()
+      startHour: settings?.startHour ?? BUY_BOX_DEFAULT_START_HOUR,
+      endHour: settings?.endHour ?? BUY_BOX_DEFAULT_END_HOUR,
+      maxPerMin: settings?.maxPerMin ?? BUY_BOX_MAX_PER_MINUTE,
+    };
+  }
+
 
 export class MessagesService {
   private readonly logger = new Logger(MessagesService.name);
@@ -385,28 +404,38 @@ export class MessagesService {
 
       
       if (!checkBuyBoxSendingWindow()) {
+
         const now = new Date();
+
         const nextStart = new Date();
 
         if (now.getHours() < BUY_BOX_DEFAULT_START_HOUR) {
+
           nextStart.setHours(BUY_BOX_DEFAULT_START_HOUR, 0, 0, 0);
+
         } else {
+
           nextStart.setDate(now.getDate() + 1);
+
           nextStart.setHours(BUY_BOX_DEFAULT_START_HOUR, 0, 0, 0);
+
         }
 
         const resumeInMs = Math.max(60000, nextStart.getTime() - now.getTime());
 
         await this.prisma.bulkSmsCampaign.update({
+
           where: { id: freshCampaign.id },
+
           data: { status: 'QUEUED' },
+
         } as any);
 
-        setTimeout(() => {
-          void this.processBulkCampaign(batchId);
-        }, resumeInMs);
+        setTimeout(() => { void this.processBulkCampaign(batchId); }, resumeInMs);
 
         return;
+
+      }
       }
 
       const recipient: any = await this.prisma.bulkSmsCampaignRecipient.findFirst({
