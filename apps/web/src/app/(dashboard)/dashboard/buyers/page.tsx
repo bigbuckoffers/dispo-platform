@@ -871,7 +871,7 @@ export default function BuyersPage() {
 
           <div className="grid grid-cols-4 gap-3 mb-4">
             <div className="rounded-xl border border-green-800/40 bg-green-900/10 p-3">
-              <div className="text-xs text-green-400">Send Forms</div>
+              <div className="text-xs text-green-400">Send Buy Box Forms</div>
               <div className="text-2xl font-bold text-green-300">{buyBoxQueueCounts.not_sent}</div>
             </div>
             <div className="rounded-xl border border-blue-800/40 bg-blue-900/10 p-3">
