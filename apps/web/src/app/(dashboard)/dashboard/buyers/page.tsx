@@ -59,7 +59,7 @@ export default function BuyersPage() {
   const [tier, setTier] = useState('');
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
-  const [tab, setTab] = useState<'all'|'hot'|'review'|'reviewed'|'submissions'>('all');
+  const [tab, setTab] = useState<'all'|'hot'|'review'|'reviewed'|'submissions'|'buybox_followup'>('all');
   const [submissions, setSubmissions] = useState<any[]>([]);
   const [loadingSubs, setLoadingSubs] = useState(false);
   const [selectedSub, setSelectedSub] = useState<any>(null);
@@ -79,6 +79,7 @@ export default function BuyersPage() {
   const [bulkCampaigns, setBulkCampaigns] = useState<any[]>([]);
   const [loadingBulkCampaigns, setLoadingBulkCampaigns] = useState(false);
   const [showAllSkippedReasons, setShowAllSkippedReasons] = useState(false);
+  const [buyBoxQueueFilter, setBuyBoxQueueFilter] = useState<'all'|'not_sent'|'sent'|'opened'|'started'|'submitted'|'needs_review'>('all');
 
 
   const getVisibleBulkBuyers = () => {
@@ -376,6 +377,61 @@ export default function BuyersPage() {
   const needsReview = [...allBuyers].filter(b => profileScore(b) < 70 && !(b.tags||[]).includes('profile_reviewed')).sort((a,b) => (b.compositeScore||0)-(a.compositeScore||0));
   const hotBuyers = [...allBuyers].filter(b => b.tier==='VIP'||b.tier==='TIER_1'||getTemp(b).label.includes('Hot')||getTemp(b).label.includes('Active')).sort((a,b) => (b.compositeScore||0)-(a.compositeScore||0));
 
+  const buyBoxStatusKey = (b: any) => {
+    const status = String(b.intakeStatus || 'NOT_SENT');
+
+    if (status === 'SUBMITTED' || b.intakeSubmittedAt) return 'submitted';
+    if (status === 'MANUAL_REVIEW_NEEDED') return 'needs_review';
+    if (status === 'STARTED' || b.intakeStartedAt) return 'started';
+    if (status === 'OPENED' || b.intakeOpenedAt) return 'opened';
+    if (status === 'LINK_SENT' || b.intakeSentAt) return 'sent';
+    if (status === 'LINK_CREATED') return 'not_sent';
+
+    return 'not_sent';
+  };
+
+  const buyBoxNextAction = (b: any) => {
+    const key = buyBoxStatusKey(b);
+
+    if (key === 'submitted') return { label: 'Review Submission', tone: 'text-purple-300 bg-purple-500/10 border-purple-700/40', description: 'Buyer submitted their Buy Box. Review and approve profile data.' };
+    if (key === 'needs_review') return { label: 'Needs Human Review', tone: 'text-yellow-300 bg-yellow-500/10 border-yellow-700/40', description: 'Manual review needed before this buyer is considered complete.' };
+    if (key === 'started') return { label: 'Send Reminder / Call', tone: 'text-amber-300 bg-amber-500/10 border-amber-700/40', description: 'Buyer started but did not submit. This is a strong follow-up opportunity.' };
+    if (key === 'opened') return { label: 'Nudge Buyer', tone: 'text-blue-300 bg-blue-500/10 border-blue-700/40', description: 'Buyer opened the form but did not start. Send a light reminder.' };
+    if (key === 'sent') return { label: 'Wait or Remind', tone: 'text-gray-300 bg-gray-800 border-gray-700', description: 'Form was sent. If enough time has passed, send a reminder.' };
+
+    return { label: 'Send Buy Box', tone: 'text-green-300 bg-green-500/10 border-green-700/40', description: 'Buyer has not received the Buy Box form yet.' };
+  };
+
+  const buyBoxFollowUpBuyers = [...allBuyers]
+    .filter((b: any) => {
+      const key = buyBoxStatusKey(b);
+      if (buyBoxQueueFilter === 'all') return true;
+      return key === buyBoxQueueFilter;
+    })
+    .sort((a: any, b: any) => {
+      const priority: Record<string, number> = {
+        submitted: 1,
+        needs_review: 2,
+        started: 3,
+        opened: 4,
+        sent: 5,
+        not_sent: 6,
+      };
+      return (priority[buyBoxStatusKey(a)] || 99) - (priority[buyBoxStatusKey(b)] || 99);
+    });
+
+  const buyBoxQueueCounts = {
+    all: allBuyers.length,
+    not_sent: allBuyers.filter((b: any) => buyBoxStatusKey(b) === 'not_sent').length,
+    sent: allBuyers.filter((b: any) => buyBoxStatusKey(b) === 'sent').length,
+    opened: allBuyers.filter((b: any) => buyBoxStatusKey(b) === 'opened').length,
+    started: allBuyers.filter((b: any) => buyBoxStatusKey(b) === 'started').length,
+    submitted: allBuyers.filter((b: any) => buyBoxStatusKey(b) === 'submitted').length,
+    needs_review: allBuyers.filter((b: any) => buyBoxStatusKey(b) === 'needs_review').length,
+  };
+
+
+
   const getIntakeStatus = (b: any) => {
     const latestEvent = b.events?.[0]?.eventType;
     if (latestEvent === 'INTAKE_COMPLETED') return { label: '✅ Completed', color: 'text-green-400 bg-green-500/10', priority: 3 };
@@ -428,6 +484,49 @@ export default function BuyersPage() {
         <td className="px-4 py-3 text-gray-500 text-xs">{lastContact}</td>
         <td className="px-4 py-3 text-right" onClick={e=>e.stopPropagation()}>
           <button onClick={()=>deleteBuyer(b.id,bname(b))} className="opacity-0 group-hover/row:opacity-100 text-red-500 hover:text-red-400 transition px-2 py-1 rounded hover:bg-red-500/10 text-xs">🗑</button>
+        </td>
+      </tr>
+    );
+  };
+
+  const BuyBoxFollowUpRow = ({ b }: { b: any }) => {
+    const action = buyBoxNextAction(b);
+    const key = buyBoxStatusKey(b);
+    const lastActivity = b.intakeSubmittedAt || b.intakeStartedAt || b.intakeOpenedAt || b.intakeSentAt || b.updatedAt;
+    return (
+      <tr className="border-b border-gray-800/50 hover:bg-gray-800/30 cursor-pointer group/row" onClick={()=>window.location.href=`/dashboard/buyers/${b.id}`}>
+        <td className="px-4 py-3">
+          <div className="font-medium text-white text-sm">{bname(b)}</div>
+          <div className="text-gray-500 text-xs">{b.phone || b.email || 'No contact'}</div>
+        </td>
+        <td className="px-4 py-3">
+          <span className={`text-xs px-2 py-0.5 rounded-full border ${action.tone}`}>{action.label}</span>
+          <div className="text-gray-500 text-[10px] mt-1 max-w-[280px]">{action.description}</div>
+        </td>
+        <td className="px-4 py-3 text-gray-300 text-xs">
+          {key.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase())}
+        </td>
+        <td className="px-4 py-3 text-gray-400 text-xs">
+          {lastActivity ? new Date(lastActivity).toLocaleDateString('en-US', { month:'short', day:'numeric' }) : '—'}
+        </td>
+        <td className="px-4 py-3 text-gray-400 text-xs">
+          {(b.buyBox?.states||[]).join(', ') || b.marketPrimary || '—'}
+        </td>
+        <td className="px-4 py-3 text-right" onClick={e=>e.stopPropagation()}>
+          <div className="flex items-center justify-end gap-2">
+            <button
+              onClick={()=>window.location.href=`/dashboard/messages?buyer=${b.id}`}
+              className="px-2 py-1 bg-blue-900/30 hover:bg-blue-900/60 text-blue-300 rounded text-xs"
+            >
+              Message
+            </button>
+            <button
+              onClick={()=>window.location.href=`/dashboard/buyers/${b.id}`}
+              className="px-2 py-1 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded text-xs"
+            >
+              Profile
+            </button>
+          </div>
         </td>
       </tr>
     );
@@ -506,6 +605,9 @@ export default function BuyersPage() {
         </button>
         <button onClick={()=>{setTab('review');loadAll();}} className={`px-5 py-2 rounded-lg text-sm font-medium transition-colors ${tab==='review'?'bg-orange-600 text-white':'text-gray-400 hover:text-white'}`}>
           Needs Profile <span className="ml-1 text-xs bg-orange-500/30 text-orange-300 px-1.5 py-0.5 rounded-full">{loadingAll?'...':needsReview.length}</span>
+        </button>
+        <button onClick={()=>{setTab('buybox_followup');loadAll();}} className={`px-5 py-2 rounded-lg text-sm font-medium transition-colors ${tab==='buybox_followup'?'bg-purple-700 text-white':'text-gray-400 hover:text-white'}`}>
+          Buy Box Follow-Up <span className="ml-1 text-xs bg-purple-500/30 text-purple-300 px-1.5 py-0.5 rounded-full">{loadingAll?'...':buyBoxQueueCounts.all}</span>
         </button>
         <button onClick={()=>{setTab('submissions');loadSubmissions();}} className={`px-5 py-2 rounded-lg text-sm font-medium transition-colors ${tab==='submissions'?'bg-purple-700 text-white':'text-gray-400 hover:text-white'}`}>
           📬 Submissions <span className="ml-1 text-xs bg-purple-500/30 text-purple-300 px-1.5 py-0.5 rounded-full">{submissions.length}</span>
