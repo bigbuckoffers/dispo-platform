@@ -61,6 +61,40 @@ function deliveryCounts(c: Campaign | null) {
   };
 }
 
+function formatDeliveryError(code?: string, message?: string, fallback?: string) {
+  const raw = message || fallback || code || '';
+
+  if (!raw) return '—';
+
+  const c = String(code || raw).trim();
+
+  const known: Record<string, string> = {
+    '30034': '30034 — Undelivered by Twilio/carrier',
+    '30003': '30003 — Unreachable handset',
+    '30004': '30004 — Message blocked',
+    '30005': '30005 — Unknown destination handset',
+    '30006': '30006 — Landline or unreachable carrier',
+    '30007': '30007 — Carrier filtering',
+    '30008': '30008 — Unknown delivery failure',
+  };
+
+  if (known[c]) return known[c];
+
+  return raw.length > 90 ? `${raw.slice(0, 90)}…` : raw;
+}
+
+function deliveryHelp(status?: string) {
+  const s = String(status || '').toUpperCase();
+
+  if (s === 'DELIVERED') return 'Confirmed delivered to the buyer phone.';
+  if (s === 'UNDELIVERED') return 'Twilio/carrier could not deliver this SMS.';
+  if (s === 'FAILED') return 'The message failed before or during delivery.';
+  if (s === 'SENT') return 'Sent to Twilio. Waiting for final delivery confirmation.';
+  if (s === 'PENDING') return 'Waiting for Twilio delivery update.';
+
+  return 'Delivery status from Twilio.';
+}
+
 export default function CampaignsPage() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(false);
@@ -378,14 +412,22 @@ export default function CampaignsPage() {
                               <span className={`text-xs px-2 py-1 rounded-full border ${statusClass(r.status)}`}>{r.status}</span>
                             </td>
                             <td className="px-4 py-3">
-                              <span className={`text-xs px-2 py-1 rounded-full border ${statusClass(r.deliveryStatus || 'PENDING')}`}>{r.deliveryStatus || 'PENDING'}</span>
+                              <span
+                                title={deliveryHelp(r.deliveryStatus || 'PENDING')}
+                                className={`text-xs px-2 py-1 rounded-full border ${statusClass(r.deliveryStatus || 'PENDING')}`}
+                              >
+                                {r.deliveryStatus || 'PENDING'}
+                              </span>
                             </td>
                             <td className="px-4 py-3 text-gray-400">{r.sentAt ? new Date(r.sentAt).toLocaleString() : '—'}</td>
                             <td className="px-4 py-3 text-gray-400">{r.deliveredAt ? new Date(r.deliveredAt).toLocaleString() : '—'}</td>
                             <td className="px-4 py-3 text-red-300 max-w-xs">
                               {(r.error || r.deliveryErrorMessage || r.deliveryErrorCode) ? (
-                                <span title={r.error || r.deliveryErrorMessage || r.deliveryErrorCode} className="block truncate">
-                                  {r.error || r.deliveryErrorMessage || r.deliveryErrorCode}
+                                <span
+                                  title={deliveryHelp(r.deliveryStatus || r.status)}
+                                  className="block truncate"
+                                >
+                                  {formatDeliveryError(r.deliveryErrorCode, r.deliveryErrorMessage, r.error)}
                                 </span>
                               ) : '—'}
                             </td>
