@@ -118,6 +118,40 @@ export class BuyersService {
     return buyer;
   }
 
+  async resetBuyBoxStatus(orgId: string, id: string) {
+    await this.findOne(orgId, id);
+
+    await this.prisma.buyerIntakeEvent.deleteMany({
+      where: { buyerId: id },
+    } as any);
+
+    await this.prisma.buyerIntakeSubmission.deleteMany({
+      where: { buyerId: id },
+    } as any);
+
+    const buyer = await this.prisma.buyer.update({
+      where: { id },
+      data: {
+        intakeStatus: 'NOT_SENT' as any,
+        intakeToken: null,
+        intakeSentAt: null,
+        intakeOpenedAt: null,
+        intakeStartedAt: null,
+        intakeSubmittedAt: null,
+        intakeLastReminderAt: null,
+        intakeLink: null,
+        intakeCompletedAt: null,
+        intakeExpiresAt: null,
+      } as any,
+    });
+
+    return {
+      success: true,
+      buyerId: id,
+      intakeStatus: buyer.intakeStatus,
+    };
+  }
+
   async update(orgId: string, id: string, dto: UpdateBuyerDto, userId: string) {
     await this.findOne(orgId, id);
     const buyer = await this.prisma.buyer.update({

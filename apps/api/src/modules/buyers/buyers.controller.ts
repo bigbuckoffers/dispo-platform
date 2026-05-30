@@ -77,6 +77,16 @@ export class BuyersController {
     return this.intelService.generateAllMissingAiSummaries(+limit);
   }
 
+  @Post(':id/reset-buy-box-status')
+  @Roles(TeamRole.ADMIN, TeamRole.OWNER)
+  @ApiOperation({ summary: 'Reset Buy Box intake status for testing/resend' })
+  resetBuyBoxStatus(
+    @OrgId() orgId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.buyersService.resetBuyBoxStatus(orgId, id);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get full buyer profile' })
   findOne(
