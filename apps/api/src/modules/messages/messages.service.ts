@@ -355,6 +355,24 @@ export class MessagesService {
     });
   }
 
+  private normalizeBulkSendingRules(raw: any = {}) {
+    const startHour = Number.isFinite(Number(raw.startHour)) ? Number(raw.startHour) : BUY_BOX_DEFAULT_START_HOUR;
+    const endHour = Number.isFinite(Number(raw.endHour)) ? Number(raw.endHour) : BUY_BOX_DEFAULT_END_HOUR;
+    const maxPerMinute = Number.isFinite(Number(raw.maxPerMinute)) ? Number(raw.maxPerMinute) : BUY_BOX_MAX_PER_MINUTE;
+    const rawDays = Array.isArray(raw.daysOfWeek) ? raw.daysOfWeek : [1, 2, 3, 4, 5];
+    const daysOfWeek = rawDays
+      .map((d: any) => Number(d))
+      .filter((d: number) => Number.isInteger(d) && d >= 0 && d <= 6);
+
+    return {
+      startHour: Math.min(23, Math.max(0, startHour)),
+      endHour: Math.min(23, Math.max(0, endHour)),
+      maxPerMinute: Math.min(20, Math.max(1, maxPerMinute)),
+      daysOfWeek: daysOfWeek.length ? Array.from(new Set(daysOfWeek)).sort() : [1, 2, 3, 4, 5],
+      timezoneMode: raw.timezoneMode === 'eastern' ? 'eastern' : 'local',
+    };
+  }
+
   private async processBulkCampaign(batchId: string) {
     const campaign: any = await this.prisma.bulkSmsCampaign.findUnique({
       where: { batchId },
@@ -421,8 +439,13 @@ export class MessagesService {
       if (freshCampaign.status === 'PAUSED' || freshCampaign.status === 'CANCELLED') return;
       if (!['QUEUED', 'SENDING'].includes(freshCampaign.status)) return;
 
+      const campaignMeta: any = freshCampaign.skippedDetails && typeof freshCampaign.skippedDetails === 'object'
+        ? freshCampaign.skippedDetails
+        : {};
+      const savedSendingRules = campaignMeta.sendingRulesSnapshot;
+
       const sendingRules = normalizeSendingRules(
-        await this.settingsService.getBuyBoxSendingSettings(freshCampaign.organizationId),
+        savedSendingRules || await this.settingsService.getBuyBoxSendingSettings(freshCampaign.organizationId),
       );
 
       
@@ -477,7 +500,7 @@ export class MessagesService {
             method: 'twilio_sms',
             batchId,
             templateKey: campaignTemplateKey,
-            dripRate: '5_per_minute',
+            dripRate: `${sendingRules.maxPerMinute}_per_minute`,
             delayMs: freshCampaign.delayMs,
             campaignRecipientId: recipient.id,
           },
@@ -552,11 +575,16 @@ export class MessagesService {
       campaignName?: string;
       includeAlreadySent?: boolean;
       delayMs?: number;
+      sendingRules?: any;
     } = {},
   ) {
     const templateKey = options.templateKey || 'general';
     const isReminderCampaign = templateKey.startsWith('reminder_');
-    const currentSendingRules = await this.settingsService.getBuyBoxSendingSettings(orgId);
+    const accountSendingRules = await this.settingsService.getBuyBoxSendingSettings(orgId);
+    const currentSendingRules = this.normalizeBulkSendingRules({
+      ...accountSendingRules,
+      ...(options.sendingRules || {}),
+    });
     const maxPerMinute = Math.max(1, Number(currentSendingRules.maxPerMinute || BUY_BOX_MAX_PER_MINUTE));
     const settingsDelayMs = Math.floor(60000 / maxPerMinute);
     const delayMs = Math.max(options.delayMs || 12000, settingsDelayMs);
@@ -618,7 +646,7 @@ export class MessagesService {
         queued: eligible.length,
         pending: eligible.length,
         skipped: skipped.length,
-        skippedDetails: skipped as any,
+        skippedDetails: { skipped, sendingRulesSnapshot: currentSendingRules } as any,
         dripRate: `${maxPerMinute} texts per minute`,
         delayMs,
         estimatedMinutes: Math.max(1, Math.ceil(eligible.length / maxPerMinute)),

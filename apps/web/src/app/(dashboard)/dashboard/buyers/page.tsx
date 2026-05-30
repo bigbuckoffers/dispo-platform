@@ -76,6 +76,14 @@ export default function BuyersPage() {
     timezoneMode: 'local',
   });
   const [loadingBuyBoxSendingRules, setLoadingBuyBoxSendingRules] = useState(false);
+  const [bulkUseCustomSendingRules, setBulkUseCustomSendingRules] = useState(false);
+  const [bulkSendingRulesDraft, setBulkSendingRulesDraft] = useState<any>({
+    startHour: 9,
+    endHour: 18,
+    maxPerMinute: 5,
+    daysOfWeek: [1, 2, 3, 4, 5],
+    timezoneMode: 'local',
+  });
   const [bulkTemplate, setBulkTemplate] = useState('general');
   const [bulkCampaignName, setBulkCampaignName] = useState('');
   const [bulkCustomMessage, setBulkCustomMessage] = useState('');
@@ -186,14 +194,17 @@ export default function BuyersPage() {
       if (!r.ok) throw new Error('Could not load sending rules');
       const d = await r.json();
       setBuyBoxSendingRules(d);
+      setBulkSendingRulesDraft(d);
     } catch (e) {
-      setBuyBoxSendingRules({
+      const fallbackRules = {
         startHour: 9,
         endHour: 18,
         maxPerMinute: 5,
         daysOfWeek: [1, 2, 3, 4, 5],
         timezoneMode: 'local',
-      });
+      };
+      setBuyBoxSendingRules(fallbackRules);
+      setBulkSendingRulesDraft(fallbackRules);
     } finally {
       setLoadingBuyBoxSendingRules(false);
     }
@@ -358,7 +369,21 @@ export default function BuyersPage() {
     return actions[0] || { type: 'buybox', label: 'Bulk Buy Box Send', templateKey: 'general', includeAlreadySent: false };
   };
 
+  const toggleBulkOverrideDay = (day: number) => {
+    setBulkSendingRulesDraft((prev: any) => {
+      const current = Array.isArray(prev.daysOfWeek) ? prev.daysOfWeek.map(Number) : [1,2,3,4,5];
+      const exists = current.includes(day);
+      const daysOfWeek = exists ? current.filter((d: number) => d !== day) : [...current, day].sort();
+      return { ...prev, daysOfWeek: daysOfWeek.length ? daysOfWeek : current };
+    });
+  };
+
+  const getFinalBulkSendingRules = () => {
+    return bulkUseCustomSendingRules ? bulkSendingRulesDraft : buyBoxSendingRules;
+  };
+
   const openBulkBuyBoxModal = () => {
+    setBulkUseCustomSendingRules(false);
     void loadBuyBoxSendingRules();
     setBulkResult(null);
     setShowAllSkippedReasons(false);
@@ -418,6 +443,7 @@ export default function BuyersPage() {
           customMessage: currentBulkMessage || bulkCustomMessage,
           includeAlreadySent: bulkIncludeAlreadySent,
           delayMs: 12000,
+          sendingRules: bulkUseCustomSendingRules ? bulkSendingRulesDraft : undefined,
         }),
       });
 
@@ -1617,17 +1643,17 @@ export default function BuyersPage() {
                     <div className="grid grid-cols-3 gap-2 text-xs">
                       <div className="rounded-lg border border-gray-800 bg-gray-950/60 p-3">
                         <div className="text-gray-500 mb-1">Days</div>
-                        <div className="font-semibold text-white">{formatSendingDays(buyBoxSendingRules.daysOfWeek)}</div>
+                        <div className="font-semibold text-white">{formatSendingDays(getFinalBulkSendingRules().daysOfWeek)}</div>
                       </div>
                       <div className="rounded-lg border border-gray-800 bg-gray-950/60 p-3">
                         <div className="text-gray-500 mb-1">Send Window</div>
                         <div className="font-semibold text-white">
-                          {formatHourLabel(buyBoxSendingRules.startHour)} – {formatHourLabel(buyBoxSendingRules.endHour)}
+                          {formatHourLabel(getFinalBulkSendingRules().startHour)} – {formatHourLabel(getFinalBulkSendingRules().endHour)}
                         </div>
                       </div>
                       <div className="rounded-lg border border-gray-800 bg-gray-950/60 p-3">
                         <div className="text-gray-500 mb-1">Drip Rate</div>
-                        <div className="font-semibold text-white">{buyBoxSendingRules.maxPerMinute || 5}/min</div>
+                        <div className="font-semibold text-white">{getFinalBulkSendingRules().maxPerMinute || 5}/min</div>
                       </div>
                     </div>
                   )}
@@ -1635,6 +1661,96 @@ export default function BuyersPage() {
                   <div className="mt-3 rounded-lg border border-blue-800/40 bg-blue-950/20 p-3 text-xs text-blue-200/75">
                     Remaining texts pause at the end of the window and resume in the next valid sending window.
                   </div>
+                </div>
+
+                <div className="rounded-xl border border-gray-800 bg-gray-950/70 p-4">
+                  <label className="flex items-center justify-between gap-3 cursor-pointer">
+                    <div>
+                      <div className="text-sm font-medium text-white">Customize for this campaign</div>
+                      <div className="text-xs text-gray-500">Leave off to use the default rules from Settings.</div>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={bulkUseCustomSendingRules}
+                      onChange={e => {
+                        setBulkUseCustomSendingRules(e.target.checked);
+                        if (e.target.checked) setBulkSendingRulesDraft(buyBoxSendingRules);
+                      }}
+                      className="h-4 w-4"
+                    />
+                  </label>
+
+                  {bulkUseCustomSendingRules && (
+                    <div className="mt-4 space-y-4">
+                      <div className="grid grid-cols-3 gap-3">
+                        <label className="space-y-1">
+                          <span className="text-xs text-gray-500">Start</span>
+                          <select
+                            value={bulkSendingRulesDraft.startHour}
+                            onChange={e => setBulkSendingRulesDraft((s: any) => ({ ...s, startHour: Number(e.target.value) }))}
+                            className="w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-xs text-white"
+                          >
+                            {Array.from({ length: 24 }).map((_, hour) => (
+                              <option key={hour} value={hour}>{formatHourLabel(hour)}</option>
+                            ))}
+                          </select>
+                        </label>
+
+                        <label className="space-y-1">
+                          <span className="text-xs text-gray-500">End</span>
+                          <select
+                            value={bulkSendingRulesDraft.endHour}
+                            onChange={e => setBulkSendingRulesDraft((s: any) => ({ ...s, endHour: Number(e.target.value) }))}
+                            className="w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-xs text-white"
+                          >
+                            {Array.from({ length: 24 }).map((_, hour) => (
+                              <option key={hour} value={hour}>{formatHourLabel(hour)}</option>
+                            ))}
+                          </select>
+                        </label>
+
+                        <label className="space-y-1">
+                          <span className="text-xs text-gray-500">Texts/min</span>
+                          <input
+                            type="number"
+                            min={1}
+                            max={20}
+                            value={bulkSendingRulesDraft.maxPerMinute}
+                            onChange={e => setBulkSendingRulesDraft((s: any) => ({ ...s, maxPerMinute: Number(e.target.value) }))}
+                            className="w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-xs text-white"
+                          />
+                        </label>
+                      </div>
+
+                      <div>
+                        <div className="mb-2 text-xs text-gray-500">Days</div>
+                        <div className="flex flex-wrap gap-2">
+                          {Object.entries(dayLabels).map(([day, label]) => {
+                            const dayNumber = Number(day);
+                            const active = (bulkSendingRulesDraft.daysOfWeek || []).map(Number).includes(dayNumber);
+                            return (
+                              <button
+                                type="button"
+                                key={day}
+                                onClick={() => toggleBulkOverrideDay(dayNumber)}
+                                className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition ${
+                                  active
+                                    ? 'border-purple-600 bg-purple-700 text-white'
+                                    : 'border-gray-700 bg-gray-900 text-gray-400 hover:text-white'
+                                }`}
+                              >
+                                {label}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      <div className="rounded-lg border border-purple-800/40 bg-purple-950/20 p-3 text-xs text-purple-200/80">
+                        This campaign will use: {formatSendingDays(bulkSendingRulesDraft.daysOfWeek)} · {formatHourLabel(bulkSendingRulesDraft.startHour)}–{formatHourLabel(bulkSendingRulesDraft.endHour)} · {bulkSendingRulesDraft.maxPerMinute}/min
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <button onClick={runBackendBulkBuyBoxSend} disabled={bulkSending || !!bulkResult || getBulkEligibleBuyers().length===0} className="rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-500 disabled:opacity-50">

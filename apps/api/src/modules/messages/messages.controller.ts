@@ -65,6 +65,7 @@ export class MessagesController {
     includeAlreadySent?: boolean;
     delayMs?: number;
     orgId?: string;
+    sendingRules?: any;
   }) {
     const defaultOrg = 'c87f4e63-fd29-4ff5-823f-e4926daa0820';
     return this.messagesService.sendBulkBuyBox(body.orgId || defaultOrg, body.buyerIds || [], {
@@ -73,6 +74,7 @@ export class MessagesController {
       campaignName: body.campaignName || '',
       includeAlreadySent: !!body.includeAlreadySent,
       delayMs: body.delayMs || 12000,
+      sendingRules: body.sendingRules,
     });
   }
 
