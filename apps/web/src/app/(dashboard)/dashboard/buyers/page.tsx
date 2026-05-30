@@ -65,6 +65,97 @@ export default function BuyersPage() {
   const [fieldDecisions, setFieldDecisions] = useState<Record<string,string>>({});
   const [error, setError] = useState('');
   const [showCreate, setShowCreate] = useState(false);
+  const [bulkSelected, setBulkSelected] = useState<Record<string, boolean>>({});
+  const [showBulkBuyBoxModal, setShowBulkBuyBoxModal] = useState(false);
+  const [bulkTemplate, setBulkTemplate] = useState('general');
+  const [bulkCustomMessage, setBulkCustomMessage] = useState('');
+  const [bulkIncludeAlreadySent, setBulkIncludeAlreadySent] = useState(false);
+  const [bulkSending, setBulkSending] = useState(false);
+  const [bulkResult, setBulkResult] = useState<any>(null);
+
+
+  const getVisibleBulkBuyers = () => {
+    if (tab === 'hot') return hotBuyers;
+    if (tab === 'review') return needsReview;
+    if (tab === 'reviewed') return reviewed;
+    return buyers;
+  };
+
+  const getBulkSelectedBuyers = () => getVisibleBulkBuyers().filter((b: any) => bulkSelected[b.id]);
+
+  const isAlreadySent = (b: any) => !!b.intakeSentAt || ['LINK_SENT','OPENED','STARTED'].includes(b.intakeStatus);
+
+  const getBulkEligibleBuyers = () => getBulkSelectedBuyers().filter((b: any) => {
+    const submitted = !!b.intakeSubmittedAt || b.intakeStatus === 'SUBMITTED';
+    if (!b.phone || submitted) return false;
+    if (isAlreadySent(b) && !bulkIncludeAlreadySent) return false;
+    return true;
+  });
+
+  const getBulkSkippedBuyers = () => getBulkSelectedBuyers().filter((b: any) => !getBulkEligibleBuyers().some((e: any) => e.id === b.id));
+
+  const toggleBulkBuyer = (buyerId: string) => {
+    setBulkSelected(prev => ({ ...prev, [buyerId]: !prev[buyerId] }));
+  };
+
+  const selectVisibleNotSent = () => {
+    const next: Record<string, boolean> = {};
+    getVisibleBulkBuyers().forEach((b: any) => {
+      const submitted = !!b.intakeSubmittedAt || b.intakeStatus === 'SUBMITTED';
+      if (b.phone && !submitted && !isAlreadySent(b)) next[b.id] = true;
+    });
+    setBulkSelected(next);
+  };
+
+  const clearBulkSelection = () => setBulkSelected({});
+
+  const getBulkTemplatePreview = () => {
+    const link = 'https://dispo-platform-web.vercel.app/intake/BUYER_UNIQUE_LINK';
+    const templates: Record<string, string> = {
+      general: `Hey, can you complete your Buy Box form so we can send you deals that actually match what you buy? ${link}`,
+      new_number: `Hey, this is DispoAI / Big Buck Offers. You may not have this number saved yet — can you complete your Buy Box form so we know what deals to send you? ${link}`,
+      long_time: `Hey, it’s been a while. We’re cleaning up our buyer list and only want to send deals that fit. Can you update your Buy Box here? ${link}`,
+      cold_data: `Hey, we’re updating our buyer network and wanted to confirm what types of deals you’re looking for. Fill out your Buy Box here and we’ll only send relevant opportunities: ${link}`,
+      vip: `Hey, we’re updating our VIP buyer profiles so we can keep sending you the right deals first. Can you confirm your current Buy Box here? ${link}`,
+    };
+    const base = bulkCustomMessage.trim() || templates[bulkTemplate] || templates.general;
+    return base.includes('{{link}}') ? base.replaceAll('{{link}}', link) : base.includes(link) ? base : `${base} ${link}`;
+  };
+
+  const runBackendBulkBuyBoxSend = async () => {
+    const eligible = getBulkEligibleBuyers();
+    if (!eligible.length) return alert('No eligible buyers selected.');
+
+    if (!confirm(`Send Buy Box form to ${eligible.length} buyers at 5 texts per minute?`)) return;
+
+    setBulkSending(true);
+    setBulkResult(null);
+
+    try {
+      const res = await fetch(`${API}/messages/bulk-buybox`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          buyerIds: getBulkSelectedBuyers().map((b: any) => b.id),
+          templateKey: bulkTemplate,
+          customMessage: bulkCustomMessage,
+          includeAlreadySent: bulkIncludeAlreadySent,
+          delayMs: 12000,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.message || `API error ${res.status}`);
+
+      setBulkResult(data);
+      load();
+      loadAll();
+    } catch (e: any) {
+      alert('Bulk send failed: ' + e.message);
+    } finally {
+      setBulkSending(false);
+    }
+  };
 
   const deleteBuyer = async (id: string, name: string) => {
     if (!confirm(`Delete ${name}? This cannot be undone.`)) return;
@@ -229,8 +320,19 @@ export default function BuyersPage() {
     return (
       <tr className="border-b border-gray-800/50 hover:bg-gray-800/30 cursor-pointer group/row" onClick={()=>window.location.href=`/dashboard/buyers/${b.id}`}>
         <td className="px-4 py-3 min-w-[180px]">
-          <div className="font-medium text-white text-sm">{bname(b)}</div>
-          <div className="text-gray-500 text-xs">{b.email?.includes('@import.dispoai.com')?(b.phone||''):(b.phone||b.email||'')}</div>
+          <div className="flex items-start gap-3">
+            <input
+              type="checkbox"
+              checked={!!bulkSelected[b.id]}
+              onClick={e=>e.stopPropagation()}
+              onChange={()=>toggleBulkBuyer(b.id)}
+              className="mt-1 accent-purple-600"
+            />
+            <div>
+              <div className="font-medium text-white text-sm">{bname(b)}</div>
+              <div className="text-gray-500 text-xs">{b.email?.includes('@import.dispoai.com')?(b.phone||''):(b.phone||b.email||'')}</div>
+            </div>
+          </div>
         </td>
         <td className="px-4 py-3"><span className={`px-2 py-0.5 rounded-full text-xs font-medium ${ts.bg}`}>{ts.label}</span></td>
         <td className="px-4 py-3"><span className={`text-xs font-medium ${temp.color}`}>{temp.label}</span></td>
@@ -295,6 +397,7 @@ export default function BuyersPage() {
           <p className="text-gray-400 text-sm mt-1">{total} buyers</p>
         </div>
         <div className="flex gap-2">
+          <button onClick={() => setShowBulkBuyBoxModal(true)} className="bg-purple-900/50 hover:bg-purple-800/70 border border-purple-700/50 text-purple-200 px-4 py-2 rounded-lg text-sm font-medium transition">📩 Bulk Buy Box Send</button>
           <button onClick={() => setShowCreate(true)} className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition">+ Add Buyer</button>
           <button onClick={exportCsv} className="bg-emerald-900/40 hover:bg-emerald-800/60 border border-emerald-700/40 text-emerald-300 px-4 py-2 rounded-lg text-sm font-medium transition">⬇ Export CSV</button>
         </div>
@@ -331,6 +434,18 @@ export default function BuyersPage() {
           <button onClick={load} className="bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-300 px-4 py-2 rounded-lg text-sm">Refresh</button>
         </div>
       )}
+      <div className="bg-gray-900 border border-gray-800 rounded-xl p-3 mb-4 flex items-center justify-between">
+        <div className="text-sm text-gray-300">
+          Selected buyers: <span className="text-white font-semibold">{getBulkSelectedBuyers().length}</span>
+          <span className="text-gray-500 ml-2">Eligible: {getBulkEligibleBuyers().length}</span>
+          <span className="text-gray-500 ml-2">Skipped: {getBulkSkippedBuyers().length}</span>
+        </div>
+        <div className="flex gap-2">
+          <button onClick={selectVisibleNotSent} className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-xs">Select Visible Not Sent</button>
+          <button onClick={clearBulkSelection} className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-xs">Clear</button>
+          <button onClick={()=>setShowBulkBuyBoxModal(true)} disabled={getBulkSelectedBuyers().length===0} className="px-3 py-1.5 bg-purple-700 hover:bg-purple-600 text-white rounded-lg text-xs disabled:opacity-40">Send Buy Box Forms</button>
+        </div>
+      </div>
       {error&&<div className="bg-red-900/30 border border-red-500/30 text-red-300 rounded-lg p-4 mb-4 text-sm">Error: {error}</div>}
       {tab==='all'&&(
         <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
@@ -525,6 +640,78 @@ export default function BuyersPage() {
           </div>
         </div>
       )}
+      {showBulkBuyBoxModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm px-4">
+          <div className="w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl border border-purple-700/40 bg-gray-950 shadow-2xl">
+            <div className="border-b border-gray-800 bg-gradient-to-r from-purple-950/80 to-blue-950/50 px-6 py-5">
+              <h3 className="text-lg font-semibold text-white">Send Buy Box Forms in Bulk</h3>
+              <p className="text-sm text-gray-400 mt-1">Backend drip delivery: 5 texts per minute. Each buyer gets their own unique Buy Box link.</p>
+            </div>
+
+            <div className="space-y-5 px-6 py-5">
+              <div className="grid grid-cols-4 gap-3">
+                <div className="rounded-xl border border-gray-800 bg-gray-900/70 p-4"><div className="text-xs text-gray-500">Selected</div><div className="text-2xl font-bold text-white">{getBulkSelectedBuyers().length}</div></div>
+                <div className="rounded-xl border border-green-800/40 bg-green-900/10 p-4"><div className="text-xs text-green-400">Eligible</div><div className="text-2xl font-bold text-green-300">{getBulkEligibleBuyers().length}</div></div>
+                <div className="rounded-xl border border-yellow-800/40 bg-yellow-900/10 p-4"><div className="text-xs text-yellow-400">Skipped</div><div className="text-2xl font-bold text-yellow-300">{getBulkSkippedBuyers().length}</div></div>
+                <div className="rounded-xl border border-blue-800/40 bg-blue-900/10 p-4"><div className="text-xs text-blue-400">Est. Time</div><div className="text-2xl font-bold text-blue-300">~{Math.max(1, Math.ceil(getBulkEligibleBuyers().length / 5))}m</div></div>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-xs font-medium uppercase tracking-wide text-gray-500">Template Context</label>
+                <select value={bulkTemplate} onChange={e=>setBulkTemplate(e.target.value)} className="w-full rounded-lg border border-gray-700 bg-gray-900 px-4 py-2 text-sm text-white">
+                  <option value="general">General Buyer Intake</option>
+                  <option value="new_number">Sending From New Number</option>
+                  <option value="long_time">Haven’t Spoken in a While</option>
+                  <option value="cold_data">Cold Buyer Data</option>
+                  <option value="vip">VIP / Done Deals Before</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-xs font-medium uppercase tracking-wide text-gray-500">Editable Message Template</label>
+                <textarea
+                  value={bulkCustomMessage}
+                  onChange={e=>setBulkCustomMessage(e.target.value)}
+                  placeholder="Optional custom template. Use {{link}} where the buyer's unique Buy Box link should go. Leave blank to use selected template."
+                  className="min-h-[110px] w-full rounded-xl border border-gray-700 bg-gray-900 px-4 py-3 text-sm text-white placeholder-gray-500 focus:border-purple-500 focus:outline-none"
+                />
+                <p className="mt-2 text-xs text-gray-500">If you do not include {'{{link}}'}, DispoAI will append the unique Buy Box link automatically.</p>
+              </div>
+
+              <label className="flex items-center gap-2 text-sm text-gray-300">
+                <input type="checkbox" checked={bulkIncludeAlreadySent} onChange={e=>setBulkIncludeAlreadySent(e.target.checked)} className="accent-purple-600" />
+                Include buyers who were already sent the Buy Box form
+              </label>
+
+              <div>
+                <div className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">Preview</div>
+                <div className="rounded-xl border border-gray-800 bg-gray-900/70 p-4 text-sm leading-relaxed text-gray-200">{getBulkTemplatePreview()}</div>
+              </div>
+
+              <div className="rounded-xl border border-yellow-700/30 bg-yellow-900/10 p-4 text-xs text-yellow-200">
+                This will send real SMS messages from the backend. Delivery is dripped at 5 texts per minute.
+              </div>
+
+              {bulkResult && (
+                <div className="rounded-xl border border-green-800/40 bg-green-900/10 p-4 text-sm text-green-200">
+                  Batch queued: {bulkResult.queued} texts · Skipped: {bulkResult.skipped} · Estimated time: ~{bulkResult.estimatedMinutes}m
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center justify-between gap-3 border-t border-gray-800 px-6 py-4">
+              <div className="text-xs text-gray-500">Rate: 5 texts/minute · backend drip · 1 SMS every 12 seconds</div>
+              <div className="flex gap-3">
+                <button onClick={()=>setShowBulkBuyBoxModal(false)} disabled={bulkSending} className="rounded-lg bg-gray-800 px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 disabled:opacity-50">Close</button>
+                <button onClick={runBackendBulkBuyBoxSend} disabled={bulkSending || getBulkEligibleBuyers().length===0} className="rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-500 disabled:opacity-50">
+                  {bulkSending ? 'Queuing drip...' : `Confirm Send to ${getBulkEligibleBuyers().length}`}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showCreate && <CreateBuyerModal onClose={() => setShowCreate(false)} onCreated={() => { setShowCreate(false); load(); loadAll(); }} />}
       {selectedSub && (
         <SubmissionReviewModal

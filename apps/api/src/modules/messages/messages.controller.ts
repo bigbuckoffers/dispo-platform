@@ -26,6 +26,24 @@ export class MessagesController {
     return this.messagesService.sendMessage(body.orgId || defaultOrg, buyerId, body.message, { intakeTrackingType: body.intakeTrackingType });
   }
 
+  @Post('bulk-buybox')
+  sendBulkBuyBox(@Body() body: {
+    buyerIds: string[];
+    templateKey?: string;
+    customMessage?: string;
+    includeAlreadySent?: boolean;
+    delayMs?: number;
+    orgId?: string;
+  }) {
+    const defaultOrg = 'c87f4e63-fd29-4ff5-823f-e4926daa0820';
+    return this.messagesService.sendBulkBuyBox(body.orgId || defaultOrg, body.buyerIds || [], {
+      templateKey: body.templateKey || 'general',
+      customMessage: body.customMessage || '',
+      includeAlreadySent: !!body.includeAlreadySent,
+      delayMs: body.delayMs || 12000,
+    });
+  }
+
   @Post('bulk')
   sendBulk(@Body() body: { buyerIds: string[]; message: string; delayMs?: number; orgId?: string; intakeTrackingType?: 'link_sent' | 'reminder'; batchId?: string }) {
     const defaultOrg = 'c87f4e63-fd29-4ff5-823f-e4926daa0820';

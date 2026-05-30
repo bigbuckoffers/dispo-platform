@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../shared/prisma/prisma.service';
 import * as twilio from 'twilio';
+import { randomBytes } from 'crypto';
 import { IntakeService } from '../intake/intake.service';
 
 @Injectable()
@@ -117,6 +118,121 @@ export class MessagesService {
       this.logger.error(`Inbound webhook error: ${e.message}`, e.stack);
       throw e;
     }
+  }
+
+  private buildBuyBoxBulkMessage(templateKey: string, link: string, customMessage?: string) {
+    const templates: Record<string, string> = {
+      general: `Hey, can you complete your Buy Box form so we can send you deals that actually match what you buy? ${link}`,
+      new_number: `Hey, this is DispoAI / Big Buck Offers. You may not have this number saved yet — can you complete your Buy Box form so we know what deals to send you? ${link}`,
+      long_time: `Hey, it’s been a while. We’re cleaning up our buyer list and only want to send deals that fit. Can you update your Buy Box here? ${link}`,
+      cold_data: `Hey, we’re updating our buyer network and wanted to confirm what types of deals you’re looking for. Fill out your Buy Box here and we’ll only send relevant opportunities: ${link}`,
+      vip: `Hey, we’re updating our VIP buyer profiles so we can keep sending you the right deals first. Can you confirm your current Buy Box here? ${link}`,
+    };
+
+    const base = (customMessage || '').trim() || templates[templateKey] || templates.general;
+    return base.includes('{{link}}') ? base.replaceAll('{{link}}', link) : base.includes(link) ? base : `${base} ${link}`;
+  }
+
+  private async getOrCreateBuyerBuyBoxLink(buyer: any) {
+    if (buyer.intakeToken) {
+      return `https://dispo-platform-web.vercel.app/intake/${buyer.intakeToken}`;
+    }
+
+    const token = randomBytes(24).toString('hex');
+
+    await this.prisma.buyer.update({
+      where: { id: buyer.id },
+      data: {
+        intakeToken: token,
+        intakeStatus: 'LINK_CREATED' as any,
+      } as any,
+    });
+
+    return `https://dispo-platform-web.vercel.app/intake/${token}`;
+  }
+
+  async sendBulkBuyBox(
+    orgId: string,
+    buyerIds: string[],
+    options: {
+      templateKey?: string;
+      customMessage?: string;
+      includeAlreadySent?: boolean;
+      delayMs?: number;
+    } = {},
+  ) {
+    const delayMs = options.delayMs || 12000;
+    const batchId = `buybox-${Date.now()}`;
+
+    const buyers = await this.prisma.buyer.findMany({
+      where: { id: { in: buyerIds } },
+    });
+
+    const buyerById = new Map(buyers.map((b: any) => [b.id, b]));
+    const eligible: any[] = [];
+    const skipped: { buyerId: string; reason: string }[] = [];
+
+    for (const buyerId of buyerIds) {
+      const buyer: any = buyerById.get(buyerId);
+      if (!buyer) {
+        skipped.push({ buyerId, reason: 'buyer_not_found' });
+        continue;
+      }
+
+      if (!buyer.phone) {
+        skipped.push({ buyerId, reason: 'missing_phone' });
+        continue;
+      }
+
+      if (buyer.intakeSubmittedAt || buyer.intakeStatus === 'SUBMITTED') {
+        skipped.push({ buyerId, reason: 'already_submitted' });
+        continue;
+      }
+
+      const alreadySent = !!buyer.intakeSentAt || ['LINK_SENT', 'OPENED', 'STARTED'].includes(buyer.intakeStatus);
+      if (alreadySent && !options.includeAlreadySent) {
+        skipped.push({ buyerId, reason: 'already_sent' });
+        continue;
+      }
+
+      eligible.push(buyer);
+    }
+
+    eligible.forEach((buyer: any, index: number) => {
+      setTimeout(async () => {
+        try {
+          const link = await this.getOrCreateBuyerBuyBoxLink(buyer);
+          const message = this.buildBuyBoxBulkMessage(options.templateKey || 'general', link, options.customMessage);
+
+          await this.sendMessage(orgId, buyer.id, message, {
+            intakeTrackingType: 'link_sent',
+            trackingMetadata: {
+              source: 'bulk_buy_box_send',
+              method: 'twilio_sms',
+              batchId,
+              templateKey: options.templateKey || 'general',
+              dripRate: '5_per_minute',
+              delayMs,
+            },
+          });
+
+          this.logger.log(`Bulk Buy Box sent to buyer ${buyer.id} in batch ${batchId}`);
+        } catch (e: any) {
+          this.logger.error(`Bulk Buy Box failed for buyer ${buyer.id} in batch ${batchId}: ${e.message}`);
+        }
+      }, index * delayMs);
+    });
+
+    return {
+      batchId,
+      selected: buyerIds.length,
+      queued: eligible.length,
+      skipped: skipped.length,
+      skippedDetails: skipped,
+      dripRate: '5 texts per minute',
+      delayMs,
+      estimatedMinutes: Math.max(1, Math.ceil(eligible.length / 5)),
+    };
   }
 
   async sendBulk(orgId: string, buyerIds: string[], body: string, delayMs: number = 12000, options: { intakeTrackingType?: 'link_sent' | 'reminder'; batchId?: string } = {}) {
