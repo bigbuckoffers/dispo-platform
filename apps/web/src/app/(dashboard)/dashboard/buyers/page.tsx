@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { CreateBuyerModal } from '@/components/buyer/CreateBuyerModal';
 import { SubmissionReviewModal } from '@/components/buyer/SubmissionReviewModal';
+import { ConfirmActionModal } from '@/components/ui/ConfirmActionModal';
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
 
 function profileScore(b: any): number {
@@ -73,6 +74,7 @@ export default function BuyersPage() {
   const [currentBulkMessage, setCurrentBulkMessage] = useState('');
   const [bulkIncludeAlreadySent, setBulkIncludeAlreadySent] = useState(false);
   const [bulkSending, setBulkSending] = useState(false);
+  const [showBulkSendConfirm, setShowBulkSendConfirm] = useState(false);
   const [bulkResult, setBulkResult] = useState<any>(null);
   const [bulkCampaigns, setBulkCampaigns] = useState<any[]>([]);
   const [loadingBulkCampaigns, setLoadingBulkCampaigns] = useState(false);
@@ -187,11 +189,18 @@ export default function BuyersPage() {
     }
   };
 
-  const runBackendBulkBuyBoxSend = async () => {
+  const runBackendBulkBuyBoxSend = () => {
+    const eligible = getBulkEligibleBuyers();
+
+    if (eligible.length === 0 || bulkSending || bulkResult) return;
+
+    setShowBulkSendConfirm(true);
+  };
+
+  const executeBackendBulkBuyBoxSend = async () => {
     const eligible = getBulkEligibleBuyers();
     if (!eligible.length) return alert('No eligible buyers selected.');
 
-    if (!confirm(`Send Buy Box form to ${eligible.length} buyers at 5 texts per minute?`)) return;
 
     setBulkSending(true);
     setBulkResult(null);
@@ -214,6 +223,7 @@ export default function BuyersPage() {
       if (!res.ok) throw new Error(data?.message || `API error ${res.status}`);
 
       setBulkResult(data);
+      setShowBulkSendConfirm(false);
       loadBulkCampaigns();
       load();
       loadAll();
@@ -912,6 +922,51 @@ export default function BuyersPage() {
           }}
         />
       )}
+
+      <ConfirmActionModal
+        open={showBulkSendConfirm}
+        title="Send Buy Box Campaign?"
+        description="This will send real SMS messages from the backend using the selected message and each buyer's unique Buy Box link."
+        confirmLabel="Send Campaign"
+        cancelLabel="Cancel"
+        variant="normal"
+        loading={bulkSending}
+        onCancel={() => {
+          if (!bulkSending) setShowBulkSendConfirm(false);
+        }}
+        onConfirm={executeBackendBulkBuyBoxSend}
+      >
+        <div className="space-y-3">
+          <div className="rounded-xl border border-gray-800 bg-gray-900/70 p-3">
+            <div className="text-xs uppercase tracking-wide text-gray-500">Campaign</div>
+            <div className="mt-1 text-sm font-medium text-white">
+              {bulkCampaignName || 'Buy Box Send'}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-xl border border-green-800/40 bg-green-900/10 p-3">
+              <div className="text-xs text-green-400">Eligible Recipients</div>
+              <div className="text-2xl font-bold text-green-300">{getBulkEligibleBuyers().length}</div>
+            </div>
+            <div className="rounded-xl border border-blue-800/40 bg-blue-900/10 p-3">
+              <div className="text-xs text-blue-400">Estimated Time</div>
+              <div className="text-2xl font-bold text-blue-300">~{Math.max(1, Math.ceil(getBulkEligibleBuyers().length / 5))}m</div>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-gray-800 bg-gray-900/70 p-3">
+            <div className="text-xs uppercase tracking-wide text-gray-500">Delivery</div>
+            <div className="mt-1 text-sm text-gray-300">5 texts per minute · 1 SMS every 12 seconds</div>
+          </div>
+
+          <div className="rounded-xl border border-gray-800 bg-gray-900/70 p-3">
+            <div className="text-xs uppercase tracking-wide text-gray-500">Message Preview</div>
+            <div className="mt-2 text-sm leading-relaxed text-gray-200">{getBulkTemplatePreview()}</div>
+          </div>
+        </div>
+      </ConfirmActionModal>
+
     </div>
   );
 }
