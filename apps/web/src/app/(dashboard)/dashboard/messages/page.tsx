@@ -115,6 +115,71 @@ function conversationDeliveryBadge(c: any) {
   return { label: status || 'Outbound', classes: 'bg-gray-800 text-gray-400 border-gray-700', title: 'Last outbound SMS status' };
 }
 
+function conversationPriorityBadge(c: any) {
+  const buyer = c?.buyer || {};
+  const last = c?.smsMessages?.[0];
+  const delivery = conversationDeliveryBadge(c);
+
+  if ((c?.unreadCount || 0) > 0 || last?.direction === 'INBOUND') {
+    return {
+      label: 'Inbound Reply',
+      classes: 'bg-blue-600/20 text-blue-200 border-blue-600/50',
+      title: 'Buyer replied. Respond first.',
+    };
+  }
+
+  const status = String(last?.deliveryStatus || last?.status || '').toUpperCase();
+
+  if (status === 'UNDELIVERED') {
+    return {
+      label: 'Undelivered',
+      classes: 'bg-red-600/20 text-red-200 border-red-600/50',
+      title: smsErrorLabel(last) || 'Message likely did not reach buyer. Verify phone.',
+    };
+  }
+
+  if (status === 'FAILED') {
+    return {
+      label: 'Failed',
+      classes: 'bg-red-600/20 text-red-200 border-red-600/50',
+      title: smsErrorLabel(last) || 'Message failed. Verify phone or Twilio delivery.',
+    };
+  }
+
+  const missing: string[] = [];
+  if (!buyer?.marketPrimary && !buyer?.buyBox?.states?.length) missing.push('Market');
+  if (!buyer?.buyBox?.minPrice && !buyer?.buyBox?.maxPrice && !buyer?.buyBox?.anyPrice) missing.push('Price range');
+  if (!buyer?.buyBox?.rehabTolerance) missing.push('Rehab tolerance');
+  if (!buyer?.preferredStrategies?.length) missing.push('Strategy');
+  if (!buyer?.proofOfFundsUrl && !buyer?.proofOfFundsWaived) missing.push('Proof of funds');
+
+  if (missing.length >= 3) {
+    return {
+      label: 'Needs Review',
+      classes: 'bg-yellow-600/20 text-yellow-200 border-yellow-600/50',
+      title: `Profile missing: ${missing.join(', ')}`,
+    };
+  }
+
+  if (missing.includes('Market') || missing.includes('Price range') || missing.includes('Rehab tolerance') || missing.includes('Strategy')) {
+    return {
+      label: 'Buy Box Needed',
+      classes: 'bg-purple-600/20 text-purple-200 border-purple-600/50',
+      title: `Buy box missing: ${missing.join(', ')}`,
+    };
+  }
+
+  if (missing.includes('Proof of funds')) {
+    return {
+      label: 'POF Needed',
+      classes: 'bg-orange-600/20 text-orange-200 border-orange-600/50',
+      title: 'Proof of funds is missing.',
+    };
+  }
+
+  return delivery;
+}
+
 function getTemp(b: any) {
   try {
     const t = JSON.parse(b?.temperatureNotes || '{}');
@@ -440,12 +505,8 @@ JSON format: {"market":"city name or null","maxPrice":number or null,"minPrice":
                   </div>
                 </div>
                 <div className="flex items-center gap-1 mb-0.5">
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full border ${getTierBadge(c.buyer.tier)}`}>{getTierLabel(c.buyer.tier)}</span>
-                  <span className={`text-[10px] ${t.color}`}>{t.label}</span>
-                </div>
-                <div className="flex items-center gap-1 mb-0.5">
                   {(() => {
-                    const badge = conversationDeliveryBadge(c);
+                    const badge = conversationPriorityBadge(c);
                     return (
                       <span title={badge.title} className={`text-[10px] px-1.5 py-0.5 rounded-full border ${badge.classes}`}>
                         {badge.label}
