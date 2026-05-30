@@ -6,9 +6,9 @@ import { randomBytes } from 'crypto';
 import { IntakeService } from '../intake/intake.service';
 
 // Buy Box reminder sending window defaults
-const BUY_BOX_DEFAULT_START_HOUR = 9; // 9 AM
-const BUY_BOX_DEFAULT_END_HOUR = 18;  // 6 PM
-const BUY_BOX_MAX_PER_MINUTE = 5;
+// using DB settings now // 9 AM
+// using DB settings now  // 6 PM
+// using DB settings now
 
 @Injectable()
 
