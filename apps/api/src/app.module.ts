@@ -21,6 +21,7 @@ import { TeamsModule } from './modules/teams/teams.module';
 import { RentCastModule } from './modules/rentcast/rentcast.module';
 import { DealSourcesModule } from './modules/deal-sources/deal-sources.module';
 import { PlacesModule } from './modules/places/places.module';
+import { SettingsModule } from './modules/settings/settings.module';
 
 @Module({
   imports: [
@@ -84,6 +85,7 @@ import { PlacesModule } from './modules/places/places.module';
     RentCastModule,
     DealSourcesModule,
     PlacesModule,
+    SettingsModule,
   ],
 })
 export class AppModule {}
