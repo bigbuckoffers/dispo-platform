@@ -1300,11 +1300,17 @@ model SmsMessage {
   direction      String       // INBOUND | OUTBOUND
   status         String       @default("QUEUED") // QUEUED | SENT | DELIVERED | FAILED
   twilioSid      String?
+  deliveryStatus String?
+  deliveryErrorCode String?
+  deliveryErrorMessage String?
+  deliveredAt    DateTime?
+  failedAt       DateTime?
   fromNumber     String?
   toNumber       String?
   createdAt      DateTime     @default(now())
 
   @@index([conversationId, createdAt])
+  @@index([twilioSid])
   @@map("sms_messages")
 }
 

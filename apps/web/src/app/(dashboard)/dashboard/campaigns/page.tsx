@@ -29,6 +29,11 @@ type Campaign = {
 };
 
 function statusClass(status: string) {
+  if (status === 'DELIVERED') return 'bg-green-500/10 text-green-300 border-green-700/40';
+  if (status === 'UNDELIVERED') return 'bg-red-500/10 text-red-300 border-red-700/40';
+  if (status === 'FAILED') return 'bg-red-500/10 text-red-300 border-red-700/40';
+  if (status === 'SENT') return 'bg-blue-500/10 text-blue-300 border-blue-700/40';
+  if (status === 'PENDING') return 'bg-gray-500/10 text-gray-300 border-gray-700/40';
   if (status === 'COMPLETED') return 'bg-green-500/10 text-green-300 border-green-700/40';
   if (status === 'COMPLETED_WITH_ERRORS') return 'bg-yellow-500/10 text-yellow-300 border-yellow-700/40';
   if (status === 'SENDING') return 'bg-blue-500/10 text-blue-300 border-blue-700/40';
@@ -46,6 +51,14 @@ function typeLabel(type: string) {
 function pct(c: Campaign) {
   if (!c.queued) return 0;
   return Math.min(100, Math.round(((c.sent + c.failed + c.cancelled) / c.queued) * 100));
+}
+
+function deliveryCounts(c: Campaign | null) {
+  const recipients = c?.recipients || [];
+  return {
+    delivered: recipients.filter((r:any) => r.deliveryStatus === 'DELIVERED').length,
+    undelivered: recipients.filter((r:any) => ['UNDELIVERED','FAILED'].includes(r.deliveryStatus)).length,
+  };
 }
 
 export default function CampaignsPage() {
@@ -321,6 +334,8 @@ export default function CampaignsPage() {
                   ['Failed', selectedCampaign.failed],
                   ['Skipped', selectedCampaign.skipped],
                   ['Cancelled', selectedCampaign.cancelled],
+                  ['Delivered', deliveryCounts(selectedCampaign).delivered],
+                  ['Undelivered', deliveryCounts(selectedCampaign).undelivered],
                 ].map(([label, value]) => (
                   <div key={label} className="rounded-xl border border-gray-800 bg-gray-900/70 p-3">
                     <div className="text-xs text-gray-500">{label}</div>
@@ -347,8 +362,10 @@ export default function CampaignsPage() {
                         <tr className="text-left text-gray-500 border-b border-gray-800">
                           <th className="px-4 py-3 font-medium">Buyer</th>
                           <th className="px-4 py-3 font-medium">Phone</th>
-                          <th className="px-4 py-3 font-medium">Status</th>
+                          <th className="px-4 py-3 font-medium">Send Status</th>
+                          <th className="px-4 py-3 font-medium">Delivery</th>
                           <th className="px-4 py-3 font-medium">Sent At</th>
+                          <th className="px-4 py-3 font-medium">Delivered At</th>
                           <th className="px-4 py-3 font-medium">Error</th>
                         </tr>
                       </thead>
@@ -360,8 +377,12 @@ export default function CampaignsPage() {
                             <td className="px-4 py-3">
                               <span className={`text-xs px-2 py-1 rounded-full border ${statusClass(r.status)}`}>{r.status}</span>
                             </td>
+                            <td className="px-4 py-3">
+                              <span className={`text-xs px-2 py-1 rounded-full border ${statusClass(r.deliveryStatus || 'PENDING')}`}>{r.deliveryStatus || 'PENDING'}</span>
+                            </td>
                             <td className="px-4 py-3 text-gray-400">{r.sentAt ? new Date(r.sentAt).toLocaleString() : '—'}</td>
-                            <td className="px-4 py-3 text-red-300">{r.error || '—'}</td>
+                            <td className="px-4 py-3 text-gray-400">{r.deliveredAt ? new Date(r.deliveredAt).toLocaleString() : '—'}</td>
+                            <td className="px-4 py-3 text-red-300">{r.error || r.deliveryErrorMessage || r.deliveryErrorCode || '—'}</td>
                           </tr>
                         ))}
                       </tbody>

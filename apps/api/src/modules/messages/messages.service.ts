@@ -126,8 +126,91 @@ export class MessagesService {
     }
   }
 
+  async handleStatusCallback(data: any) {
+    this.logger.log(`Twilio status callback: ${JSON.stringify(data)}`);
+
+    const messageSid = data.MessageSid || data.SmsSid || data.SmsMessageSid;
+    const rawStatus = data.MessageStatus || data.SmsStatus || data.status;
+    const deliveryStatus = this.normalizeTwilioDeliveryStatus(rawStatus);
+    const errorCode = data.ErrorCode ? String(data.ErrorCode) : null;
+    const errorMessage = data.ErrorMessage ? String(data.ErrorMessage) : null;
+
+    if (!messageSid) return { success: false, reason: 'missing_message_sid' };
+
+    const now = new Date();
+    const smsUpdate: any = {
+      deliveryStatus,
+      status: deliveryStatus,
+      deliveryErrorCode: errorCode,
+      deliveryErrorMessage: errorMessage,
+    };
+
+    const recipientUpdate: any = {
+      deliveryStatus,
+      deliveryErrorCode: errorCode,
+      deliveryErrorMessage: errorMessage,
+    };
+
+    if (deliveryStatus === 'DELIVERED') {
+      smsUpdate.deliveredAt = now;
+      recipientUpdate.deliveredAt = now;
+    }
+
+    if (['FAILED', 'UNDELIVERED'].includes(deliveryStatus)) {
+      smsUpdate.failedAt = now;
+      recipientUpdate.failedAt = now;
+    }
+
+    const smsResult = await this.prisma.smsMessage.updateMany({
+      where: { twilioSid: messageSid },
+      data: smsUpdate,
+    } as any);
+
+    const recipientResult = await this.prisma.bulkSmsCampaignRecipient.updateMany({
+      where: { twilioSid: messageSid },
+      data: recipientUpdate,
+    } as any);
+
+    return {
+      success: true,
+      messageSid,
+      deliveryStatus,
+      smsUpdated: smsResult.count,
+      recipientsUpdated: recipientResult.count,
+    };
+  }
+
   private sleep(ms: number) {
     return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  private getTwilioStatusCallbackUrl() {
+    const explicit = this.config.get('TWILIO_STATUS_CALLBACK_URL');
+    if (explicit) return explicit;
+
+    const publicApi =
+      this.config.get('PUBLIC_API_URL') ||
+      this.config.get('API_PUBLIC_URL') ||
+      this.config.get('NEXT_PUBLIC_API_URL');
+
+    if (!publicApi) return undefined;
+
+    const base = String(publicApi).replace(/\/$/, '');
+    return base.endsWith('/api/v1')
+      ? `${base}/messages/webhook/status`
+      : `${base}/api/v1/messages/webhook/status`;
+  }
+
+  private normalizeTwilioDeliveryStatus(status?: string) {
+    const s = String(status || '').toLowerCase();
+
+    if (s === 'delivered') return 'DELIVERED';
+    if (s === 'undelivered') return 'UNDELIVERED';
+    if (s === 'failed') return 'FAILED';
+    if (s === 'sent') return 'SENT';
+    if (['queued', 'accepted', 'scheduled', 'sending'].includes(s)) return 'PENDING';
+
+    return s ? s.toUpperCase() : 'UNKNOWN';
   }
 
   async getBulkCampaigns(orgId: string) {
@@ -299,7 +382,7 @@ export class MessagesService {
           freshCampaign.customMessage || undefined,
         );
 
-        await this.sendMessage(freshCampaign.organizationId, buyer.id, message, {
+        const sentMessage: any = await this.sendMessage(freshCampaign.organizationId, buyer.id, message, {
           intakeTrackingType: 'link_sent',
           trackingMetadata: {
             source: 'bulk_buy_box_send',
@@ -314,7 +397,14 @@ export class MessagesService {
 
         await this.prisma.bulkSmsCampaignRecipient.update({
           where: { id: recipient.id },
-          data: { status: 'SENT', sentAt: new Date(), error: null },
+          data: {
+            status: 'SENT',
+            sentAt: new Date(),
+            error: null,
+            twilioSid: sentMessage.twilioSid,
+            smsMessageId: sentMessage.id,
+            deliveryStatus: 'SENT',
+          },
         } as any);
 
         await this.recalcBulkCampaignCounts(freshCampaign.id);
@@ -472,9 +562,20 @@ export class MessagesService {
   }
 
   private async sendViaTwilio(to: string, body: string): Promise<string> {
-    const msg = await this.twilioClient.messages.create({
-      body, to, from: this.config.get('TWILIO_PHONE_NUMBER'),
-    });
+    const payload: any = {
+      body,
+      to,
+      from: this.config.get('TWILIO_PHONE_NUMBER'),
+    };
+
+    const statusCallback = this.getTwilioStatusCallbackUrl();
+    if (statusCallback) {
+      payload.statusCallback = statusCallback;
+    } else {
+      this.logger.warn('No Twilio status callback URL configured. Set TWILIO_STATUS_CALLBACK_URL or PUBLIC_API_URL.');
+    }
+
+    const msg = await this.twilioClient.messages.create(payload);
     return msg.sid;
   }
 }

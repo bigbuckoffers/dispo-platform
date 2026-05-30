@@ -86,4 +86,9 @@ export class MessagesController {
   handleInbound(@Body() body: any) {
     return this.messagesService.handleInbound(body);
   }
+
+  @Post('webhook/status')
+  handleStatusCallback(@Body() body: any) {
+    return this.messagesService.handleStatusCallback(body);
+  }
 }
