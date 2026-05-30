@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { RefreshCw, Pause, Play, XCircle, Send, BarChart3 } from 'lucide-react';
+import { RefreshCw, Pause, Play, XCircle, BarChart3 } from 'lucide-react';
+import { ConfirmActionModal } from '@/components/ui/ConfirmActionModal';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
 
@@ -53,6 +54,8 @@ export default function CampaignsPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [pendingAction, setPendingAction] = useState<null | { batchId: string; action: 'pause' | 'resume' | 'cancel'; campaign?: Campaign }>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -89,18 +92,33 @@ export default function CampaignsPage() {
     }, { total: 0, sending: 0, paused: 0, completed: 0, sent: 0, failed: 0 });
   }, [campaigns]);
 
-  const campaignAction = async (batchId: string, action: 'pause' | 'resume' | 'cancel') => {
-    const label = action === 'cancel' ? 'cancel remaining messages for' : action;
-    if (!confirm(`Are you sure you want to ${label} this campaign?`)) return;
+  const campaignAction = (batchId: string, action: 'pause' | 'resume' | 'cancel') => {
+    const campaign = campaigns.find(c => c.batchId === batchId) || selectedCampaign || undefined;
+    setActionError(null);
+    setPendingAction({ batchId, action, campaign });
+  };
 
+  const runConfirmedCampaignAction = async () => {
+    if (!pendingAction) return;
+
+    const { batchId, action } = pendingAction;
     setActionLoading(`${batchId}-${action}`);
+    setActionError(null);
+
     try {
       const res = await fetch(`${API}/messages/bulk-campaigns/${batchId}/${action}`, { method: 'POST' });
       const data = await res.json().catch(() => ({}));
+
       if (!res.ok) throw new Error(data?.message || `API error ${res.status}`);
+
+      setPendingAction(null);
       await load();
+
+      if (selectedCampaign?.batchId === batchId) {
+        await refreshSelected(batchId);
+      }
     } catch (e: any) {
-      alert(`Could not ${action} campaign: ${e.message}`);
+      setActionError(e.message || `Could not ${action} campaign`);
     } finally {
       setActionLoading(null);
     }
@@ -113,7 +131,7 @@ export default function CampaignsPage() {
       setSelectedCampaign(data);
       await load();
     } catch {
-      alert('Could not refresh campaign details');
+      setActionError('Could not refresh campaign details');
     }
   };
 
@@ -373,6 +391,63 @@ export default function CampaignsPage() {
           </div>
         </div>
       )}
+
+      <ConfirmActionModal
+        open={!!pendingAction}
+        title={
+          pendingAction?.action === 'pause'
+            ? 'Pause Campaign?'
+            : pendingAction?.action === 'resume'
+              ? 'Resume Campaign?'
+              : 'Cancel Remaining Messages?'
+        }
+        description={
+          pendingAction?.action === 'pause'
+            ? 'This will stop the drip after any message currently being processed. You can resume it later.'
+            : pendingAction?.action === 'resume'
+              ? 'This will continue sending pending recipients at the campaign drip rate.'
+              : 'This will cancel all unsent recipients. Messages already sent cannot be recalled.'
+        }
+        confirmLabel={
+          pendingAction?.action === 'pause'
+            ? 'Pause Campaign'
+            : pendingAction?.action === 'resume'
+              ? 'Resume Campaign'
+              : 'Cancel Remaining'
+        }
+        variant={pendingAction?.action === 'cancel' ? 'danger' : pendingAction?.action === 'pause' ? 'warning' : 'normal'}
+        loading={!!pendingAction && actionLoading === `${pendingAction.batchId}-${pendingAction.action}`}
+        onCancel={() => {
+          if (!actionLoading) {
+            setPendingAction(null);
+            setActionError(null);
+          }
+        }}
+        onConfirm={runConfirmedCampaignAction}
+      >
+        <div className="space-y-3">
+          <div className="rounded-xl border border-gray-800 bg-gray-900/70 p-3">
+            <div className="text-xs uppercase tracking-wide text-gray-500">Campaign</div>
+            <div className="mt-1 text-sm font-medium text-white">
+              {pendingAction?.campaign?.campaignName || pendingAction?.campaign?.batchId || 'Selected campaign'}
+            </div>
+            {pendingAction?.campaign && (
+              <div className="mt-2 grid grid-cols-3 gap-2 text-xs">
+                <div className="text-gray-500">Waiting <span className="text-blue-300">{pendingAction.campaign.pending}</span></div>
+                <div className="text-gray-500">Sent <span className="text-green-300">{pendingAction.campaign.sent}</span></div>
+                <div className="text-gray-500">Failed <span className="text-red-300">{pendingAction.campaign.failed}</span></div>
+              </div>
+            )}
+          </div>
+
+          {actionError && (
+            <div className="rounded-lg border border-red-800/40 bg-red-900/20 px-3 py-2 text-sm text-red-200">
+              {actionError}
+            </div>
+          )}
+        </div>
+      </ConfirmActionModal>
+
     </div>
   );
 }
