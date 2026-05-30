@@ -260,8 +260,8 @@ export default function CampaignsPage() {
                     </div>
                     <div className="mt-3 grid grid-cols-4 md:grid-cols-7 gap-3 text-xs">
                       <div className="text-gray-500">Selected <span className="text-gray-200">{c.selected}</span></div>
-                      <div className="text-gray-500">Queued <span className="text-gray-200">{c.queued}</span></div>
-                      <div className="text-gray-500">Pending <span className="text-blue-300">{c.pending}</span></div>
+                      <div className="text-gray-500">Recipients <span className="text-gray-200">{c.queued}</span></div>
+                      <div className="text-gray-500">Waiting <span className="text-blue-300">{c.pending}</span></div>
                       <div className="text-gray-500">Sent <span className="text-green-300">{c.sent}</span></div>
                       <div className="text-gray-500">Failed <span className="text-red-300">{c.failed}</span></div>
                       <div className="text-gray-500">Skipped <span className="text-yellow-300">{c.skipped}</span></div>
@@ -297,8 +297,8 @@ export default function CampaignsPage() {
               <div className="grid grid-cols-4 md:grid-cols-7 gap-3">
                 {[
                   ['Selected', selectedCampaign.selected],
-                  ['Queued', selectedCampaign.queued],
-                  ['Pending', selectedCampaign.pending],
+                  ['Recipients', selectedCampaign.queued],
+                  ['Waiting', selectedCampaign.pending],
                   ['Sent', selectedCampaign.sent],
                   ['Failed', selectedCampaign.failed],
                   ['Skipped', selectedCampaign.skipped],

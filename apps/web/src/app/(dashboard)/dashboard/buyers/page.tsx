@@ -840,7 +840,7 @@ export default function BuyersPage() {
 
               {bulkResult && (
                 <div className="rounded-xl border border-green-800/40 bg-green-900/10 p-4 text-sm text-green-200">
-                  Your campaign has been queued. Batch: {bulkResult.batchId} · Queued: {bulkResult.queued} texts · Skipped: {bulkResult.skipped} · Estimated time: ~{bulkResult.estimatedMinutes}m
+                  Your campaign has been queued. Batch: {bulkResult.batchId} · Recipients: {bulkResult.queued} texts · Skipped: {bulkResult.skipped} · Estimated time: ~{bulkResult.estimatedMinutes}m
                 </div>
               )}
 
