@@ -4,6 +4,7 @@ import { PrismaService } from '../../shared/prisma/prisma.service';
 import * as twilio from 'twilio';
 import { randomBytes } from 'crypto';
 import { IntakeService } from '../intake/intake.service';
+import { SettingsService } from '../settings/settings.service';
 
 // Buy Box reminder sending window defaults
 const BUY_BOX_DEFAULT_START_HOUR = 9; // 9 AM
@@ -16,7 +17,7 @@ export class MessagesService {
   private readonly logger = new Logger(MessagesService.name);
   private twilioClient: any;
 
-  constructor(private prisma: PrismaService, private config: ConfigService, private intakeService: IntakeService) {
+  constructor(private prisma: PrismaService, private config: ConfigService, private intakeService: IntakeService, private settingsService: SettingsService) {
     this.twilioClient = twilio(
       config.get('TWILIO_ACCOUNT_SID'),
       config.get('TWILIO_AUTH_TOKEN'),
@@ -367,11 +368,48 @@ export class MessagesService {
     } as any);
 
     
-      // check current hour and pause if outside sending window
-      function checkBuyBoxSendingWindow() {
+      // Uses organization Buy Box sending settings. Defaults still fall back to 9 AM-6 PM, 5/min, Mon-Fri.
+      function normalizeSendingRules(raw: any = {}) {
+        const startHour = Number.isFinite(Number(raw.startHour)) ? Number(raw.startHour) : BUY_BOX_DEFAULT_START_HOUR;
+        const endHour = Number.isFinite(Number(raw.endHour)) ? Number(raw.endHour) : BUY_BOX_DEFAULT_END_HOUR;
+        const maxPerMinute = Number.isFinite(Number(raw.maxPerMinute)) ? Number(raw.maxPerMinute) : BUY_BOX_MAX_PER_MINUTE;
+        const rawDays = Array.isArray(raw.daysOfWeek) ? raw.daysOfWeek : [1, 2, 3, 4, 5];
+        const daysOfWeek = rawDays.map((d: any) => Number(d)).filter((d: number) => Number.isInteger(d) && d >= 0 && d <= 6);
+
+        return {
+          startHour: Math.min(23, Math.max(0, startHour)),
+          endHour: Math.min(23, Math.max(0, endHour)),
+          maxPerMinute: Math.min(20, Math.max(1, maxPerMinute)),
+          daysOfWeek: daysOfWeek.length ? Array.from(new Set(daysOfWeek)).sort() : [1, 2, 3, 4, 5],
+        };
+      }
+
+      function isWithinSendingWindow(rules: any) {
         const now = new Date();
         const hour = now.getHours();
-        return hour >= BUY_BOX_DEFAULT_START_HOUR && hour < BUY_BOX_DEFAULT_END_HOUR;
+        const day = now.getDay();
+        return rules.daysOfWeek.includes(day) && hour >= rules.startHour && hour < rules.endHour;
+      }
+
+      function msUntilNextSendingWindow(rules: any) {
+        const now = new Date();
+        const nextStart = new Date(now);
+
+        for (let addDays = 0; addDays <= 7; addDays++) {
+          const candidate = new Date(now);
+          candidate.setDate(now.getDate() + addDays);
+          candidate.setHours(rules.startHour, 0, 0, 0);
+
+          const candidateDay = candidate.getDay();
+          const isAllowedDay = rules.daysOfWeek.includes(candidateDay);
+          const isFuture = candidate.getTime() > now.getTime();
+
+          if (isAllowedDay && isFuture) {
+            return Math.max(60000, candidate.getTime() - now.getTime());
+          }
+        }
+
+        return 24 * 60 * 60 * 1000;
       }
 
       while (true) {
@@ -383,19 +421,13 @@ export class MessagesService {
       if (freshCampaign.status === 'PAUSED' || freshCampaign.status === 'CANCELLED') return;
       if (!['QUEUED', 'SENDING'].includes(freshCampaign.status)) return;
 
+      const sendingRules = normalizeSendingRules(
+        await this.settingsService.getBuyBoxSendingSettings(freshCampaign.organizationId),
+      );
+
       
-      if (!checkBuyBoxSendingWindow()) {
-        const now = new Date();
-        const nextStart = new Date();
-
-        if (now.getHours() < BUY_BOX_DEFAULT_START_HOUR) {
-          nextStart.setHours(BUY_BOX_DEFAULT_START_HOUR, 0, 0, 0);
-        } else {
-          nextStart.setDate(now.getDate() + 1);
-          nextStart.setHours(BUY_BOX_DEFAULT_START_HOUR, 0, 0, 0);
-        }
-
-        const resumeInMs = Math.max(60000, nextStart.getTime() - now.getTime());
+      if (!isWithinSendingWindow(sendingRules)) {
+        const resumeInMs = msUntilNextSendingWindow(sendingRules);
 
         await this.prisma.bulkSmsCampaign.update({
           where: { id: freshCampaign.id },
@@ -464,7 +496,7 @@ export class MessagesService {
         } as any);
 
         await this.recalcBulkCampaignCounts(freshCampaign.id);
-      const sendIntervalMs = Math.floor(60000 / BUY_BOX_MAX_PER_MINUTE);
+      const sendIntervalMs = Math.floor(60000 / Math.max(1, Number(sendingRules.maxPerMinute || BUY_BOX_MAX_PER_MINUTE)));
       await this.sleep(Math.max(freshCampaign.delayMs || 12000, sendIntervalMs));
       } catch (e: any) {
         await this.prisma.bulkSmsCampaignRecipient.update({
@@ -522,9 +554,12 @@ export class MessagesService {
       delayMs?: number;
     } = {},
   ) {
-    const delayMs = options.delayMs || 12000;
     const templateKey = options.templateKey || 'general';
     const isReminderCampaign = templateKey.startsWith('reminder_');
+    const currentSendingRules = await this.settingsService.getBuyBoxSendingSettings(orgId);
+    const maxPerMinute = Math.max(1, Number(currentSendingRules.maxPerMinute || BUY_BOX_MAX_PER_MINUTE));
+    const settingsDelayMs = Math.floor(60000 / maxPerMinute);
+    const delayMs = Math.max(options.delayMs || 12000, settingsDelayMs);
     const batchId = `${isReminderCampaign ? 'buybox-reminder' : 'buybox'}-${Date.now()}`;
 
     const buyers = await this.prisma.buyer.findMany({
@@ -584,9 +619,9 @@ export class MessagesService {
         pending: eligible.length,
         skipped: skipped.length,
         skippedDetails: skipped as any,
-        dripRate: '5 texts per minute',
+        dripRate: `${maxPerMinute} texts per minute`,
         delayMs,
-        estimatedMinutes: Math.max(1, Math.ceil(eligible.length / 5)),
+        estimatedMinutes: Math.max(1, Math.ceil(eligible.length / maxPerMinute)),
       },
     } as any);
 
@@ -611,9 +646,9 @@ export class MessagesService {
       queued: eligible.length,
       skipped: skipped.length,
       skippedDetails: skipped,
-      dripRate: '5 texts per minute',
+      dripRate: `${maxPerMinute} texts per minute`,
       delayMs,
-      estimatedMinutes: Math.max(1, Math.ceil(eligible.length / 5)),
+      estimatedMinutes: Math.max(1, Math.ceil(eligible.length / maxPerMinute)),
       status: campaign.status,
     };
   }

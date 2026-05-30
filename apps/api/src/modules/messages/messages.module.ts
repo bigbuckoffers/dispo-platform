@@ -3,9 +3,10 @@ import { MessagesService } from './messages.service';
 import { MessagesController } from './messages.controller';
 import { PrismaModule } from '../../shared/prisma/prisma.module';
 import { IntakeModule } from '../intake/intake.module';
+import { SettingsModule } from '../settings/settings.module';
 
 @Module({
-  imports: [PrismaModule, IntakeModule],
+  imports: [PrismaModule, IntakeModule, SettingsModule],
   controllers: [MessagesController],
   providers: [MessagesService],
   exports: [MessagesService],
