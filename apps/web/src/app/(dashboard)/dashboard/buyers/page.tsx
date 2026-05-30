@@ -87,6 +87,7 @@ export default function BuyersPage() {
     if (tab === 'hot') return hotBuyers;
     if (tab === 'review') return needsReview;
     if (tab === 'reviewed') return reviewed;
+    if (tab === 'buybox_followup') return buyBoxFollowUpBuyers;
     return buyers;
   };
 
@@ -601,8 +602,19 @@ export default function BuyersPage() {
     return (
       <tr className="border-b border-gray-800/50 hover:bg-gray-800/30 cursor-pointer group/row" onClick={()=>window.location.href=`/dashboard/buyers/${b.id}`}>
         <td className="px-4 py-3">
-          <div className="font-medium text-white text-sm">{bname(b)}</div>
-          <div className="text-gray-500 text-xs">{b.phone || b.email || 'No contact'}</div>
+          <div className="flex items-start gap-3">
+            <input
+              type="checkbox"
+              checked={!!bulkSelected[b.id]}
+              onClick={e=>e.stopPropagation()}
+              onChange={()=>toggleBulkBuyer(b.id)}
+              className="mt-1 accent-purple-600"
+            />
+            <div>
+              <div className="font-medium text-white text-sm">{bname(b)}</div>
+              <div className="text-gray-500 text-xs">{b.phone || b.email || 'No contact'}</div>
+            </div>
+          </div>
         </td>
         <td className="px-4 py-3">
           <span className={`text-xs px-2 py-0.5 rounded-full border ${action.tone}`}>{action.label}</span>
@@ -893,7 +905,23 @@ export default function BuyersPage() {
               <thead>
                 <tr className="border-b border-gray-800">
                   {['Buyer','Next Action','Status','Last Activity','Market',''].map(h=>(
-                    <th key={h} className="text-left text-gray-500 font-medium px-4 py-3 text-xs uppercase tracking-wide">{h}</th>
+                    <th key={h} className="text-left text-gray-500 font-medium px-4 py-3 text-xs uppercase tracking-wide">
+                      {h === 'Buyer' ? (
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={buyBoxFollowUpBuyers.length > 0 && buyBoxFollowUpBuyers.every((b:any)=>!!bulkSelected[b.id])}
+                            onChange={e=>{
+                              const next = {...bulkSelected};
+                              buyBoxFollowUpBuyers.forEach((b:any)=>{ next[b.id] = e.target.checked; });
+                              setBulkSelected(next);
+                            }}
+                            className="accent-purple-600"
+                          />
+                          <span>Buyer</span>
+                        </div>
+                      ) : h}
+                    </th>
                   ))}
                 </tr>
               </thead>
