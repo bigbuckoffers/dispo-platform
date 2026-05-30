@@ -174,6 +174,7 @@ export default function MessagesPage() {
   const [generatingDraft, setGeneratingDraft] = useState(false);
   const [aiDetected, setAiDetected] = useState<any>(null);
   const [rightTab, setRightTab] = useState<'intel'|'deals'|'notes'>('intel');
+  const [showRightPanel, setShowRightPanel] = useState(false);
   const [notes, setNotes] = useState('');
   const [savingNotes, setSavingNotes] = useState(false);
   const bottomRef = useRef<any>(null);
@@ -454,7 +455,7 @@ JSON format: {"market":"city name or null","maxPrice":number or null,"minPrice":
             <div className="text-center">
               <div className="text-5xl mb-3">💬</div>
               <p className="text-gray-400 font-medium">Select a conversation</p>
-              <p className="text-gray-600 text-sm mt-1">Or open a buyer profile and click Message</p>
+              <p className="text-gray-600 text-sm mt-1">Open a buyer conversation to text, review replies, and follow up</p>
             </div>
           </div>
         ) : (
@@ -473,6 +474,12 @@ JSON format: {"market":"city name or null","maxPrice":number or null,"minPrice":
                 {temp && <span className={`text-xs ${temp.color}`}>{temp.label}</span>}
               </div>
               <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowRightPanel(v => !v)}
+                  className={`text-xs px-2 py-1 rounded transition ${showRightPanel ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-gray-200'}`}
+                >
+                  🧠 Buyer Intel
+                </button>
                 <a href={`/dashboard/buyers/${selected.buyer.id}`} className="text-blue-400 hover:text-blue-300 text-xs transition">View Profile →</a>
                 <button onClick={() => { if (buyer?.phone) window.location.href = `tel:${buyer.phone}`; }} className="text-gray-500 hover:text-gray-300 text-xs px-2 py-1 rounded bg-gray-800 transition">📞 Call</button>
               </div>
@@ -608,7 +615,7 @@ JSON format: {"market":"city name or null","maxPrice":number or null,"minPrice":
       </div>
 
       {/* RIGHT: Buyer Intel Panel */}
-      {selected && (
+      {selected && showRightPanel && (
         <div className="w-72 border-l border-gray-800 flex flex-col flex-shrink-0">
           {/* Tabs */}
           <div className="flex border-b border-gray-800">
