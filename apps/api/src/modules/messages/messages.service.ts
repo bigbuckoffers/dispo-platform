@@ -6,6 +6,12 @@ import { randomBytes } from 'crypto';
 import { IntakeService } from '../intake/intake.service';
 
 @Injectable()
+
+// Buy Box reminder sending window defaults
+const BUY_BOX_DEFAULT_START_HOUR = 9; // 9 AM
+const BUY_BOX_DEFAULT_END_HOUR = 18;  // 6 PM
+const BUY_BOX_MAX_PER_MINUTE = 5;
+
 export class MessagesService {
   private readonly logger = new Logger(MessagesService.name);
   private twilioClient: any;
@@ -360,7 +366,15 @@ export class MessagesService {
       data: { status: 'SENDING' },
     } as any);
 
-    while (true) {
+    
+      // check current hour and pause if outside sending window
+      function checkBuyBoxSendingWindow() {
+        const now = new Date();
+        const hour = now.getHours();
+        return hour >= BUY_BOX_DEFAULT_START_HOUR && hour < BUY_BOX_DEFAULT_END_HOUR;
+      }
+
+      while (true) {
       const freshCampaign: any = await this.prisma.bulkSmsCampaign.findUnique({
         where: { batchId },
       } as any);
@@ -368,6 +382,17 @@ export class MessagesService {
       if (!freshCampaign) return;
       if (freshCampaign.status === 'PAUSED' || freshCampaign.status === 'CANCELLED') return;
       if (!['QUEUED', 'SENDING'].includes(freshCampaign.status)) return;
+
+      
+      if (!checkBuyBoxSendingWindow()) {
+        // pause until next day start
+        const now = new Date();
+        const nextStart = new Date();
+        nextStart.setDate(now.getDate() + 1);
+        nextStart.setHours(BUY_BOX_DEFAULT_START_HOUR, 0, 0, 0);
+        const waitMs = nextStart.getTime() - now.getTime();
+        await this.sleep(waitMs);
+      }
 
       const recipient: any = await this.prisma.bulkSmsCampaignRecipient.findFirst({
         where: { campaignId: freshCampaign.id, status: 'PENDING' },
@@ -425,7 +450,12 @@ export class MessagesService {
 
         await this.recalcBulkCampaignCounts(freshCampaign.id);
 
-        await this.sleep(freshCampaign.delayMs || 12000);
+        
+      // enforce max messages per minute
+      const sendIntervalMs = Math.floor(60000 / BUY_BOX_MAX_PER_MINUTE);
+      await this.sleep(sendIntervalMs);
+
+      await this.sleep(freshCampaign.delayMs || 12000);
       } catch (e: any) {
         await this.prisma.bulkSmsCampaignRecipient.update({
           where: { id: recipient.id },
