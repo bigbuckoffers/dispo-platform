@@ -217,6 +217,20 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
     }
   };
 
+  const resetBuyBoxStatus = async () => {
+    if (!confirm('Reset this buyer’s Buy Box status? This will clear their intake link, sent/opened/submitted timestamps, intake events, and submissions.')) return;
+
+    try {
+      await api.post(`/buyers/${id}/reset-buy-box-status`);
+      toast.success('Buy Box status reset');
+      qc.invalidateQueries({ queryKey: ['buyer', id] });
+      qc.invalidateQueries({ queryKey: ['buyer-intake-events', id] });
+      refetchIntakeEvents();
+    } catch (e: any) {
+      toast.error('Could not reset Buy Box status');
+    }
+  };
+
   const deleteBuyer = async () => {
     if (!confirm('Delete this buyer permanently? This cannot be undone.')) return;
     try { await api.delete(`/buyers/${id}`); toast.success('Buyer deleted'); window.location.href = '/dashboard/buyers'; }
@@ -475,7 +489,24 @@ export default function BuyerProfilePage({ params }: { params: { id: string } })
       <div className="flex flex-wrap items-center gap-3 text-xs text-gray-400"><span>Last activity: <span className="text-gray-200">{latestIntakeEvent?`${INTAKE_EVENT_LABELS[latestIntakeEvent.eventType]||latestIntakeEvent.eventType} · ${formatIntakeDate(latestIntakeEvent.createdAt)}`:'No intake activity tracked yet.'}</span></span><span className="text-gray-600">•</span><span>Reminders sent: <span className="text-gray-200">{reminderCount}</span></span></div>
       {intakeEventsError?<p className="text-xs text-yellow-400 border-t border-gray-800 pt-3">Could not load intake timeline.</p>:intakeEventsList.length>0?<div className="space-y-2 max-h-40 overflow-y-auto pr-1">{intakeEventsList.slice(0,8).map((event:any)=><div key={event.id} className="flex items-start justify-between gap-3 border-t border-gray-800 pt-2 first:border-t-0 first:pt-0"><div><p className="text-xs text-gray-200">{INTAKE_EVENT_LABELS[event.eventType]||event.eventType}</p>{event.source&&<p className="text-[11px] text-gray-600">{event.source}</p>}</div><span className="text-[11px] text-gray-500 whitespace-nowrap">{formatIntakeDate(event.createdAt)}</span></div>)}</div>:<p className="text-xs text-gray-500 border-t border-gray-800 pt-3">No intake activity tracked yet.</p>}
     </div>
-    <SECTION title="AI Buyer Intelligence Summary" icon={Brain} iconColor="text-purple-400" badge={aiConfidence?aiConfidence+'% confidence':undefined}>
+    
+      
+      <div className="mb-4 rounded-xl border border-yellow-800/40 bg-yellow-900/10 p-4 flex items-center justify-between gap-4">
+        <div>
+          <div className="text-sm font-medium text-yellow-200">Admin Testing: Reset Buy Box Status</div>
+          <div className="text-xs text-yellow-300/70">
+            Clears this buyer’s Buy Box intake status so you can resend the form during testing.
+          </div>
+        </div>
+        <button
+          onClick={resetBuyBoxStatus}
+          className="shrink-0 rounded-lg bg-yellow-500/20 px-3 py-2 text-xs font-medium text-yellow-200 border border-yellow-700/40 hover:bg-yellow-500/30"
+        >
+          Reset Buy Box Status
+        </button>
+      </div>
+
+      <SECTION title="AI Buyer Intelligence Summary" icon={Brain} iconColor="text-purple-400" badge={aiConfidence?aiConfidence+'% confidence':undefined}>
       {aiSummary?(<div className="space-y-3"><p className="text-gray-300 text-sm leading-relaxed bg-purple-500/5 border border-purple-500/20 rounded-lg p-4">{aiSummary}</p><button onClick={generateAiIntel} disabled={generating} className="text-xs text-purple-400 hover:text-purple-300 flex items-center gap-1 disabled:opacity-40"><RefreshCw size={11} className={generating?'animate-spin':''} />{generating?'Regenerating...':'Regenerate Full Intel Report'}</button></div>):(<div className="text-center py-5 space-y-3"><p className="text-gray-500 text-sm">No AI intelligence report generated yet</p><button onClick={generateAiIntel} disabled={generating} className="flex items-center gap-2 px-5 py-2.5 bg-purple-600 hover:bg-purple-500 text-white text-sm rounded-lg transition disabled:opacity-50 mx-auto font-medium"><Sparkles size={14} />{generating?'Generating Report...':'Generate Full Intelligence Report'}</button>{!buyer.buyerIntelNotes&&<p className="text-gray-600 text-xs">Add intel notes below first</p>}</div>)}
     </SECTION>
     <SECTION title={'Likelihood to Close — '+closeProbability+'%'} icon={Target} iconColor={cpColor}>
