@@ -22,6 +22,8 @@ type Campaign = {
   cancelled: number;
   estimatedMinutes: number;
   delayMs: number;
+  dripRate?: string;
+  skippedDetails?: any;
   startedAt: string;
   completedAt?: string | null;
   createdAt: string;
@@ -46,6 +48,89 @@ function statusClass(status: string) {
 function typeLabel(type: string) {
   if (type === 'BULK_BUY_BOX_SEND') return 'Buy Box Send';
   return type?.replace(/_/g, ' ') || 'Campaign';
+}
+
+function campaignActionLabel(c: Campaign | null) {
+  const template = String(c?.templateKey || 'general');
+
+  if (template === 'reminder_1') return 'Reminder #1';
+  if (template === 'reminder_2') return 'Reminder #2';
+  if (template === 'reminder_3') return 'Reminder #3';
+
+  const name = String(c?.campaignName || '');
+  if (name.includes('Reminder #1')) return 'Reminder #1';
+  if (name.includes('Reminder #2')) return 'Reminder #2';
+  if (name.includes('Reminder #3')) return 'Reminder #3';
+
+  return 'Send Buy Box';
+}
+
+function campaignActionClass(c: Campaign | null) {
+  const action = campaignActionLabel(c);
+  if (action.includes('Reminder')) return 'bg-blue-500/10 text-blue-300 border-blue-700/40';
+  return 'bg-purple-500/10 text-purple-300 border-purple-700/40';
+}
+
+const dayLabels: Record<number, string> = {
+  0: 'Sun',
+  1: 'Mon',
+  2: 'Tue',
+  3: 'Wed',
+  4: 'Thu',
+  5: 'Fri',
+  6: 'Sat',
+};
+
+function formatHourLabel(hour: any) {
+  const h = Number(hour);
+  if (!Number.isFinite(h)) return '—';
+  const normalized = Math.max(0, Math.min(23, h));
+  const suffix = normalized >= 12 ? 'PM' : 'AM';
+  const display = normalized % 12 === 0 ? 12 : normalized % 12;
+  return `${display}:00 ${suffix}`;
+}
+
+function formatSendingDays(days: any) {
+  const normalized = Array.isArray(days)
+    ? Array.from(new Set(days.map((d: any) => Number(d)).filter((d: number) => d >= 0 && d <= 6))).sort((a: number, b: number) => a - b)
+    : [1, 2, 3, 4, 5];
+
+  if (normalized.length === 7) return 'Every day';
+  if (normalized.join(',') === '1,2,3,4,5') return 'Mon–Fri';
+  if (normalized.join(',') === '0,6') return 'Sat–Sun';
+
+  const isContiguous = normalized.every((d: number, i: number) => i === 0 || d === normalized[i - 1] + 1);
+  if (isContiguous && normalized.length >= 2) {
+    return `${dayLabels[normalized[0]]}–${dayLabels[normalized[normalized.length - 1]]}`;
+  }
+
+  return normalized.map((d: number) => dayLabels[d]).filter(Boolean).join(', ');
+}
+
+function getSendingRulesSnapshot(c: Campaign | null) {
+  const meta: any = c?.skippedDetails && typeof c.skippedDetails === 'object' ? c.skippedDetails : {};
+  return meta.sendingRulesSnapshot || null;
+}
+
+function formatCampaignRules(c: Campaign | null) {
+  const rules: any = getSendingRulesSnapshot(c);
+
+  if (!rules) {
+    const perMin = c?.delayMs ? Math.max(1, Math.round(60000 / c.delayMs)) : null;
+    return {
+      days: 'Settings default',
+      window: 'Settings window',
+      rate: c?.dripRate || (perMin ? `${perMin}/min` : '—'),
+      mode: 'Settings defaults',
+    };
+  }
+
+  return {
+    days: formatSendingDays(rules.daysOfWeek),
+    window: `${formatHourLabel(rules.startHour)}–${formatHourLabel(rules.endHour)}`,
+    rate: `${rules.maxPerMinute || 5}/min`,
+    mode: 'Rules snapshot',
+  };
 }
 
 function pct(c: Campaign) {
@@ -341,11 +426,26 @@ export default function CampaignsPage() {
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <div className="text-white font-semibold">{c.campaignName || typeLabel(c.type)}</div>
+                        <span className={`text-xs px-2 py-1 rounded-full border ${campaignActionClass(c)}`}>{campaignActionLabel(c)}</span>
                         <span className={`text-xs px-2 py-1 rounded-full border ${statusClass(c.status)}`}>{c.status}</span>
                         <span className="text-xs text-gray-500">Template: {c.templateKey || 'general'}</span>
                       </div>
                       <div className="mt-1 text-xs text-gray-500">
                         {c.batchId} · {new Date(c.createdAt || c.startedAt).toLocaleString()}
+                      </div>
+                      <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+                        <span className="rounded-md border border-gray-800 bg-gray-950/70 px-2 py-1 text-gray-300">
+                          {formatCampaignRules(c).days}
+                        </span>
+                        <span className="rounded-md border border-gray-800 bg-gray-950/70 px-2 py-1 text-gray-300">
+                          {formatCampaignRules(c).window}
+                        </span>
+                        <span className="rounded-md border border-gray-800 bg-gray-950/70 px-2 py-1 text-gray-300">
+                          {formatCampaignRules(c).rate}
+                        </span>
+                        <span className="rounded-md border border-purple-800/40 bg-purple-950/20 px-2 py-1 text-purple-200">
+                          {formatCampaignRules(c).mode}
+                        </span>
                       </div>
                     </div>
 
@@ -446,6 +546,38 @@ export default function CampaignsPage() {
                     <div className="text-xl font-bold text-white">{value as any}</div>
                   </div>
                 ))}
+              </div>
+
+              <div className="rounded-xl border border-gray-800 bg-gray-900/70 p-4">
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div>
+                    <div className="text-xs uppercase tracking-wide text-gray-500">Campaign Type</div>
+                    <div className="mt-1 flex flex-wrap items-center gap-2">
+                      <span className={`text-xs px-2 py-1 rounded-full border ${campaignActionClass(selectedCampaign)}`}>
+                        {campaignActionLabel(selectedCampaign)}
+                      </span>
+                      <span className="text-xs text-gray-500">Template: {selectedCampaign.templateKey || 'general'}</span>
+                    </div>
+                  </div>
+
+                  <div className="text-right">
+                    <div className="text-xs uppercase tracking-wide text-gray-500">Drip / Sending Rules</div>
+                    <div className="mt-1 flex flex-wrap justify-end gap-2 text-xs">
+                      <span className="rounded-md border border-gray-800 bg-gray-950/70 px-2 py-1 text-gray-300">
+                        {formatCampaignRules(selectedCampaign).days}
+                      </span>
+                      <span className="rounded-md border border-gray-800 bg-gray-950/70 px-2 py-1 text-gray-300">
+                        {formatCampaignRules(selectedCampaign).window}
+                      </span>
+                      <span className="rounded-md border border-gray-800 bg-gray-950/70 px-2 py-1 text-gray-300">
+                        {formatCampaignRules(selectedCampaign).rate}
+                      </span>
+                      <span className="rounded-md border border-purple-800/40 bg-purple-950/20 px-2 py-1 text-purple-200">
+                        {formatCampaignRules(selectedCampaign).mode}
+                      </span>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               {selectedCampaign && (() => {
