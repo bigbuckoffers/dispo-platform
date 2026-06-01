@@ -28,6 +28,8 @@ type Campaign = {
   completedAt?: string | null;
   createdAt: string;
   recipients?: any[];
+  engagementSummary?: any;
+  recipientEngagement?: any[];
 };
 
 function statusClass(status: string) {
@@ -144,6 +146,24 @@ function deliveryCounts(c: Campaign | null) {
     delivered: recipients.filter((r:any) => r.deliveryStatus === 'DELIVERED').length,
     undelivered: recipients.filter((r:any) => ['UNDELIVERED','FAILED'].includes(r.deliveryStatus)).length,
   };
+}
+
+function engagementSummary(c: Campaign | null) {
+  return c?.engagementSummary || {
+    opened: 0,
+    started: 0,
+    submitted: 0,
+    replied: 0,
+    needsFollowUp: 0,
+  };
+}
+
+function engagementBadgeClass(label: string) {
+  if (label === 'Submitted') return 'border-green-800/40 bg-green-950/20 text-green-200';
+  if (label === 'Started') return 'border-cyan-800/40 bg-cyan-950/20 text-cyan-200';
+  if (label === 'Opened') return 'border-blue-800/40 bg-blue-950/20 text-blue-200';
+  if (label === 'Replies') return 'border-purple-800/40 bg-purple-950/20 text-purple-200';
+  return 'border-yellow-800/40 bg-yellow-950/20 text-yellow-200';
 }
 
 
@@ -509,6 +529,20 @@ export default function CampaignsPage() {
                           {formatCampaignRules(c).mode}
                         </span>
                       </div>
+
+                      <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+                        {[
+                          ['Opened', engagementSummary(c).opened],
+                          ['Started', engagementSummary(c).started],
+                          ['Submitted', engagementSummary(c).submitted],
+                          ['Replies', engagementSummary(c).replied],
+                          ['Follow-Up', engagementSummary(c).needsFollowUp],
+                        ].map(([label, value]: any) => (
+                          <span key={label} className={`rounded-md border px-2 py-1 ${engagementBadgeClass(label)}`}>
+                            {label} {value}
+                          </span>
+                        ))}
+                      </div>
                     </div>
 
                     <div className="flex items-center gap-2 shrink-0">
@@ -602,6 +636,11 @@ export default function CampaignsPage() {
                   ['Cancelled', selectedCampaign.cancelled],
                   ['Delivered', deliveryCounts(selectedCampaign).delivered],
                   ['Undelivered', deliveryCounts(selectedCampaign).undelivered],
+                  ['Opened', engagementSummary(selectedCampaign).opened],
+                  ['Started', engagementSummary(selectedCampaign).started],
+                  ['Submitted', engagementSummary(selectedCampaign).submitted],
+                  ['Replies', engagementSummary(selectedCampaign).replied],
+                  ['Follow-Up', engagementSummary(selectedCampaign).needsFollowUp],
                 ].map(([label, value]) => (
                   <div key={label} className="rounded-xl border border-gray-800 bg-gray-900/70 p-3">
                     <div className="text-xs text-gray-500">{label}</div>
@@ -695,6 +734,7 @@ export default function CampaignsPage() {
                           <th className="px-4 py-3 font-medium">Phone</th>
                           <th className="px-4 py-3 font-medium">Send Status</th>
                           <th className="px-4 py-3 font-medium">Delivery</th>
+                          <th className="px-4 py-3 font-medium">Engagement</th>
                           <th className="px-4 py-3 font-medium">Sent At</th>
                           <th className="px-4 py-3 font-medium">Delivered At</th>
                           <th className="px-4 py-3 font-medium">Error</th>
@@ -715,6 +755,30 @@ export default function CampaignsPage() {
                               >
                                 {r.deliveryStatus || 'PENDING'}
                               </span>
+                            </td>
+                            <td className="px-4 py-3">
+                              {(() => {
+                                const e = (selectedCampaign.recipientEngagement || []).find((x:any) => x.buyerId === r.buyerId) || {};
+                                const tags = [
+                                  e.submitted ? 'Submitted' : null,
+                                  e.started ? 'Started' : null,
+                                  e.opened ? 'Opened' : null,
+                                  e.replied ? 'Replied' : null,
+                                  e.needsFollowUp ? 'Follow-Up' : null,
+                                ].filter(Boolean);
+
+                                return tags.length ? (
+                                  <div className="flex flex-wrap gap-1">
+                                    {tags.map((tag:any) => (
+                                      <span key={tag} className={`rounded-md border px-2 py-1 text-xs ${engagementBadgeClass(tag === 'Replied' ? 'Replies' : tag)}`}>
+                                        {tag}
+                                      </span>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <span className="text-gray-500">—</span>
+                                );
+                              })()}
                             </td>
                             <td className="px-4 py-3 text-gray-400">{r.sentAt ? new Date(r.sentAt).toLocaleString() : '—'}</td>
                             <td className="px-4 py-3 text-gray-400">{r.deliveredAt ? new Date(r.deliveredAt).toLocaleString() : '—'}</td>
