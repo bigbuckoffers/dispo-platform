@@ -154,11 +154,14 @@ export default function SettingsPage() {
                 <label className="space-y-1">
                   <span className="text-xs text-gray-500">Max texts/min</span>
                   <input
-                    type="number"
-                    min={1}
-                    max={20}
-                    value={buyBoxSettings.maxPerMinute}
-                    onChange={e => setBuyBoxSettings((s: any) => ({ ...s, maxPerMinute: Number(e.target.value) }))}
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    value={String(buyBoxSettings.maxPerMinute ?? '')}
+                    onChange={e => {
+                      const raw = e.target.value.replace(/[^0-9]/g, '');
+                      setBuyBoxSettings((s: any) => ({ ...s, maxPerMinute: raw === '' ? '' : Number(raw) }));
+                    }}
                     className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:border-purple-500"
                   />
                 </label>
@@ -204,11 +207,14 @@ export default function SettingsPage() {
                       <span className="text-xs text-gray-500">{label}</span>
                       <div className="flex items-center gap-2">
                         <input
-                          type="number"
-                          min={0}
-                          max={key === 'reminder1' ? 30 : key === 'reminder2' ? 60 : 90}
-                          value={(buyBoxSettings as any).reminderCadenceDays?.[key] ?? (key === 'reminder1' ? 2 : key === 'reminder2' ? 4 : 7)}
-                          onChange={e => updateReminderCadence(key, Number(e.target.value))}
+                          type="text"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                          value={String((buyBoxSettings as any).reminderCadenceDays?.[key] ?? (key === 'reminder1' ? 2 : key === 'reminder2' ? 4 : 7))}
+                          onChange={e => {
+                            const raw = e.target.value.replace(/[^0-9]/g, '');
+                            updateReminderCadence(key, raw === '' ? 0 : Number(raw));
+                          }}
                           className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:border-purple-500"
                         />
                         <span className="text-xs text-gray-500">days</span>

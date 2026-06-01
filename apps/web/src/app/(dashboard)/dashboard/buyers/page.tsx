@@ -873,7 +873,13 @@ export default function BuyersPage() {
     if (key === 'needs_followup') return { label: 'Needs Follow-Up', tone: 'text-yellow-300 bg-yellow-500/10 border-yellow-700/40', description: 'SMS was sent/delivered but buyer has not opened, started, submitted, or replied.' };
     if (key === 'submitted') return { label: 'Review Submission', tone: 'text-purple-300 bg-purple-500/10 border-purple-700/40', description: 'Buyer submitted their Buy Box. Review and approve profile data.' };
     if (key === 'needs_review') return { label: 'Needs Human Review', tone: 'text-yellow-300 bg-yellow-500/10 border-yellow-700/40', description: 'Manual review needed before this buyer is considered complete.' };
-    if (key === 'started') return { label: 'Send Reminder / Call', tone: 'text-amber-300 bg-amber-500/10 border-amber-700/40', description: 'Buyer started but did not submit. This is a strong follow-up opportunity.' };
+    if (key === 'started') {
+      const nextReminder = getQueueNextReminderNumber(b);
+      if (nextReminder > 3) {
+        return { label: 'Call Buyer / Stop SMS', tone: 'text-yellow-300 bg-yellow-500/10 border-yellow-700/40', description: 'Buyer already received 3 reminders. Next best action is to call or manually message.' };
+      }
+      return { label: 'Send Reminder / Call', tone: 'text-amber-300 bg-amber-500/10 border-amber-700/40', description: 'Buyer started but did not submit. This is a strong follow-up opportunity.' };
+    }
     if (key === 'opened') return { label: 'Nudge Buyer', tone: 'text-blue-300 bg-blue-500/10 border-blue-700/40', description: 'Buyer opened the form but did not start. Send a light reminder.' };
     if (key === 'sent') return { label: 'Wait or Remind', tone: 'text-gray-300 bg-gray-800 border-gray-700', description: 'Form was sent. If enough time has passed, send a reminder.' };
 
