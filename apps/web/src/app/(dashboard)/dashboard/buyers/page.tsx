@@ -405,6 +405,14 @@ export default function BuyersPage() {
     return String(action?.label || 'Bulk Send Buy Box Forms');
   };
 
+  const getBulkEstimatedMinutes = () => {
+    const eligibleCount = getBulkEligibleBuyers().length;
+    const rules: any = getFinalBulkSendingRules();
+    const maxPerMinute = Math.max(1, Number(rules?.maxPerMinute || 5));
+
+    return Math.max(1, Math.ceil(eligibleCount / maxPerMinute));
+  };
+
   const openBulkBuyBoxModal = () => {
     setBulkUseCustomSendingRules(false);
     void loadBuyBoxSendingRules();
@@ -1525,7 +1533,7 @@ export default function BuyersPage() {
                 <div className="rounded-xl border border-gray-800 bg-gray-900/70 p-2"><div className="text-xs text-gray-500">Selected</div><div className="text-2xl font-bold text-white">{getBulkSelectedBuyers().length}</div></div>
                 <div className="rounded-xl border border-green-800/40 bg-green-900/10 p-2"><div className="text-xs text-green-400">Eligible</div><div className="text-2xl font-bold text-green-300">{getBulkEligibleBuyers().length}</div></div>
                 <div className="rounded-xl border border-yellow-800/40 bg-yellow-900/10 p-2"><div className="text-xs text-yellow-400">Skipped</div><div className="text-2xl font-bold text-yellow-300">{getBulkSkippedBuyers().length}</div></div>
-                <div className="rounded-xl border border-blue-800/40 bg-blue-900/10 p-2"><div className="text-xs text-blue-400">Est. Time</div><div className="text-2xl font-bold text-blue-300">~{Math.max(1, Math.ceil(getBulkEligibleBuyers().length / 5))}m</div></div>
+                <div className="rounded-xl border border-blue-800/40 bg-blue-900/10 p-2"><div className="text-xs text-blue-400">Est. Time</div><div className="text-2xl font-bold text-blue-300">~{getBulkEstimatedMinutes()}m</div></div>
               </div>
 
               {getBulkSkippedBuyers().length > 0 && (
@@ -1855,7 +1863,7 @@ export default function BuyersPage() {
             </div>
             <div className="rounded-xl border border-blue-800/40 bg-blue-900/10 p-2">
               <div className="text-xs text-blue-400">Estimated Time</div>
-              <div className="text-2xl font-bold text-blue-300">~{Math.max(1, Math.ceil(getBulkEligibleBuyers().length / 5))}m</div>
+              <div className="text-2xl font-bold text-blue-300">~{getBulkEstimatedMinutes()}m</div>
             </div>
           </div>
 
