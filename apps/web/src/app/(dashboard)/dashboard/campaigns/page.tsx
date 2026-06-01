@@ -254,6 +254,7 @@ export default function CampaignsPage() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(false);
   const [statusFilter, setStatusFilter] = useState('all');
+  const [actionFilter, setActionFilter] = useState('all');
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [pendingAction, setPendingAction] = useState<null | { batchId: string; action: 'pause' | 'resume' | 'cancel'; campaign?: Campaign }>(null);
@@ -278,9 +279,23 @@ export default function CampaignsPage() {
   }, []);
 
   const filtered = useMemo(() => {
-    if (statusFilter === 'all') return campaigns;
-    return campaigns.filter(c => c.status === statusFilter);
-  }, [campaigns, statusFilter]);
+    return campaigns.filter(c => {
+      const statusMatches = statusFilter === 'all' || c.status === statusFilter;
+
+      let actionMatches = true;
+      if (actionFilter === 'send_buy_box') actionMatches = campaignActionLabel(c) === 'Send Buy Box';
+      if (actionFilter === 'reminder_1') actionMatches = campaignActionLabel(c) === 'Reminder #1';
+      if (actionFilter === 'reminder_2') actionMatches = campaignActionLabel(c) === 'Reminder #2';
+      if (actionFilter === 'reminder_3') actionMatches = campaignActionLabel(c) === 'Reminder #3';
+
+      if (actionFilter === 'needs_attention') {
+        const health = campaignHealth(c);
+        actionMatches = health.tone === 'yellow' || health.tone === 'red';
+      }
+
+      return statusMatches && actionMatches;
+    });
+  }, [campaigns, statusFilter, actionFilter]);
 
   const totals = useMemo(() => {
     return campaigns.reduce((acc, c) => {
@@ -292,6 +307,20 @@ export default function CampaignsPage() {
       acc.failed += c.failed || 0;
       return acc;
     }, { total: 0, sending: 0, paused: 0, completed: 0, sent: 0, failed: 0 });
+  }, [campaigns]);
+
+  const actionTotals = useMemo(() => {
+    return campaigns.reduce((acc: any, c) => {
+      const action = campaignActionLabel(c);
+      acc[action] = (acc[action] || 0) + 1;
+
+      const health = campaignHealth(c);
+      if (health.tone === 'yellow' || health.tone === 'red') {
+        acc.needsAttention += 1;
+      }
+
+      return acc;
+    }, { needsAttention: 0 });
   }, [campaigns]);
 
   const campaignAction = (batchId: string, action: 'pause' | 'resume' | 'cancel') => {
@@ -385,21 +414,54 @@ export default function CampaignsPage() {
         </div>
       </div>
 
-      <div className="rounded-2xl border border-gray-800 bg-gray-900 p-4 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2 flex-wrap">
-          {['all','QUEUED','SENDING','PAUSED','COMPLETED','COMPLETED_WITH_ERRORS','CANCELLED'].map(s => (
-            <button
-              key={s}
-              onClick={() => setStatusFilter(s)}
-              className={`rounded-lg px-3 py-1.5 text-xs border ${
-                statusFilter === s
-                  ? 'bg-purple-700 border-purple-500 text-white'
-                  : 'bg-gray-950 border-gray-800 text-gray-400 hover:text-white'
-              }`}
-            >
-              {s === 'all' ? 'All' : s.replace(/_/g, ' ')}
-            </button>
-          ))}
+      <div className="rounded-2xl border border-gray-800 bg-gray-900 p-4 space-y-3">
+        <div>
+          <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">Status</div>
+          <div className="flex items-center gap-2 flex-wrap">
+            {['all','QUEUED','SENDING','PAUSED','COMPLETED','COMPLETED_WITH_ERRORS','CANCELLED'].map(s => (
+              <button
+                key={s}
+                onClick={() => setStatusFilter(s)}
+                className={`rounded-lg px-3 py-1.5 text-xs border ${
+                  statusFilter === s
+                    ? 'bg-purple-700 border-purple-500 text-white'
+                    : 'bg-gray-950 border-gray-800 text-gray-400 hover:text-white'
+                }`}
+              >
+                {s === 'all' ? 'All' : s.replace(/_/g, ' ')}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">Campaign Type</div>
+          <div className="flex items-center gap-2 flex-wrap">
+            {[
+              ['all', 'All Types', campaigns.length],
+              ['send_buy_box', 'Send Buy Box', actionTotals['Send Buy Box'] || 0],
+              ['reminder_1', 'Reminder #1', actionTotals['Reminder #1'] || 0],
+              ['reminder_2', 'Reminder #2', actionTotals['Reminder #2'] || 0],
+              ['reminder_3', 'Reminder #3', actionTotals['Reminder #3'] || 0],
+              ['needs_attention', 'Needs Attention', actionTotals.needsAttention || 0],
+            ].map(([key, label, count]: any) => (
+              <button
+                key={key}
+                onClick={() => setActionFilter(key)}
+                className={`rounded-lg px-3 py-1.5 text-xs border ${
+                  actionFilter === key
+                    ? key === 'needs_attention'
+                      ? 'bg-red-700 border-red-500 text-white'
+                      : 'bg-purple-700 border-purple-500 text-white'
+                    : key === 'needs_attention'
+                      ? 'bg-red-950/20 border-red-900/40 text-red-300 hover:text-white'
+                      : 'bg-gray-950 border-gray-800 text-gray-400 hover:text-white'
+                }`}
+              >
+                {label} <span className="ml-1 opacity-70">{count}</span>
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -412,7 +474,7 @@ export default function CampaignsPage() {
         {loading ? (
           <div className="p-8 text-center text-gray-500">Loading campaigns...</div>
         ) : filtered.length === 0 ? (
-          <div className="p-8 text-center text-gray-500">No campaigns found.</div>
+          <div className="p-8 text-center text-gray-500">No campaigns match the selected filters.</div>
         ) : (
           <div className="divide-y divide-gray-800">
             {filtered.map(c => {
