@@ -64,6 +64,25 @@ export class BuyersService {
         include: {
           buyBox: true,
           _count: { select: { offers: true, purchases: true } },
+          conversations: {
+            orderBy: { lastMessageAt: 'desc' },
+            take: 1,
+            include: {
+              smsMessages: {
+                orderBy: { createdAt: 'desc' },
+                take: 1,
+                select: {
+                  id: true,
+                  direction: true,
+                  status: true,
+                  deliveryStatus: true,
+                  deliveryErrorCode: true,
+                  deliveryErrorMessage: true,
+                  createdAt: true,
+                },
+              },
+            },
+          },
           events: {
             where: { eventType: { in: ['INTAKE_OPENED','INTAKE_COMPLETED','INTAKE_ABANDONED'] as any } },
             orderBy: { createdAt: 'desc' },
