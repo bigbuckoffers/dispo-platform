@@ -517,9 +517,13 @@ export default function BuyersPage() {
   };
 
   const getQueueReminderCount = (b: any) => {
-    const events = Array.isArray(b?.events) ? b.events : [];
-    const eventCount = events.filter((e: any) => e.eventType === 'INTAKE_REMINDER_SENT').length;
-    return Number(b?.intakeReminderCount || b?.reminderCount || eventCount || 0);
+    const intakeEvents = Array.isArray(b?.intakeEvents) ? b.intakeEvents : [];
+    const oldEvents = Array.isArray(b?.events) ? b.events : [];
+
+    const intakeEventCount = intakeEvents.filter((e: any) => e.eventType === 'INTAKE_REMINDER_SENT').length;
+    const oldEventCount = oldEvents.filter((e: any) => e.eventType === 'INTAKE_REMINDER_SENT').length;
+
+    return Number(b?.intakeReminderCount || b?.reminderCount || intakeEventCount || oldEventCount || 0);
   };
 
   const getQueueNextReminderNumber = (b: any) => getQueueReminderCount(b) + 1;

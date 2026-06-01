@@ -88,6 +88,11 @@ export class BuyersService {
             orderBy: { createdAt: 'desc' },
             take: 1,
           },
+          intakeEvents: {
+            where: { eventType: 'INTAKE_REMINDER_SENT' as any },
+            orderBy: { createdAt: 'desc' },
+            take: 10,
+          },
         },
       }),
       this.prisma.buyer.count({ where }),
