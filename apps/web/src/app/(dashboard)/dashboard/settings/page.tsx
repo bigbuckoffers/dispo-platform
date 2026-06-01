@@ -22,6 +22,11 @@ export default function SettingsPage() {
     maxPerMinute: 5,
     daysOfWeek: [1, 2, 3, 4, 5],
     timezoneMode: 'local',
+    reminderCadenceDays: {
+      reminder1: 2,
+      reminder2: 4,
+      reminder3: 7,
+    },
   });
   const [loadingBuyBoxSettings, setLoadingBuyBoxSettings] = useState(true);
   const [savingBuyBoxSettings, setSavingBuyBoxSettings] = useState(false);
@@ -82,6 +87,16 @@ export default function SettingsPage() {
         : [...prev.daysOfWeek, day].sort();
       return { ...prev, daysOfWeek };
     });
+  }
+
+  function updateReminderCadence(key: 'reminder1' | 'reminder2' | 'reminder3', value: number) {
+    setBuyBoxSettings((prev: any) => ({
+      ...prev,
+      reminderCadenceDays: {
+        ...(prev.reminderCadenceDays || {}),
+        [key]: value,
+      },
+    }));
   }
 
   return (
@@ -170,6 +185,39 @@ export default function SettingsPage() {
                   })}
                 </div>
               </div>
+
+              <div className="rounded-lg border border-gray-800 bg-gray-950/60 p-3">
+                <div className="flex items-center justify-between gap-3 mb-3">
+                  <div>
+                    <div className="text-xs font-semibold text-white">Reminder cadence</div>
+                    <div className="text-xs text-gray-500 mt-0.5">Controls when reminder buttons become available in the Buyer Follow-Up queue.</div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-3">
+                  {[
+                    ['reminder1', 'Reminder #1 after original send'],
+                    ['reminder2', 'Reminder #2 after Reminder #1'],
+                    ['reminder3', 'Reminder #3 after Reminder #2'],
+                  ].map(([key, label]: any) => (
+                    <label key={key} className="space-y-1">
+                      <span className="text-xs text-gray-500">{label}</span>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          min={0}
+                          max={key === 'reminder1' ? 30 : key === 'reminder2' ? 60 : 90}
+                          value={(buyBoxSettings as any).reminderCadenceDays?.[key] ?? (key === 'reminder1' ? 2 : key === 'reminder2' ? 4 : 7)}
+                          onChange={e => updateReminderCadence(key, Number(e.target.value))}
+                          className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:border-purple-500"
+                        />
+                        <span className="text-xs text-gray-500">days</span>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
 
               <div className="flex items-center justify-between gap-3 pt-2">
                 <div className="text-xs text-gray-500">

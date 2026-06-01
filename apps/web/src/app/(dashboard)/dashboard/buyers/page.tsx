@@ -74,6 +74,11 @@ export default function BuyersPage() {
     maxPerMinute: 5,
     daysOfWeek: [1, 2, 3, 4, 5],
     timezoneMode: 'local',
+    reminderCadenceDays: {
+      reminder1: 2,
+      reminder2: 4,
+      reminder3: 7,
+    },
   });
   const [loadingBuyBoxSendingRules, setLoadingBuyBoxSendingRules] = useState(false);
   const [bulkUseCustomSendingRules, setBulkUseCustomSendingRules] = useState(false);
@@ -200,7 +205,15 @@ export default function BuyersPage() {
       const r = await fetch(`${API}/settings/buy-box-sending`);
       if (!r.ok) throw new Error('Could not load sending rules');
       const d = await r.json();
-      setBuyBoxSendingRules(d);
+      setBuyBoxSendingRules({
+        ...d,
+        reminderCadenceDays: {
+          reminder1: 2,
+          reminder2: 4,
+          reminder3: 7,
+          ...(d?.reminderCadenceDays || {}),
+        },
+      });
       setBulkSendingRulesDraft(d);
     } catch (e) {
       const fallbackRules = {
@@ -527,6 +540,41 @@ export default function BuyersPage() {
   };
 
   const getQueueNextReminderNumber = (b: any) => getQueueReminderCount(b) + 1;
+
+  const getQueueReminderAnchorDate = (b: any) => {
+    const intakeEvents = Array.isArray(b?.intakeEvents) ? b.intakeEvents : [];
+    const reminders = intakeEvents
+      .filter((e: any) => e.eventType === 'INTAKE_REMINDER_SENT')
+      .sort((a: any, z: any) => new Date(z.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    if (reminders[0]?.createdAt) return new Date(reminders[0].createdAt);
+    if (b.intakeSentAt) return new Date(b.intakeSentAt);
+    if (b.conversations?.[0]?.smsMessages?.[0]?.createdAt) return new Date(b.conversations[0].smsMessages[0].createdAt);
+    return null;
+  };
+
+  const getQueueReminderEligibility = (b: any) => {
+    const reminderNumber = getQueueNextReminderNumber(b);
+    const cadence = buyBoxSendingRules?.reminderCadenceDays || { reminder1: 2, reminder2: 4, reminder3: 7 };
+    const delayDays = Number(cadence[`reminder${reminderNumber}`] ?? (reminderNumber === 1 ? 2 : reminderNumber === 2 ? 4 : 7));
+
+    if (reminderNumber > 3) return { ready: false, daysRemaining: 0, readyAt: null, delayDays };
+    if (!delayDays || delayDays <= 0) return { ready: true, daysRemaining: 0, readyAt: null, delayDays };
+
+    const anchor = getQueueReminderAnchorDate(b);
+    if (!anchor) return { ready: true, daysRemaining: 0, readyAt: null, delayDays };
+
+    const readyAt = new Date(anchor.getTime() + delayDays * 24 * 60 * 60 * 1000);
+    const msRemaining = readyAt.getTime() - Date.now();
+    const daysRemaining = Math.max(0, Math.ceil(msRemaining / (24 * 60 * 60 * 1000)));
+
+    return {
+      ready: msRemaining <= 0,
+      daysRemaining,
+      readyAt,
+      delayDays,
+    };
+  };
 
   const getQueueReminderMessage = (b: any, link: string) => {
     const reminderNumber = getQueueNextReminderNumber(b);
@@ -978,27 +1026,33 @@ export default function BuyersPage() {
               </button>
             )}
 
-            {key === 'needs_followup' && getQueueNextReminderNumber(b) <= 3 && (
-              <button
-                onClick={()=>setQueueConfirmAction({ type: 'reminder', buyer: b, reminderNumber: getQueueNextReminderNumber(b) })}
-                disabled={!!queueActionLoading[b.id] || !b.phone}
-                className="px-2 py-1 bg-yellow-900/40 hover:bg-yellow-800/70 disabled:opacity-40 text-yellow-300 rounded text-xs"
-                title={!b.phone ? 'Buyer has no phone number' : `Send reminder #${getQueueNextReminderNumber(b)}`}
-              >
-                {queueActionLoading[b.id] === 'reminder' ? 'Sending...' : `Reminder #${getQueueNextReminderNumber(b)}`}
-              </button>
-            )}
+            {key === 'needs_followup' && getQueueNextReminderNumber(b) <= 3 && (() => {
+              const eligibility = getQueueReminderEligibility(b);
+              return (
+                <button
+                  onClick={()=> eligibility.ready && setQueueConfirmAction({ type: 'reminder', buyer: b, reminderNumber: getQueueNextReminderNumber(b) })}
+                  disabled={!!queueActionLoading[b.id] || !b.phone || !eligibility.ready}
+                  className="px-2 py-1 bg-yellow-900/40 hover:bg-yellow-800/70 disabled:opacity-40 text-yellow-300 rounded text-xs"
+                  title={!b.phone ? 'Buyer has no phone number' : eligibility.ready ? `Send reminder #${getQueueNextReminderNumber(b)}` : `Ready in ${eligibility.daysRemaining} day${eligibility.daysRemaining === 1 ? '' : 's'}`}
+                >
+                  {queueActionLoading[b.id] === 'reminder' ? 'Sending...' : eligibility.ready ? `Reminder #${getQueueNextReminderNumber(b)}` : `Ready in ${eligibility.daysRemaining}d`}
+                </button>
+              );
+            })()}
 
-            {['sent','opened','started'].includes(key) && getQueueNextReminderNumber(b) <= 3 && (
-              <button
-                onClick={()=>setQueueConfirmAction({ type: 'reminder', buyer: b, reminderNumber: getQueueNextReminderNumber(b) })}
-                disabled={!!queueActionLoading[b.id] || !b.phone}
-                className="px-2 py-1 bg-blue-900/40 hover:bg-blue-800/70 disabled:opacity-40 text-blue-300 rounded text-xs"
-                title={!b.phone ? 'Buyer has no phone number' : `Send reminder #${getQueueNextReminderNumber(b)}`}
-              >
-                {queueActionLoading[b.id] === 'reminder' ? 'Sending...' : `Reminder #${getQueueNextReminderNumber(b)}`}
-              </button>
-            )}
+            {['sent','opened','started'].includes(key) && getQueueNextReminderNumber(b) <= 3 && (() => {
+              const eligibility = getQueueReminderEligibility(b);
+              return (
+                <button
+                  onClick={()=> eligibility.ready && setQueueConfirmAction({ type: 'reminder', buyer: b, reminderNumber: getQueueNextReminderNumber(b) })}
+                  disabled={!!queueActionLoading[b.id] || !b.phone || !eligibility.ready}
+                  className="px-2 py-1 bg-blue-900/40 hover:bg-blue-800/70 disabled:opacity-40 text-blue-300 rounded text-xs"
+                  title={!b.phone ? 'Buyer has no phone number' : eligibility.ready ? `Send reminder #${getQueueNextReminderNumber(b)}` : `Ready in ${eligibility.daysRemaining} day${eligibility.daysRemaining === 1 ? '' : 's'}`}
+                >
+                  {queueActionLoading[b.id] === 'reminder' ? 'Sending...' : eligibility.ready ? `Reminder #${getQueueNextReminderNumber(b)}` : `Ready in ${eligibility.daysRemaining}d`}
+                </button>
+              );
+            })()}
 
             {['sent','opened','started'].includes(key) && getQueueNextReminderNumber(b) > 3 && (
               <button

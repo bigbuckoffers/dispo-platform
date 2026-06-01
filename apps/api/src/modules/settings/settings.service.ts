@@ -9,6 +9,11 @@ const DEFAULT_BUY_BOX_SENDING = {
   maxPerMinute: 5,
   daysOfWeek: [1, 2, 3, 4, 5],
   timezoneMode: 'local',
+  reminderCadenceDays: {
+    reminder1: 2,
+    reminder2: 4,
+    reminder3: 7,
+  },
 };
 
 @Injectable()
@@ -25,12 +30,20 @@ export class SettingsService {
       .map((d: any) => Number(d))
       .filter((d: number) => Number.isInteger(d) && d >= 0 && d <= 6);
 
+    const rawCadence = input.reminderCadenceDays || {};
+    const reminderCadenceDays = {
+      reminder1: Math.min(30, Math.max(0, Number.isFinite(Number(rawCadence.reminder1)) ? Number(rawCadence.reminder1) : DEFAULT_BUY_BOX_SENDING.reminderCadenceDays.reminder1)),
+      reminder2: Math.min(60, Math.max(0, Number.isFinite(Number(rawCadence.reminder2)) ? Number(rawCadence.reminder2) : DEFAULT_BUY_BOX_SENDING.reminderCadenceDays.reminder2)),
+      reminder3: Math.min(90, Math.max(0, Number.isFinite(Number(rawCadence.reminder3)) ? Number(rawCadence.reminder3) : DEFAULT_BUY_BOX_SENDING.reminderCadenceDays.reminder3)),
+    };
+
     return {
       startHour: Math.min(23, Math.max(0, startHour)),
       endHour: Math.min(23, Math.max(0, endHour)),
       maxPerMinute: Math.min(20, Math.max(1, maxPerMinute)),
       daysOfWeek: daysOfWeek.length ? Array.from(new Set(daysOfWeek)).sort() : DEFAULT_BUY_BOX_SENDING.daysOfWeek,
       timezoneMode: input.timezoneMode === 'eastern' ? 'eastern' : 'local',
+      reminderCadenceDays,
     };
   }
 
