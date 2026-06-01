@@ -1837,8 +1837,8 @@ export default function BuyersPage() {
 
       <ConfirmActionModal
         open={showBulkSendConfirm}
-        title="Send Buy Box Campaign?"
-        description="This will send real SMS messages from the backend using the selected message and each buyer's unique Buy Box link."
+        title="{getBulkActionShortLabel().includes('Reminder') ? `Send ${getBulkActionShortLabel()} Campaign?` : 'Send Buy Box Campaign?'}"
+        description="{getBulkActionShortLabel().includes('Reminder') ? `This will send ${getBulkActionShortLabel()} by real SMS using each buyer's unique Buy Box link.` : `This will send real SMS messages from the backend using the selected message and each buyer's unique Buy Box link.`}"
         confirmLabel="Send Campaign"
         cancelLabel="Cancel"
         variant="normal"
@@ -1869,7 +1869,7 @@ export default function BuyersPage() {
 
           <div className="rounded-xl border border-gray-800 bg-gray-900/70 p-2">
             <div className="text-xs uppercase tracking-wide text-gray-500">Delivery</div>
-            <div className="mt-1 text-sm text-gray-300">5 texts per minute · 1 SMS every 12 seconds</div>
+            <div className="mt-1 text-sm text-gray-300">{getFinalBulkSendingRules().maxPerMinute || 5} texts per minute · backend drip</div>
           </div>
 
           <div className="rounded-xl border border-gray-800 bg-gray-900/70 p-2">
