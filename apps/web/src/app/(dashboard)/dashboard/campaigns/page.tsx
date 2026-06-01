@@ -155,6 +155,7 @@ function engagementSummary(c: Campaign | null) {
     submitted: 0,
     replied: 0,
     needsFollowUp: 0,
+    verifyPhone: 0,
   };
 }
 
@@ -163,6 +164,7 @@ function engagementBadgeClass(label: string) {
   if (label === 'Started') return 'border-cyan-800/40 bg-cyan-950/20 text-cyan-200';
   if (label === 'Opened') return 'border-blue-800/40 bg-blue-950/20 text-blue-200';
   if (label === 'Replies') return 'border-purple-800/40 bg-purple-950/20 text-purple-200';
+  if (label === 'Verify Phone') return 'border-red-800/40 bg-red-950/20 text-red-200';
   return 'border-yellow-800/40 bg-yellow-950/20 text-yellow-200';
 }
 
@@ -537,6 +539,7 @@ export default function CampaignsPage() {
                           ['Submitted', engagementSummary(c).submitted],
                           ['Replies', engagementSummary(c).replied],
                           ['Follow-Up', engagementSummary(c).needsFollowUp],
+                          ['Verify Phone', engagementSummary(c).verifyPhone],
                         ].map(([label, value]: any) => (
                           <span key={label} className={`rounded-md border px-2 py-1 ${engagementBadgeClass(label)}`}>
                             {label} {value}
@@ -641,6 +644,7 @@ export default function CampaignsPage() {
                   ['Submitted', engagementSummary(selectedCampaign).submitted],
                   ['Replies', engagementSummary(selectedCampaign).replied],
                   ['Follow-Up', engagementSummary(selectedCampaign).needsFollowUp],
+                  ['Verify Phone', engagementSummary(selectedCampaign).verifyPhone],
                 ].map(([label, value]) => (
                   <div key={label} className="rounded-xl border border-gray-800 bg-gray-900/70 p-3">
                     <div className="text-xs text-gray-500">{label}</div>
@@ -765,6 +769,7 @@ export default function CampaignsPage() {
                                   e.opened ? 'Opened' : null,
                                   e.replied ? 'Replied' : null,
                                   e.needsFollowUp ? 'Follow-Up' : null,
+                                  e.verifyPhone ? 'Verify Phone' : null,
                                 ].filter(Boolean);
 
                                 return tags.length ? (
