@@ -413,6 +413,29 @@ export default function BuyersPage() {
     return Math.max(1, Math.ceil(eligibleCount / maxPerMinute));
   };
 
+  const getBulkConfirmTitle = () => {
+    const action = getBulkActionShortLabel();
+    return action.includes('Reminder') ? `Send ${action} Campaign?` : 'Send Buy Box Campaign?';
+  };
+
+  const getBulkConfirmBody = () => {
+    const action = getBulkActionShortLabel();
+    return action.includes('Reminder')
+      ? `This will send ${action} by real SMS using each buyer's unique Buy Box link.`
+      : `This will send real SMS messages from the backend using the selected message and each buyer's unique Buy Box link.`;
+  };
+
+  const getBulkConfirmButtonLabel = () => {
+    const action = getBulkActionShortLabel();
+    if (bulkSending) return 'Sending...';
+    return action.includes('Reminder') ? `Send ${action}` : 'Send Buy Box';
+  };
+
+  const getBulkMaxPerMinute = () => {
+    const rules: any = getFinalBulkSendingRules();
+    return Math.max(1, Number(rules?.maxPerMinute || 5));
+  };
+
   const openBulkBuyBoxModal = () => {
     setBulkUseCustomSendingRules(false);
     void loadBuyBoxSendingRules();
@@ -1669,7 +1692,7 @@ export default function BuyersPage() {
                         {formatHourLabel(getFinalBulkSendingRules().startHour)}–{formatHourLabel(getFinalBulkSendingRules().endHour)}
                       </span>
                       <span className="rounded-md border border-gray-800 bg-gray-900 px-2 py-1 font-medium text-white">
-                        {getFinalBulkSendingRules().maxPerMinute || 5}/min
+                        {getBulkMaxPerMinute()}/min
                       </span>
                     </>
                   )}
@@ -1756,11 +1779,19 @@ export default function BuyersPage() {
                     <label className="space-y-1">
                       <span className="text-xs text-gray-500">Texts/min</span>
                       <input
-                        type="number"
-                        min={1}
-                        max={20}
-                        value={bulkSendingRulesDraft.maxPerMinute}
-                        onChange={e => setBulkSendingRulesDraft((s: any) => ({ ...s, maxPerMinute: Number(e.target.value) }))}
+                        type="text"
+                        inputMode="numeric"
+                        value={bulkSendingRulesDraft.maxPerMinute ?? ''}
+                        onChange={e => {
+                          const raw = e.target.value.replace(/[^0-9]/g, '');
+                          setBulkSendingRulesDraft((s: any) => ({ ...s, maxPerMinute: raw === '' ? '' : Number(raw) }));
+                        }}
+                        onBlur={() => {
+                          setBulkSendingRulesDraft((s: any) => {
+                            const n = Math.max(1, Math.min(20, Number(s.maxPerMinute || 5)));
+                            return { ...s, maxPerMinute: n };
+                          });
+                        }}
                         className="w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-xs text-white"
                       />
                     </label>
@@ -1837,8 +1868,8 @@ export default function BuyersPage() {
 
       <ConfirmActionModal
         open={showBulkSendConfirm}
-        title="{getBulkActionShortLabel().includes('Reminder') ? `Send ${getBulkActionShortLabel()} Campaign?` : 'Send Buy Box Campaign?'}"
-        description="{getBulkActionShortLabel().includes('Reminder') ? `This will send ${getBulkActionShortLabel()} by real SMS using each buyer's unique Buy Box link.` : `This will send real SMS messages from the backend using the selected message and each buyer's unique Buy Box link.`}"
+        title="{getBulkConfirmTitle()}"
+        description="{getBulkConfirmBody()}"
         confirmLabel="Send Campaign"
         cancelLabel="Cancel"
         variant="normal"
