@@ -84,9 +84,9 @@ export class BuyersService {
             },
           },
           events: {
-            where: { eventType: { in: ['INTAKE_OPENED','INTAKE_COMPLETED','INTAKE_ABANDONED','INTAKE_LINK_SENT','INTAKE_REMINDER_SENT'] as any } },
+            where: { eventType: { in: ['INTAKE_OPENED','INTAKE_COMPLETED','INTAKE_ABANDONED'] as any } },
             orderBy: { createdAt: 'desc' },
-            take: 20,
+            take: 1,
           },
         },
       }),
