@@ -69,15 +69,32 @@ export class MessagesService {
   async sendMessage(orgId: string, buyerId: string, body: string, options: { intakeTrackingType?: 'link_sent' | 'reminder'; trackingMetadata?: any } = {}) {
     const buyer = await this.prisma.buyer.findUnique({ where: { id: buyerId } });
     if (!buyer?.phone) throw new Error('Buyer has no phone number');
-    const twilioSid = await this.sendViaTwilio(buyer.phone, body);
+
+    let finalBody = body || '';
+
+    if (options.intakeTrackingType === 'link_sent' || options.intakeTrackingType === 'reminder') {
+      const active = await this.intakeService.ensureActiveToken(buyer.id);
+
+      if (finalBody.includes('{{link}}')) {
+        finalBody = finalBody.replaceAll('{{link}}', active.intakeLink);
+      }
+
+      finalBody = finalBody.replace(/https?:\/\/[^\s]+\/intake\/(undefined|null|BUYER_UNIQUE_LINK)/g, active.intakeLink);
+
+      if (!/\/intake\/[A-Za-z0-9_-]+/.test(finalBody)) {
+        finalBody = `${finalBody.trim()} ${active.intakeLink}`.trim();
+      }
+    }
+
+    const twilioSid = await this.sendViaTwilio(buyer.phone, finalBody);
     const conv = await this.prisma.conversation.upsert({
       where: { organizationId_buyerId: { organizationId: orgId, buyerId } },
-      create: { organizationId: orgId, buyerId, lastMessageAt: new Date(), lastMessageBody: body },
-      update: { lastMessageAt: new Date(), lastMessageBody: body },
+      create: { organizationId: orgId, buyerId, lastMessageAt: new Date(), lastMessageBody: finalBody },
+      update: { lastMessageAt: new Date(), lastMessageBody: finalBody },
     });
     const message = await this.prisma.smsMessage.create({
       data: {
-        conversationId: conv.id, body, direction: 'OUTBOUND', status: 'SENT',
+        conversationId: conv.id, body: finalBody, direction: 'OUTBOUND', status: 'SENT',
         twilioSid, fromNumber: this.config.get('TWILIO_PHONE_NUMBER'), toNumber: buyer.phone,
       },
     });
@@ -85,7 +102,7 @@ export class MessagesService {
     try {
       await this.intakeService.logMessagingIntakeEventFromMessage({
         buyerId,
-        messageBody: body,
+        messageBody: finalBody,
         intakeTrackingType: options.intakeTrackingType || 'link_sent',
         metadata: {
           source: options.trackingMetadata?.source || 'dispoai_messaging',
