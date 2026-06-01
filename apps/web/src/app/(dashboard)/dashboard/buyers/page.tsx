@@ -1868,9 +1868,9 @@ export default function BuyersPage() {
 
       <ConfirmActionModal
         open={showBulkSendConfirm}
-        title="{getBulkConfirmTitle()}"
-        description="{getBulkConfirmBody()}"
-        confirmLabel="Send Campaign"
+        title={getBulkConfirmTitle()}
+        description={getBulkConfirmBody()}
+        confirmLabel={getBulkConfirmButtonLabel()}
         cancelLabel="Cancel"
         variant="normal"
         loading={bulkSending}
