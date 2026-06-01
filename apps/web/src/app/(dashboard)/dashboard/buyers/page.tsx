@@ -1210,6 +1210,8 @@ export default function BuyersPage() {
           <div className="flex flex-wrap gap-2 mb-4">
             {[
               ['all','All'],
+              ['verify_phone','Verify Phone'],
+              ['needs_followup','Needs Follow-Up'],
               ['not_sent','Not Sent'],
               ['sent','Sent'],
               ['opened','Opened'],
@@ -1227,7 +1229,15 @@ export default function BuyersPage() {
             ))}
           </div>
 
-          <div className="grid grid-cols-4 gap-2 mb-4">
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-2 mb-4">
+            <div className="rounded-xl border border-red-800/40 bg-red-900/10 p-2">
+              <div className="text-xs text-red-400">Verify Phone</div>
+              <div className="text-2xl font-bold text-red-300">{buyBoxQueueCounts.verify_phone}</div>
+            </div>
+            <div className="rounded-xl border border-yellow-800/40 bg-yellow-900/10 p-2">
+              <div className="text-xs text-yellow-400">Needs Follow-Up</div>
+              <div className="text-2xl font-bold text-yellow-300">{buyBoxQueueCounts.needs_followup}</div>
+            </div>
             <div className="rounded-xl border border-green-800/40 bg-green-900/10 p-2">
               <div className="text-xs text-green-400">Send Buy Box Forms</div>
               <div className="text-2xl font-bold text-green-300">{buyBoxQueueCounts.not_sent}</div>
@@ -1240,9 +1250,9 @@ export default function BuyersPage() {
               <div className="text-xs text-purple-400">Submitted</div>
               <div className="text-2xl font-bold text-purple-300">{buyBoxQueueCounts.submitted}</div>
             </div>
-            <div className="rounded-xl border border-yellow-800/40 bg-yellow-900/10 p-2">
-              <div className="text-xs text-yellow-400">Needs Review</div>
-              <div className="text-2xl font-bold text-yellow-300">{buyBoxQueueCounts.needs_review}</div>
+            <div className="rounded-xl border border-orange-800/40 bg-orange-900/10 p-2">
+              <div className="text-xs text-orange-400">Needs Review</div>
+              <div className="text-2xl font-bold text-orange-300">{buyBoxQueueCounts.needs_review}</div>
             </div>
           </div>
 
