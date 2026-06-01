@@ -234,7 +234,7 @@ export class MessagesService {
   }
 
   async getBulkCampaigns(orgId: string) {
-    return this.prisma.bulkSmsCampaign.findMany({
+    const campaigns: any[] = await this.prisma.bulkSmsCampaign.findMany({
       where: { organizationId: orgId },
       orderBy: { createdAt: 'desc' },
       take: 50,
@@ -245,15 +245,127 @@ export class MessagesService {
         },
       },
     } as any);
+
+    return this.attachBulkCampaignEngagementSummaries(campaigns);
   }
 
   async getBulkCampaign(orgId: string, batchId: string) {
-    return this.prisma.bulkSmsCampaign.findFirst({
+    const campaign: any = await this.prisma.bulkSmsCampaign.findFirst({
       where: { organizationId: orgId, batchId },
       include: {
         recipients: { orderBy: { createdAt: 'asc' } },
       },
     } as any);
+
+    const enriched = await this.attachBulkCampaignEngagementSummaries(campaign ? [campaign] : []);
+    return enriched[0] || null;
+  }
+
+  private async attachBulkCampaignEngagementSummaries(campaigns: any[]) {
+    if (!campaigns?.length) return campaigns;
+
+    const allBuyerIds = Array.from(new Set(
+      campaigns.flatMap((c: any) => (c.recipients || []).map((r: any) => r.buyerId).filter(Boolean)),
+    ));
+
+    if (!allBuyerIds.length) {
+      return campaigns.map((c: any) => ({
+        ...c,
+        engagementSummary: {
+          opened: 0,
+          started: 0,
+          submitted: 0,
+          replied: 0,
+          needsFollowUp: 0,
+        },
+        recipientEngagement: [],
+      }));
+    }
+
+    const buyers: any[] = await this.prisma.buyer.findMany({
+      where: { id: { in: allBuyerIds } },
+      select: {
+        id: true,
+        intakeOpenedAt: true,
+        intakeStartedAt: true,
+        intakeSubmittedAt: true,
+      },
+    } as any);
+
+    const buyerById = new Map(buyers.map((b: any) => [b.id, b]));
+
+    const conversations: any[] = await this.prisma.conversation.findMany({
+      where: { buyerId: { in: allBuyerIds } },
+      include: {
+        smsMessages: {
+          where: { direction: 'INBOUND' },
+          orderBy: { createdAt: 'asc' },
+          select: { id: true, createdAt: true, direction: true },
+        },
+      },
+    } as any);
+
+    const inboundByBuyerId = new Map(conversations.map((c: any) => [c.buyerId, c.smsMessages || []]));
+
+    const happenedAfter = (value: any, since: Date) => {
+      if (!value) return false;
+      return new Date(value).getTime() >= since.getTime();
+    };
+
+    return campaigns.map((campaign: any) => {
+      let opened = 0;
+      let started = 0;
+      let submitted = 0;
+      let replied = 0;
+      let needsFollowUp = 0;
+
+      const recipientEngagement = (campaign.recipients || []).map((recipient: any) => {
+        const buyer = buyerById.get(recipient.buyerId);
+        const since = recipient.sentAt
+          ? new Date(recipient.sentAt)
+          : new Date(campaign.startedAt || campaign.createdAt);
+
+        const hasOpened = happenedAfter(buyer?.intakeOpenedAt, since);
+        const hasStarted = happenedAfter(buyer?.intakeStartedAt, since);
+        const hasSubmitted = happenedAfter(buyer?.intakeSubmittedAt, since);
+        const hasReply = (inboundByBuyerId.get(recipient.buyerId) || []).some((m: any) => happenedAfter(m.createdAt, since));
+
+        const status = String(recipient.status || '').toUpperCase();
+        const deliveryStatus = String(recipient.deliveryStatus || '').toUpperCase();
+        const wasSent = ['SENT', 'DELIVERED'].includes(status) || ['SENT', 'DELIVERED'].includes(deliveryStatus);
+
+        if (hasOpened) opened += 1;
+        if (hasStarted) started += 1;
+        if (hasSubmitted) submitted += 1;
+        if (hasReply) replied += 1;
+
+        const engaged = hasOpened || hasStarted || hasSubmitted || hasReply;
+        const shouldFollowUp = wasSent && !engaged;
+
+        if (shouldFollowUp) needsFollowUp += 1;
+
+        return {
+          buyerId: recipient.buyerId,
+          opened: hasOpened,
+          started: hasStarted,
+          submitted: hasSubmitted,
+          replied: hasReply,
+          needsFollowUp: shouldFollowUp,
+        };
+      });
+
+      return {
+        ...campaign,
+        engagementSummary: {
+          opened,
+          started,
+          submitted,
+          replied,
+          needsFollowUp,
+        },
+        recipientEngagement,
+      };
+    });
   }
 
   private async recalcBulkCampaignCounts(campaignId: string) {
