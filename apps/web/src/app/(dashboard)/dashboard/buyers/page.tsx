@@ -389,6 +389,22 @@ export default function BuyersPage() {
     return bulkUseCustomSendingRules ? bulkSendingRulesDraft : buyBoxSendingRules;
   };
 
+  const getBulkActionShortLabel = () => {
+    const action: any = getSelectedBuyBoxQueueBulkAction();
+    const label = String(action?.label || 'Bulk Send Buy Box Forms');
+
+    if (label.includes('Reminder #1')) return 'Reminder #1';
+    if (label.includes('Reminder #2')) return 'Reminder #2';
+    if (label.includes('Reminder #3')) return 'Reminder #3';
+    if (label.includes('Buy Box')) return 'Send Buy Box';
+    return label.replace('Bulk ', '');
+  };
+
+  const getBulkActionFullLabel = () => {
+    const action: any = getSelectedBuyBoxQueueBulkAction();
+    return String(action?.label || 'Bulk Send Buy Box Forms');
+  };
+
   const openBulkBuyBoxModal = () => {
     setBulkUseCustomSendingRules(false);
     void loadBuyBoxSendingRules();
@@ -1492,7 +1508,7 @@ export default function BuyersPage() {
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <h3 className="text-lg font-semibold text-white">{getSelectedBuyBoxQueueBulkAction().label || "Send Buy Box Forms in Bulk"}</h3>
-                  <p className="text-sm text-gray-400 mt-1">Backend drip delivery: 5 texts per minute. Each buyer gets their own unique Buy Box link.</p>
+                  <p className="text-sm text-gray-400 mt-1">{getBulkActionFullLabel()} · Backend drip delivery. Each buyer gets their own unique Buy Box link.</p>
                 </div>
                 <button
                   onClick={()=>setShowBulkBuyBoxModal(false)}
@@ -1545,7 +1561,7 @@ export default function BuyersPage() {
               <div>
                 <label className="mb-2 block text-xs font-medium uppercase tracking-wide text-gray-500">Campaign Name</label>
                 <input
-                  value={bulkCampaignName}
+                  value={bulkCampaignName || getBulkActionFullLabel()}
                   onChange={e=>setBulkCampaignName(e.target.value)}
                   placeholder="Ex: May Buyer Reactivation, VIP Buy Box Cleanup"
                   className="w-full rounded-lg border border-gray-700 bg-gray-900 px-4 py-2 text-sm text-white placeholder-gray-500 focus:border-purple-500 focus:outline-none"
@@ -1629,6 +1645,9 @@ export default function BuyersPage() {
             <div className="shrink-0 border-t border-gray-800 bg-gray-950/95 px-5 py-2">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex min-w-0 flex-wrap items-center gap-2 text-xs">
+                  <span className="rounded-md border border-purple-800/40 bg-purple-950/30 px-2 py-1 font-semibold text-purple-200">
+                    {getBulkActionShortLabel()}
+                  </span>
                   <span className="text-gray-500">Rules</span>
 
                   {loadingBuyBoxSendingRules ? (
@@ -1682,7 +1701,7 @@ export default function BuyersPage() {
                     disabled={bulkSending || !!bulkResult || getBulkEligibleBuyers().length===0}
                     className="h-8 rounded-md bg-purple-600 px-4 text-xs font-semibold text-white hover:bg-purple-500 disabled:opacity-50"
                   >
-                    {bulkSending ? 'Sending...' : `Confirm ${getBulkEligibleBuyers().length}`}
+                    {bulkSending ? 'Sending...' : `Confirm ${getBulkActionShortLabel()} (${getBulkEligibleBuyers().length})`}
                   </button>
                 </div>
               </div>
