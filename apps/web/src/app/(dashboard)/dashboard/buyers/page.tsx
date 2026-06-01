@@ -1626,43 +1626,37 @@ export default function BuyersPage() {
               )}
             </div>
 
-            <div className="shrink-0 border-t border-gray-800 bg-gray-950/95 px-6 py-3">
-              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500">
-                  <span>Backend drip</span>
-                  <span className="text-gray-700">·</span>
-                  <span>{getFinalBulkSendingRules().maxPerMinute || 5} texts/min</span>
-                  <span className="text-gray-700">·</span>
-                  <span>pauses/resumes by window</span>
+            <div className="shrink-0 border-t border-gray-800 bg-gray-950/95 px-5 py-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex min-w-0 flex-wrap items-center gap-2 text-xs">
+                  <span className="text-gray-500">Rules</span>
+
+                  {loadingBuyBoxSendingRules ? (
+                    <span className="rounded-md border border-gray-800 bg-gray-900 px-2 py-1 text-gray-500">Loading...</span>
+                  ) : (
+                    <>
+                      <span className="rounded-md border border-gray-800 bg-gray-900 px-2 py-1 font-medium text-white">
+                        {formatSendingDays(getFinalBulkSendingRules().daysOfWeek)}
+                      </span>
+                      <span className="rounded-md border border-gray-800 bg-gray-900 px-2 py-1 font-medium text-white">
+                        {formatHourLabel(getFinalBulkSendingRules().startHour)}–{formatHourLabel(getFinalBulkSendingRules().endHour)}
+                      </span>
+                      <span className="rounded-md border border-gray-800 bg-gray-900 px-2 py-1 font-medium text-white">
+                        {getFinalBulkSendingRules().maxPerMinute || 5}/min
+                      </span>
+                    </>
+                  )}
+
+                  <button
+                    onClick={loadBuyBoxSendingRules}
+                    className="rounded-md px-2 py-1 text-xs text-purple-300 hover:bg-purple-950/40 hover:text-white"
+                  >
+                    Refresh
+                  </button>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
-                  <div className="flex items-center gap-2 rounded-lg border border-purple-800/40 bg-purple-950/20 px-3 py-2 text-xs">
-                    <span className="font-semibold uppercase tracking-wide text-purple-200">Rules</span>
-                    {loadingBuyBoxSendingRules ? (
-                      <span className="text-gray-500">Loading...</span>
-                    ) : (
-                      <>
-                        <span className="rounded-md bg-gray-950/70 px-2 py-1 text-white">
-                          {formatSendingDays(getFinalBulkSendingRules().daysOfWeek)}
-                        </span>
-                        <span className="rounded-md bg-gray-950/70 px-2 py-1 text-white">
-                          {formatHourLabel(getFinalBulkSendingRules().startHour)}–{formatHourLabel(getFinalBulkSendingRules().endHour)}
-                        </span>
-                        <span className="rounded-md bg-gray-950/70 px-2 py-1 text-white">
-                          {getFinalBulkSendingRules().maxPerMinute || 5}/min
-                        </span>
-                      </>
-                    )}
-                    <button
-                      onClick={loadBuyBoxSendingRules}
-                      className="text-purple-300 hover:text-white"
-                    >
-                      Refresh
-                    </button>
-                  </div>
-
-                  <label className="flex h-9 items-center gap-2 rounded-lg border border-gray-800 bg-gray-950/70 px-3 text-xs text-gray-400">
+                  <label className="flex h-8 items-center gap-2 rounded-md border border-gray-800 bg-gray-900 px-2.5 text-xs text-gray-300">
                     <input
                       type="checkbox"
                       checked={bulkUseCustomSendingRules}
@@ -1670,15 +1664,15 @@ export default function BuyersPage() {
                         setBulkUseCustomSendingRules(e.target.checked);
                         if (e.target.checked) setBulkSendingRulesDraft(buyBoxSendingRules);
                       }}
-                      className="h-4 w-4 accent-purple-600"
+                      className="h-3.5 w-3.5 accent-purple-600"
                     />
-                    <span><span className="text-gray-200">Custom rules</span></span>
+                    Custom
                   </label>
 
                   <button
                     onClick={()=>setShowBulkBuyBoxModal(false)}
                     disabled={bulkSending}
-                    className="h-9 rounded-lg bg-gray-800 px-4 text-sm text-gray-200 hover:bg-gray-700 disabled:opacity-50"
+                    className="h-8 rounded-md bg-gray-800 px-3 text-xs text-gray-200 hover:bg-gray-700 disabled:opacity-50"
                   >
                     Close
                   </button>
@@ -1686,9 +1680,9 @@ export default function BuyersPage() {
                   <button
                     onClick={runBackendBulkBuyBoxSend}
                     disabled={bulkSending || !!bulkResult || getBulkEligibleBuyers().length===0}
-                    className="h-9 rounded-lg bg-purple-600 px-5 text-sm font-medium text-white hover:bg-purple-500 disabled:opacity-50"
+                    className="h-8 rounded-md bg-purple-600 px-4 text-xs font-semibold text-white hover:bg-purple-500 disabled:opacity-50"
                   >
-                    {bulkSending ? 'Sending...' : `Confirm Send to ${getBulkEligibleBuyers().length}`}
+                    {bulkSending ? 'Sending...' : `Confirm ${getBulkEligibleBuyers().length}`}
                   </button>
                 </div>
               </div>
