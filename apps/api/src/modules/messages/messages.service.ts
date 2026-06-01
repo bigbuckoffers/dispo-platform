@@ -277,6 +277,7 @@ export class MessagesService {
           submitted: 0,
           replied: 0,
           needsFollowUp: 0,
+          verifyPhone: 0,
         },
         recipientEngagement: [],
       }));
@@ -318,6 +319,7 @@ export class MessagesService {
       let submitted = 0;
       let replied = 0;
       let needsFollowUp = 0;
+      let verifyPhone = 0;
 
       const recipientEngagement = (campaign.recipients || []).map((recipient: any) => {
         const buyer = buyerById.get(recipient.buyerId);
@@ -332,7 +334,11 @@ export class MessagesService {
 
         const status = String(recipient.status || '').toUpperCase();
         const deliveryStatus = String(recipient.deliveryStatus || '').toUpperCase();
-        const wasSent = ['SENT', 'DELIVERED'].includes(status) || ['SENT', 'DELIVERED'].includes(deliveryStatus);
+
+        const isBadNumber = ['UNDELIVERED', 'FAILED'].includes(deliveryStatus) || status === 'FAILED';
+        const wasDeliveredOrSent = !isBadNumber && (
+          ['SENT', 'DELIVERED'].includes(status) || ['SENT', 'DELIVERED'].includes(deliveryStatus)
+        );
 
         if (hasOpened) opened += 1;
         if (hasStarted) started += 1;
@@ -340,9 +346,11 @@ export class MessagesService {
         if (hasReply) replied += 1;
 
         const engaged = hasOpened || hasStarted || hasSubmitted || hasReply;
-        const shouldFollowUp = wasSent && !engaged;
+        const shouldVerifyPhone = isBadNumber;
+        const shouldFollowUp = wasDeliveredOrSent && !engaged;
 
         if (shouldFollowUp) needsFollowUp += 1;
+        if (shouldVerifyPhone) verifyPhone += 1;
 
         return {
           buyerId: recipient.buyerId,
@@ -351,6 +359,7 @@ export class MessagesService {
           submitted: hasSubmitted,
           replied: hasReply,
           needsFollowUp: shouldFollowUp,
+          verifyPhone: shouldVerifyPhone,
         };
       });
 
@@ -362,6 +371,7 @@ export class MessagesService {
           submitted,
           replied,
           needsFollowUp,
+          verifyPhone,
         },
         recipientEngagement,
       };
