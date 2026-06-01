@@ -762,8 +762,47 @@ export default function BuyersPage() {
   const needsReview = [...allBuyers].filter(b => profileScore(b) < 70 && !(b.tags||[]).includes('profile_reviewed')).sort((a,b) => (b.compositeScore||0)-(a.compositeScore||0));
   const hotBuyers = [...allBuyers].filter(b => b.tier==='VIP'||b.tier==='TIER_1'||getTemp(b).label.includes('Hot')||getTemp(b).label.includes('Active')).sort((a,b) => (b.compositeScore||0)-(a.compositeScore||0));
 
+  const getBuyerLatestSms = (b: any) => {
+    return b.conversations?.[0]?.smsMessages?.[0] || null;
+  };
+
+  const buyerHasInboundReply = (b: any) => {
+    const latest = getBuyerLatestSms(b);
+    return latest?.direction === 'INBOUND';
+  };
+
+  const buyerLatestSmsFailed = (b: any) => {
+    const latest = getBuyerLatestSms(b);
+    if (!latest || latest.direction === 'INBOUND') return false;
+
+    const status = String(latest.deliveryStatus || latest.status || '').toUpperCase();
+    return ['UNDELIVERED', 'FAILED'].includes(status);
+  };
+
+  const buyerLatestSmsDeliveredOrSent = (b: any) => {
+    const latest = getBuyerLatestSms(b);
+    if (!latest || latest.direction === 'INBOUND') return false;
+
+    const status = String(latest.deliveryStatus || latest.status || '').toUpperCase();
+    return ['DELIVERED', 'SENT'].includes(status);
+  };
+
+  const buyerHasBuyBoxEngagement = (b: any) => {
+    return !!(b.intakeOpenedAt || b.intakeStartedAt || b.intakeSubmittedAt || buyerHasInboundReply(b));
+  };
+
   const buyBoxStatusKey = (b: any) => {
     const status = String(b.intakeStatus || 'NOT_SENT');
+
+    if (buyerLatestSmsFailed(b)) return 'verify_phone';
+
+    if (
+      buyerLatestSmsDeliveredOrSent(b) &&
+      (status === 'LINK_SENT' || b.intakeSentAt) &&
+      !buyerHasBuyBoxEngagement(b)
+    ) {
+      return 'needs_followup';
+    }
 
     if (status === 'SUBMITTED' || b.intakeSubmittedAt) return 'submitted';
     if (status === 'MANUAL_REVIEW_NEEDED') return 'needs_review';
@@ -778,6 +817,8 @@ export default function BuyersPage() {
   const buyBoxNextAction = (b: any) => {
     const key = buyBoxStatusKey(b);
 
+    if (key === 'verify_phone') return { label: 'Verify Phone', tone: 'text-red-300 bg-red-500/10 border-red-700/40', description: 'Latest SMS failed or was undelivered. Verify number before sending more.' };
+    if (key === 'needs_followup') return { label: 'Needs Follow-Up', tone: 'text-yellow-300 bg-yellow-500/10 border-yellow-700/40', description: 'SMS was sent/delivered but buyer has not opened, started, submitted, or replied.' };
     if (key === 'submitted') return { label: 'Review Submission', tone: 'text-purple-300 bg-purple-500/10 border-purple-700/40', description: 'Buyer submitted their Buy Box. Review and approve profile data.' };
     if (key === 'needs_review') return { label: 'Needs Human Review', tone: 'text-yellow-300 bg-yellow-500/10 border-yellow-700/40', description: 'Manual review needed before this buyer is considered complete.' };
     if (key === 'started') return { label: 'Send Reminder / Call', tone: 'text-amber-300 bg-amber-500/10 border-amber-700/40', description: 'Buyer started but did not submit. This is a strong follow-up opportunity.' };
@@ -795,12 +836,14 @@ export default function BuyersPage() {
     })
     .sort((a: any, b: any) => {
       const priority: Record<string, number> = {
-        submitted: 1,
-        needs_review: 2,
-        started: 3,
-        opened: 4,
-        sent: 5,
-        not_sent: 6,
+        verify_phone: 1,
+        needs_followup: 2,
+        submitted: 3,
+        needs_review: 4,
+        started: 5,
+        opened: 6,
+        sent: 7,
+        not_sent: 8,
       };
       return (priority[buyBoxStatusKey(a)] || 99) - (priority[buyBoxStatusKey(b)] || 99);
     });
@@ -809,6 +852,8 @@ export default function BuyersPage() {
     all: allBuyers.length,
     not_sent: allBuyers.filter((b: any) => buyBoxStatusKey(b) === 'not_sent').length,
     sent: allBuyers.filter((b: any) => buyBoxStatusKey(b) === 'sent').length,
+    needs_followup: allBuyers.filter((b: any) => buyBoxStatusKey(b) === 'needs_followup').length,
+    verify_phone: allBuyers.filter((b: any) => buyBoxStatusKey(b) === 'verify_phone').length,
     opened: allBuyers.filter((b: any) => buyBoxStatusKey(b) === 'opened').length,
     started: allBuyers.filter((b: any) => buyBoxStatusKey(b) === 'started').length,
     submitted: allBuyers.filter((b: any) => buyBoxStatusKey(b) === 'submitted').length,
@@ -918,6 +963,28 @@ export default function BuyersPage() {
                 title={!b.phone ? 'Buyer has no phone number' : 'Send Buy Box form by SMS'}
               >
                 {queueActionLoading[b.id] === 'send' ? 'Sending...' : 'Send Buy Box'}
+              </button>
+            )}
+
+            {key === 'verify_phone' && (
+              <button
+                onClick={()=>{ if (b.phone) window.location.href = `tel:${b.phone}`; }}
+                disabled={!b.phone}
+                className="px-2 py-1 bg-red-900/40 hover:bg-red-800/70 disabled:opacity-40 text-red-300 rounded text-xs"
+                title="SMS failed or was undelivered. Verify phone number."
+              >
+                Verify Phone
+              </button>
+            )}
+
+            {key === 'needs_followup' && getQueueNextReminderNumber(b) <= 3 && (
+              <button
+                onClick={()=>setQueueConfirmAction({ type: 'reminder', buyer: b, reminderNumber: getQueueNextReminderNumber(b) })}
+                disabled={!!queueActionLoading[b.id] || !b.phone}
+                className="px-2 py-1 bg-yellow-900/40 hover:bg-yellow-800/70 disabled:opacity-40 text-yellow-300 rounded text-xs"
+                title={!b.phone ? 'Buyer has no phone number' : `Send reminder #${getQueueNextReminderNumber(b)}`}
+              >
+                {queueActionLoading[b.id] === 'reminder' ? 'Sending...' : `Reminder #${getQueueNextReminderNumber(b)}`}
               </button>
             )}
 
