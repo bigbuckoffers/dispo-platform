@@ -944,9 +944,6 @@ export default function BuyersPage() {
           <span className={`text-xs px-2 py-0.5 rounded-full border ${action.tone}`}>{action.label}</span>
           <div className="text-gray-500 text-[10px] mt-1 max-w-[280px]">{action.description}</div>
         </td>
-        <td className="px-4 py-3 text-gray-300 text-xs">
-          {key.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase())}
-        </td>
         <td className="px-4 py-3 text-gray-400 text-xs">
           {lastActivity ? new Date(lastActivity).toLocaleDateString('en-US', { month:'short', day:'numeric' }) : '—'}
         </td>
@@ -1260,7 +1257,7 @@ export default function BuyersPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-800">
-                  {['Buyer','Next Action','Status','Last Activity','Market',''].map(h=>(
+                  {['Buyer','Next Action','Last Activity','Market',''].map(h=>(
                     <th key={h} className="text-left text-gray-500 font-medium px-4 py-3 text-xs uppercase tracking-wide">
                       {h === 'Buyer' ? (
                         <div className="flex items-center gap-2">
