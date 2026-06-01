@@ -671,21 +671,8 @@ export class MessagesService {
   }
 
   private async getOrCreateBuyerBuyBoxLink(buyer: any) {
-    if (buyer.intakeToken) {
-      return `https://dispo-platform-web.vercel.app/intake/${buyer.intakeToken}`;
-    }
-
-    const token = randomBytes(24).toString('hex');
-
-    await this.prisma.buyer.update({
-      where: { id: buyer.id },
-      data: {
-        intakeToken: token,
-        intakeStatus: 'LINK_CREATED' as any,
-      } as any,
-    });
-
-    return `https://dispo-platform-web.vercel.app/intake/${token}`;
+    const active = await this.intakeService.ensureActiveToken(buyer.id);
+    return active.intakeLink;
   }
 
   async sendBulkBuyBox(

@@ -48,6 +48,42 @@ export class IntakeService {
     return token;
   }
 
+  async ensureActiveToken(buyerId: string): Promise<{ token: string; intakeLink: string; expiresAt: Date }> {
+    const buyer = await this.prisma.buyer.findUnique({
+      where: { id: buyerId },
+      select: { id: true, intakeToken: true, intakeExpiresAt: true },
+    });
+
+    const now = new Date();
+    const hasActiveToken = !!buyer?.intakeToken && !!buyer?.intakeExpiresAt && new Date(buyer.intakeExpiresAt).getTime() > now.getTime();
+
+    const token = hasActiveToken ? buyer!.intakeToken! : crypto.randomBytes(16).toString('hex');
+    const expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+    const intakeLink = `https://dispo-platform-web.vercel.app/intake/${token}`;
+
+    await this.prisma.buyer.update({
+      where: { id: buyerId },
+      data: {
+        intakeToken: token,
+        intakeLink,
+        intakeExpiresAt: expiresAt,
+        ...(!hasActiveToken ? { intakeStatus: BuyerIntakeStatus.LINK_CREATED } : {}),
+      } as any,
+    });
+
+    if (!hasActiveToken) {
+      await this.logIntakeEvent({
+        buyerId,
+        intakeToken: token,
+        eventType: BuyerIntakeEventType.INTAKE_LINK_CREATED,
+        metadata: { intakeLink, expiresAt },
+        source: 'api',
+      });
+    }
+
+    return { token, intakeLink, expiresAt };
+  }
+
   async getBuyerByToken(token: string) {
     const buyer = await this.prisma.buyer.findUnique({
       where: { intakeToken: token },
